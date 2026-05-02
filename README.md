@@ -1,59 +1,93 @@
-# SagepFrontend
+# SAGEP Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.9.
+Base inicial do frontend do SAGEP em Angular, Tailwind CSS e integração com a API real do backend.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node.js 20+
+- npm
+- Backend do SAGEP rodando localmente em `http://localhost:3000`
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Instalação
 
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Como rodar
 
 ```bash
-ng generate --help
+npm start
 ```
 
-## Building
+Aplicação local:
 
-To build the project run:
+- Frontend: `http://localhost:4200`
+- API esperada: `http://localhost:3000/api`
 
-```bash
-ng build
+## Ambiente
+
+Os environments atuais usam:
+
+```ts
+apiUrl: 'http://localhost:3000/api'
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Arquivos:
 
-## Running unit tests
+- [src/environments/environment.ts](/home/luiz/Documentos/sagep-frontend/src/environments/environment.ts)
+- [src/environments/environment.development.ts](/home/luiz/Documentos/sagep-frontend/src/environments/environment.development.ts)
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Módulos implementados nesta etapa
 
-```bash
-ng test
-```
+- autenticação com login, logout, refresh token e carregamento de sessão via `/auth/me`
+- interceptor HTTP com Bearer token e tentativa de refresh em `401`
+- guards de autenticação e permissão
+- layout autenticado com sidebar, cabeçalho, logout e navegação por perfil/permissão
+- dashboard operacional consumindo `GET /dashboard/operational`
+- listagem de projetos consumindo `GET /projects`
+- detalhe de projeto consumindo:
+  - `GET /projects/:id/details`
+  - `GET /projects/:id/timeline`
+  - `GET /projects/:id/next-action`
 
-## Running end-to-end tests
+## Rotas disponíveis
 
-For end-to-end (e2e) testing, run:
+- `/login`
+- `/dashboard`
+- `/projects`
+- `/projects/:id`
 
-```bash
-ng e2e
-```
+## Como testar
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+1. Suba o backend e confirme que `http://localhost:3000/api/health` responde.
+2. Rode o frontend com `npm start`.
+3. Acesse `http://localhost:4200/login`.
+4. Use uma credencial seeded do backend, por exemplo:
+   - `admin@sagep.com` / `123456`
+   - `gestor@sagep.com` / `123456`
+   - `projetista@sagep.com` / `123456`
+   - `consulta@sagep.com` / `123456`
+5. Após login:
+   - o app redireciona para `/dashboard`
+   - o dashboard consulta `/dashboard/operational`
+   - a tela de projetos consulta `/projects`
+   - o detalhe consulta `/projects/:id/details`, `/timeline` e `/next-action`
 
-## Additional Resources
+## Referências usadas do backend
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- `README.md`
+- `docs/API.md`
+- `docs/FLUXO_DOCUMENTAL.md`
+- `docs/PERMISSOES.md`
+- `docs/DASHBOARD.md`
+- `docs/SALDO_ATA.md`
+- `docs/FRONTEND_MAP.md`
+
+## Próximos passos recomendados
+
+- expandir paginação, filtros e ordenação de projetos
+- criar fallback visual por permissão insuficiente
+- evoluir dashboard com seletores de período e visões operacional/executiva/geral
+- implementar módulos de estimativas, DIEx, OS, ATAs e saldo da ATA
+- adicionar testes de serviço, guard e fluxo de autenticação

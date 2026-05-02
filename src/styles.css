@@ -1,3 +1,41 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --sagep-ink: #0f172a;
+  --sagep-muted: #475569;
+  --sagep-line: #d7dee7;
+  --sagep-surface: #f8fafc;
+  --sagep-surface-strong: #ffffff;
+  --sagep-brand: #0f766e;
+  --sagep-brand-dark: #115e59;
+  --sagep-brand-soft: #ccfbf1;
+  --sagep-warn: #b45309;
+  --sagep-danger: #b91c1c;
+  --sagep-shadow: 0 24px 50px -26px rgba(15, 23, 42, 0.28);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef4f5 100%);
+  color: var(--sagep-ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
