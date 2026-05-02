@@ -10,6 +10,25 @@ export function formatLabel(value: string | null | undefined): string {
     .join(' ');
 }
 
+export function getStatusBadgeClasses(status: string | null | undefined): string {
+  switch (status) {
+    case 'CONCLUIDO':
+    case 'SERVICO_CONCLUIDO':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    case 'EM_ANDAMENTO':
+    case 'SERVICO_EM_EXECUCAO':
+    case 'OS_LIBERADA':
+      return 'border-sky-200 bg-sky-50 text-sky-700';
+    case 'PAUSADO':
+    case 'ANALISANDO_AS_BUILT':
+      return 'border-amber-200 bg-amber-50 text-amber-700';
+    case 'CANCELADO':
+      return 'border-rose-200 bg-rose-50 text-rose-700';
+    default:
+      return 'border-slate-200 bg-slate-100 text-slate-700';
+  }
+}
+
 export function formatCurrency(value: unknown): string {
   const numericValue =
     typeof value === 'number'

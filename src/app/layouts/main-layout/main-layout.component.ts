@@ -11,6 +11,7 @@ interface MenuItem {
   disabled?: boolean;
   permissions?: string[];
   roles?: UserRole[];
+  hint?: string;
 }
 
 @Component({
@@ -29,8 +30,16 @@ interface MenuItem {
           <nav class="mt-8 space-y-2">
             @for (item of visibleMenu(); track item.path) {
               @if (item.disabled) {
-                <div class="rounded-2xl border border-white/8 px-4 py-3 text-sm text-slate-500">
-                  {{ item.label }}
+                <div class="rounded-2xl border border-white/8 px-4 py-3 text-sm text-slate-400">
+                  <div class="flex items-center justify-between gap-3">
+                    <span>{{ item.label }}</span>
+                    <span class="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                      Em construcao
+                    </span>
+                  </div>
+                  @if (item.hint) {
+                    <p class="mt-2 text-xs leading-5 text-slate-500">{{ item.hint }}</p>
+                  }
                 </div>
               } @else {
                 <a
@@ -91,16 +100,16 @@ export class MainLayoutComponent {
       permissions: ['dashboard.view_operational', 'dashboard.view_executive', 'dashboard.financial_view'],
     },
     { label: 'Projetos', path: '/projects' },
-    { label: 'Estimativas', path: '/estimativas', disabled: true },
-    { label: 'DIEx', path: '/diex', disabled: true },
-    { label: 'Ordens de Serviço', path: '/ordens-servico', disabled: true },
-    { label: 'ATAs', path: '/atas', disabled: true },
-    { label: 'Itens da ATA', path: '/itens-ata', disabled: true },
-    { label: 'Saldo da ATA', path: '/saldo-ata', disabled: true },
-    { label: 'Relatórios', path: '/relatorios', disabled: true },
-    { label: 'Auditoria', path: '/auditoria', disabled: true },
-    { label: 'Usuários', path: '/usuarios', disabled: true, roles: ['ADMIN'] },
-    { label: 'OMs', path: '/oms', disabled: true, roles: ['ADMIN'] },
+    { label: 'Estimativas', path: '/estimativas', disabled: true, hint: 'Previsto para a próxima etapa do fluxo documental.' },
+    { label: 'DIEx', path: '/diex', disabled: true, hint: 'Será integrado a partir de estimativas finalizadas.' },
+    { label: 'Ordens de Serviço', path: '/ordens-servico', disabled: true, hint: 'Módulo planejado após DIEx e Nota de Empenho.' },
+    { label: 'ATAs', path: '/atas', disabled: true, hint: 'Estrutura já prevista, sem implementação nesta entrega.' },
+    { label: 'Itens da ATA', path: '/itens-ata', disabled: true, hint: 'Ligado ao controle de estoque e saldo da ATA.' },
+    { label: 'Saldo da ATA', path: '/saldo-ata', disabled: true, hint: 'Painel reservado para movimentações e disponibilidade.' },
+    { label: 'Relatórios', path: '/relatorios', disabled: true, hint: 'Exportações e relatórios serão integrados em etapa futura.' },
+    { label: 'Auditoria', path: '/auditoria', disabled: true, hint: 'Consulta de eventos e rastreabilidade ainda pendente.' },
+    { label: 'Usuários', path: '/usuarios', disabled: true, roles: ['ADMIN'], hint: 'Módulo administrativo reservado ao perfil ADMIN.' },
+    { label: 'OMs', path: '/oms', disabled: true, roles: ['ADMIN'], hint: 'Cadastro institucional previsto para módulo administrativo.' },
   ];
 
   readonly visibleMenu = computed(() => {

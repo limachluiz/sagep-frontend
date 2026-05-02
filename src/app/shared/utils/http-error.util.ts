@@ -23,3 +23,7 @@ export function getErrorMessage(error: unknown, fallback = 'Ocorreu um erro ines
 
   return fallback;
 }
+
+export function isForbiddenError(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 403;
+}

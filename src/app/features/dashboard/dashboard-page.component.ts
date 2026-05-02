@@ -3,12 +3,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import { DashboardSummary } from '../../core/models/dashboard.model';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { formatCurrency, formatLabel } from '../../shared/utils/format.util';
-import { getErrorMessage } from '../../shared/utils/http-error.util';
+import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [CommonModule],
+  imports: [CommonModule, AccessDeniedStateComponent],
   template: `
     <section class="space-y-6">
       <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
@@ -34,6 +35,15 @@ import { getErrorMessage } from '../../shared/utils/http-error.util';
             <div class="h-32 animate-pulse rounded-3xl bg-white/80 shadow-[var(--sagep-shadow)]"></div>
           }
         </div>
+      } @else if (forbidden()) {
+        <app-access-denied-state
+          title="Seu perfil atual não possui acesso a este dashboard."
+          description="A API retornou acesso negado para a visão operacional. A sessão permanece ativa e você pode seguir para outros módulos disponíveis."
+          primaryLink="/projects"
+          primaryLabel="Ir para projetos"
+          secondaryLink="/dashboard"
+          secondaryLabel="Recarregar rota"
+        />
       } @else if (errorMessage()) {
         <div class="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
           <h2 class="text-lg font-semibold">Nao foi possivel carregar o dashboard</h2>
@@ -120,6 +130,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
 
   readonly loading = signal(true);
+  readonly forbidden = signal(false);
   readonly errorMessage = signal('');
   readonly dashboard = signal<DashboardSummary | null>(null);
 
@@ -159,7 +170,9 @@ export class DashboardPageComponent implements OnInit {
         this.loading.set(false);
       },
       error: (error) => {
+        this.forbidden.set(isForbiddenError(error));
         this.errorMessage.set(getErrorMessage(error, 'Falha ao consultar o dashboard operacional.'));
+        this.dashboard.set(null);
         this.loading.set(false);
       },
     });
