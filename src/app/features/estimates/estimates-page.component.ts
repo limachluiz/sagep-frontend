@@ -5,7 +5,13 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
-import { formatCurrency, formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
+import {
+  buildEstimateIdentifier,
+  formatCurrency,
+  formatDate,
+  formatLabel,
+  getStatusBadgeClasses,
+} from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 import { Estimate, EstimateListResponse, EstimateStatus } from './estimate.model';
 import { EstimatesService } from './estimates.service';
@@ -155,7 +161,7 @@ import { EstimatesService } from './estimates.service';
                     <td class="px-5 py-4 text-sm text-slate-700">{{ formatDate(estimate.updatedAt || estimate.createdAt) }}</td>
                     <td class="px-5 py-4 text-right">
                       <a
-                        [routerLink]="['/estimates', estimate.id]"
+                        [routerLink]="['/estimates', estimateIdentifier(estimate)]"
                         class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
                       >
                         Ver detalhe
@@ -198,7 +204,7 @@ import { EstimatesService } from './estimates.service';
                   </div>
                 </div>
                 <a
-                  [routerLink]="['/estimates', estimate.id]"
+                  [routerLink]="['/estimates', estimateIdentifier(estimate)]"
                   class="mt-4 inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
                 >
                   Abrir detalhe
@@ -361,6 +367,10 @@ export class EstimatesPageComponent implements OnInit {
 
   statusBadge(status: string): string {
     return getStatusBadgeClasses(status);
+  }
+
+  estimateIdentifier(estimate: Estimate): string {
+    return buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt);
   }
 
   protected readonly formatLabel = formatLabel;

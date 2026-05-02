@@ -1,10 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
-import { formatCurrency, formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
+import {
+  buildEstimateIdentifier,
+  extractEstimateCodeFromFriendlyIdentifier,
+  formatCurrency,
+  formatDate,
+  formatLabel,
+  getStatusBadgeClasses,
+} from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 import { Estimate } from './estimate.model';
 import { EstimatesService } from './estimates.service';
@@ -20,7 +28,7 @@ import { EstimatesService } from './estimates.service';
         </a>
         @if (estimate()) {
           <span class="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-600 shadow-sm">
-            Fonte: GET /estimates/:id
+            Fonte: GET /estimates/:identifier
           </span>
         }
       </div>
@@ -77,7 +85,7 @@ import { EstimatesService } from './estimates.service';
           <div class="bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_100%)] px-6 py-8 text-white">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">Estimativa EST-{{ estimate()?.estimateCode }}</p>
+                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">{{ estimateDisplayCode() }}</p>
                 <h1 class="mt-3 text-3xl font-semibold">{{ estimate()?.project?.title || 'Estimativa vinculada a projeto' }}</h1>
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
                   {{ estimate()?.notes | emptyValue:'Sem observacoes cadastradas para esta estimativa.' }}
@@ -226,7 +234,11 @@ export class EstimateDetailPageComponent implements OnInit {
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
   readonly estimate = signal<Estimate | null>(null);
-  private estimateId: string | null = null;
+  private estimateIdentifier: string | null = null;
+  readonly estimateDisplayCode = computed(() => {
+    const estimate = this.estimate();
+    return estimate ? buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt) : 'Estimativa';
+  });
 
   readonly highlightFacts = computed(() => {
     const estimate = this.estimate();
@@ -254,9 +266,9 @@ export class EstimateDetailPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.estimateId = this.route.snapshot.paramMap.get('id');
+    this.estimateIdentifier = this.route.snapshot.paramMap.get('id');
 
-    if (!this.estimateId) {
+    if (!this.estimateIdentifier) {
       this.errorMessage.set('Identificador da estimativa nao informado na rota.');
       this.loading.set(false);
       return;
@@ -266,20 +278,39 @@ export class EstimateDetailPageComponent implements OnInit {
   }
 
   reload(): void {
-    if (!this.estimateId) return;
+    if (!this.estimateIdentifier) return;
 
     this.loading.set(true);
     this.forbidden.set(false);
     this.errorMessage.set('');
 
-    this.estimatesService.getById(this.estimateId).subscribe({
+    const routeIdentifier = this.estimateIdentifier;
+    const codeCandidate = extractEstimateCodeFromFriendlyIdentifier(routeIdentifier);
+    const shouldTryCodeLookup =
+      routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
+
+    const estimateRequest$ = shouldTryCodeLookup
+      ? this.estimatesService.getByCode(codeCandidate).pipe(
+          catchError(() => this.estimatesService.getByIdentifier(routeIdentifier)),
+        )
+      : this.estimatesService.getByIdentifier(routeIdentifier).pipe(
+          catchError((originalError) =>
+            this.estimatesService.getByCode(codeCandidate).pipe(
+              catchError(() => throwError(() => originalError)),
+            ),
+          ),
+        );
+
+    estimateRequest$.subscribe({
       next: (response) => {
         this.estimate.set(response);
         this.loading.set(false);
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
-        this.errorMessage.set(getErrorMessage(error, 'Falha ao carregar o detalhe da estimativa.'));
+        this.errorMessage.set(
+          getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'),
+        );
         this.estimate.set(null);
         this.loading.set(false);
       },

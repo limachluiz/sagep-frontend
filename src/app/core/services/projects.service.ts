@@ -5,6 +5,7 @@ import { forkJoin, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ProjectDetails,
+  ProjectLookupResponse,
   ProjectListResponse,
   ProjectTimelineItem,
 } from '../models/project.model';
@@ -26,11 +27,15 @@ export class ProjectsService {
     return this.http.get<ProjectListResponse>(`${this.apiUrl}/projects`, { params: httpParams });
   }
 
-  getDetails(id: string) {
+  getByCode(code: string) {
+    return this.http.get<ProjectLookupResponse>(`${this.apiUrl}/projects/code/${encodeURIComponent(code)}`);
+  }
+
+  getDetails(projectIdentifier: string) {
     return forkJoin({
-      details: this.http.get<ProjectDetails>(`${this.apiUrl}/projects/${id}/details`),
-      timeline: this.http.get<ProjectTimelineItem[]>(`${this.apiUrl}/projects/${id}/timeline`),
-      nextAction: this.http.get<Record<string, unknown>>(`${this.apiUrl}/projects/${id}/next-action`),
+      details: this.http.get<ProjectDetails>(`${this.apiUrl}/projects/${projectIdentifier}/details`),
+      timeline: this.http.get<ProjectTimelineItem[]>(`${this.apiUrl}/projects/${projectIdentifier}/timeline`),
+      nextAction: this.http.get<Record<string, unknown>>(`${this.apiUrl}/projects/${projectIdentifier}/next-action`),
     }).pipe(
       map(({ details, timeline, nextAction }) => ({
         ...details,

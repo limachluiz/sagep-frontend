@@ -66,3 +66,55 @@ export function formatDate(value: unknown): string {
     timeStyle: 'short',
   }).format(date);
 }
+
+function buildHumanIdentifier(prefix: string, code: number | null | undefined, dateLike: unknown): string | null {
+  if (!code) {
+    return null;
+  }
+
+  const paddedCode = String(code).padStart(4, '0');
+
+  if (typeof dateLike === 'string' || dateLike instanceof Date) {
+    const date = new Date(dateLike);
+
+    if (!Number.isNaN(date.getTime())) {
+      return `${prefix}-${date.getFullYear()}-${paddedCode}`;
+    }
+  }
+
+  return `${prefix}-${paddedCode}`;
+}
+
+export function buildProjectIdentifier(projectCode: number | null | undefined, projectId: string, createdAt?: unknown): string {
+  return buildHumanIdentifier('PRJ', projectCode, createdAt) ?? projectId;
+}
+
+export function extractProjectCodeFromFriendlyIdentifier(identifier: string): string {
+  const normalized = identifier.trim().toUpperCase();
+  const match = normalized.match(/^PRJ(?:-\d{4})?-(\d+)$/);
+
+  if (match) {
+    return match[1];
+  }
+
+  return identifier;
+}
+
+export function buildEstimateIdentifier(
+  estimateCode: number | null | undefined,
+  estimateId: string,
+  createdAt?: unknown,
+): string {
+  return buildHumanIdentifier('EST', estimateCode, createdAt) ?? estimateId;
+}
+
+export function extractEstimateCodeFromFriendlyIdentifier(identifier: string): string {
+  const normalized = identifier.trim().toUpperCase();
+  const match = normalized.match(/^EST(?:-\d{4})?-(\d+)$/);
+
+  if (match) {
+    return match[1];
+  }
+
+  return identifier;
+}

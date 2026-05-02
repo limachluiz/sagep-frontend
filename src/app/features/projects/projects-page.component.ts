@@ -7,7 +7,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Project, ProjectListResponse } from '../../core/models/project.model';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
-import { formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
+import { buildProjectIdentifier, formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 
 @Component({
@@ -150,7 +150,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                     <td class="px-5 py-4 text-sm text-slate-700">{{ formatDate(project.createdAt) }}</td>
                     <td class="px-5 py-4 text-right">
                       <a
-                        [routerLink]="['/projects', project.id]"
+                        [routerLink]="['/projects', projectIdentifier(project)]"
                         class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
                       >
                         Ver detalhe
@@ -312,6 +312,10 @@ export class ProjectsPageComponent implements OnInit {
 
   statusBadge(value: string): string {
     return getStatusBadgeClasses(value);
+  }
+
+  projectIdentifier(project: Project): string {
+    return buildProjectIdentifier(project.projectCode, project.id, project.createdAt);
   }
 
   protected readonly formatDate = formatDate;

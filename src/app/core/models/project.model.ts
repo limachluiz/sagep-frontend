@@ -76,6 +76,10 @@ export interface ProjectDetails {
   operationalSummary?: Record<string, unknown>;
 }
 
+export interface ProjectLookupResponse extends Project {
+  owner?: Partial<User> | null;
+}
+
 export interface ProjectTimelineItem {
   id: string;
   at: string;

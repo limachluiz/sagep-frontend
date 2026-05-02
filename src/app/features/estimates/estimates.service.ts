@@ -35,7 +35,11 @@ export class EstimatesService {
     return this.http.get<EstimateListResponse>(`${this.apiUrl}/estimates`, { params: httpParams });
   }
 
-  getById(id: string) {
-    return this.http.get<Estimate>(`${this.apiUrl}/estimates/${id}`);
+  getByCode(code: string) {
+    return this.http.get<Estimate>(`${this.apiUrl}/estimates/code/${encodeURIComponent(code)}`);
+  }
+
+  getByIdentifier(estimateIdentifier: string) {
+    return this.http.get<Estimate>(`${this.apiUrl}/estimates/${estimateIdentifier}`);
   }
 }

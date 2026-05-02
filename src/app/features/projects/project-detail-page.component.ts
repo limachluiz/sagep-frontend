@@ -1,12 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, switchMap, throwError } from 'rxjs';
 
 import { ProjectDetails } from '../../core/models/project.model';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
-import { formatCurrency, formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
+import {
+  buildProjectIdentifier,
+  extractProjectCodeFromFriendlyIdentifier,
+  formatCurrency,
+  formatDate,
+  formatLabel,
+  getStatusBadgeClasses,
+} from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 
 @Component({
@@ -20,7 +28,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         </a>
         @if (details()) {
           <span class="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-600 shadow-sm">
-            Fonte: GET /projects/:id/details
+            Fonte: GET /projects/:identifier/details
           </span>
         }
       </div>
@@ -79,7 +87,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <div class="bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_100%)] px-6 py-8 text-white">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">Projeto #{{ details()?.project?.projectCode }}</p>
+                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">{{ projectDisplayCode() }}</p>
                 <h1 class="mt-3 text-3xl font-semibold">{{ details()?.project?.title }}</h1>
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
                   {{ details()?.project?.description || 'Sem descricao cadastrada para este projeto.' }}
@@ -236,7 +244,11 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
   readonly details = signal<ProjectDetails | null>(null);
-  private projectId: string | null = null;
+  private projectIdentifier: string | null = null;
+  readonly projectDisplayCode = computed(() => {
+    const project = this.details()?.project;
+    return project ? buildProjectIdentifier(project.projectCode, project.id, project.createdAt) : 'Projeto';
+  });
 
   readonly highlightFacts = computed(() => {
     const details = this.details();
@@ -314,9 +326,9 @@ export class ProjectDetailPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('id');
+    this.projectIdentifier = this.route.snapshot.paramMap.get('id');
 
-    if (!this.projectId) {
+    if (!this.projectIdentifier) {
       this.errorMessage.set('Identificador do projeto nao informado na rota.');
       this.loading.set(false);
       return;
@@ -326,7 +338,7 @@ export class ProjectDetailPageComponent implements OnInit {
   }
 
   reload(): void {
-    if (!this.projectId) {
+    if (!this.projectIdentifier) {
       return;
     }
 
@@ -334,14 +346,35 @@ export class ProjectDetailPageComponent implements OnInit {
     this.forbidden.set(false);
     this.errorMessage.set('');
 
-    this.projectsService.getDetails(this.projectId).subscribe({
+    const routeIdentifier = this.projectIdentifier;
+    const codeCandidate = extractProjectCodeFromFriendlyIdentifier(routeIdentifier);
+    const shouldTryCodeLookup =
+      routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
+
+    const detailsRequest$ = shouldTryCodeLookup
+      ? this.projectsService.getByCode(codeCandidate).pipe(
+          switchMap((project) => this.projectsService.getDetails(project.id)),
+          catchError(() => this.projectsService.getDetails(routeIdentifier)),
+        )
+      : this.projectsService.getDetails(routeIdentifier).pipe(
+          catchError((originalError) =>
+            this.projectsService.getByCode(codeCandidate).pipe(
+              switchMap((project) => this.projectsService.getDetails(project.id)),
+              catchError(() => throwError(() => originalError)),
+            ),
+          ),
+        );
+
+    detailsRequest$.subscribe({
       next: (response) => {
         this.details.set(response);
         this.loading.set(false);
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
-        this.errorMessage.set(getErrorMessage(error, 'Falha ao carregar o detalhe do projeto.'));
+        this.errorMessage.set(
+          getErrorMessage(error, 'Projeto não encontrado ou sem permissão de acesso.'),
+        );
         this.details.set(null);
         this.loading.set(false);
       },
