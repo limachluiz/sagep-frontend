@@ -5,12 +5,16 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ErrorStateComponent } from '../../shared/components/error-state.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import {
   buildEstimateIdentifier,
   formatCurrency,
   formatDate,
   formatLabel,
-  getStatusBadgeClasses,
 } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 import { Estimate, EstimateListResponse, EstimateStatus } from './estimate.model';
@@ -18,66 +22,66 @@ import { EstimatesService } from './estimates.service';
 
 @Component({
   selector: 'app-estimates-page',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AccessDeniedStateComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    AccessDeniedStateComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    LoadingStateComponent,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+  ],
   template: `
     <section class="space-y-6">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-        <div class="flex flex-col gap-6">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Estimativas</p>
-            <h1 class="mt-3 text-3xl font-semibold text-slate-950">Base inicial de consulta de estimativas</h1>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-              Integração com <code>GET /estimates</code> para leitura da fila atual sem implementar criação, edição ou finalização nesta etapa.
-            </p>
-          </div>
-
-          <form [formGroup]="filtersForm" class="grid gap-4 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto]">
-            <input
-              type="search"
-              formControlName="search"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-              placeholder="Buscar por projeto, OM, ata ou observações"
-            />
-            <select
-              formControlName="status"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-            >
-              <option value="">Todos os status</option>
-              @for (status of statusOptions; track status) {
-                <option [value]="status">{{ formatLabel(status) }}</option>
-              }
-            </select>
-            <input
-              type="number"
-              min="1"
-              formControlName="projectCode"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-              placeholder="Código do projeto"
-            />
-            <input
-              type="number"
-              min="1"
-              formControlName="omCode"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-              placeholder="Código da OM"
-            />
-            <button
-              type="button"
-              (click)="clearFilters()"
-              class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
-            >
-              Limpar filtros
-            </button>
-          </form>
-        </div>
-      </div>
+      <app-page-header
+        title="Base inicial de consulta de estimativas"
+        eyebrow="Estimativas"
+        subtitle="Integração com GET /estimates para leitura da fila atual sem implementar criação, edição ou finalização nesta etapa."
+      >
+        <form page-header-actions [formGroup]="filtersForm" class="grid w-full gap-4 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto]">
+          <input
+            type="search"
+            formControlName="search"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            placeholder="Buscar por projeto, OM, ata ou observações"
+          />
+          <select
+            formControlName="status"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+          >
+            <option value="">Todos os status</option>
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ formatLabel(status) }}</option>
+            }
+          </select>
+          <input
+            type="number"
+            min="1"
+            formControlName="projectCode"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            placeholder="Código do projeto"
+          />
+          <input
+            type="number"
+            min="1"
+            formControlName="omCode"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            placeholder="Código da OM"
+          />
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+          >
+            Limpar filtros
+          </button>
+        </form>
+      </app-page-header>
 
       @if (loading()) {
-        <div class="grid gap-4">
-          @for (item of [1, 2, 3]; track item) {
-            <div class="h-28 animate-pulse rounded-[2rem] border border-slate-200 bg-white/80 shadow-[var(--sagep-shadow)]"></div>
-          }
-        </div>
+        <app-loading-state variant="list" [count]="3" />
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite consultar estimativas."
@@ -86,30 +90,19 @@ import { EstimatesService } from './estimates.service';
           secondaryLink="/projects"
         />
       } @else if (errorMessage()) {
-        <div class="rounded-[2rem] border border-red-200 bg-red-50 p-6 text-red-700 shadow-[var(--sagep-shadow)]">
-          <h2 class="text-lg font-semibold">Nao foi possivel carregar as estimativas</h2>
-          <p class="mt-2 text-sm leading-6">{{ errorMessage() }}</p>
-          <button
-            type="button"
-            (click)="loadEstimates()"
-            class="mt-5 rounded-full border border-red-300 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-500"
-          >
-            Tentar novamente
-          </button>
-        </div>
+        <app-error-state
+          title="Nao foi possivel carregar as estimativas"
+          [message]="errorMessage()"
+          retryLabel="Tentar novamente"
+          (retry)="loadEstimates()"
+        />
       } @else if (!estimates().length) {
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-[var(--sagep-shadow)]">
-          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">Nenhum resultado</p>
-          <h2 class="mt-3 text-2xl font-semibold text-slate-900">Nenhuma estimativa encontrada com os filtros atuais</h2>
-          <p class="mt-3 text-sm leading-6 text-slate-600">Ajuste a busca ou limpe os filtros para ampliar a consulta.</p>
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="mt-6 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Limpar filtros
-          </button>
-        </div>
+        <app-empty-state
+          title="Nenhuma estimativa encontrada com os filtros atuais"
+          description="Ajuste a busca ou limpe os filtros para ampliar a consulta."
+          actionLabel="Limpar filtros"
+          [action]="clearFilters.bind(this)"
+        />
       } @else {
         <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[var(--sagep-shadow)]">
           <div class="mb-5 flex flex-col gap-3 rounded-3xl bg-slate-50 px-5 py-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
@@ -145,9 +138,7 @@ import { EstimatesService } from './estimates.service';
                       <p class="mt-1 text-sm text-slate-500">{{ estimate.notes || 'Sem observacoes cadastradas.' }}</p>
                     </td>
                     <td class="px-5 py-4 text-sm text-slate-700">
-                      <span class="inline-flex rounded-full border px-3 py-1 font-medium" [class]="statusBadge(estimate.status)">
-                        {{ formatLabel(estimate.status) }}
-                      </span>
+                      <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
                     </td>
                     <td class="px-5 py-4 text-sm text-slate-700">
                       <p class="font-medium text-slate-900">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
@@ -181,9 +172,7 @@ import { EstimatesService } from './estimates.service';
                     <p class="font-semibold text-slate-900">EST-{{ estimate.estimateCode }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
                   </div>
-                  <span class="inline-flex rounded-full border px-3 py-1 text-xs font-medium" [class]="statusBadge(estimate.status)">
-                    {{ formatLabel(estimate.status) }}
-                  </span>
+                  <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
                 </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                   <div class="rounded-2xl bg-slate-50 p-3">
@@ -363,10 +352,6 @@ export class EstimatesPageComponent implements OnInit {
     const city = estimate.om?.cityName || estimate.destinationCityName;
     const state = estimate.om?.stateUf || estimate.destinationStateUf;
     return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
-  }
-
-  statusBadge(status: string): string {
-    return getStatusBadgeClasses(status);
   }
 
   estimateIdentifier(estimate: Estimate): string {

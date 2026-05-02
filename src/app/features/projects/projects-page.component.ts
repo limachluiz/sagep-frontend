@@ -7,65 +7,71 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Project, ProjectListResponse } from '../../core/models/project.model';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
-import { buildProjectIdentifier, formatDate, formatLabel, getStatusBadgeClasses } from '../../shared/utils/format.util';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ErrorStateComponent } from '../../shared/components/error-state.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { buildProjectIdentifier, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-projects-page',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AccessDeniedStateComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    AccessDeniedStateComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    LoadingStateComponent,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+  ],
   template: `
     <section class="space-y-6">
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-        <div class="flex flex-col gap-6">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Projetos</p>
-            <h1 class="mt-3 text-3xl font-semibold text-slate-950">Lista de projetos integrados ao backend</h1>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-              Consulta em <code>/projects</code> com acesso governado pelo backend e navegação para o detalhe ampliado.
-            </p>
-          </div>
-          <form [formGroup]="filtersForm" class="grid gap-4 xl:grid-cols-[1.3fr_0.8fr_0.8fr_auto]">
-            <input
-              type="search"
-              formControlName="search"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-              placeholder="Buscar por titulo ou campos relacionados"
-            />
-            <select
-              formControlName="status"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-            >
-              <option value="">Todos os status</option>
-              @for (status of statusOptions; track status) {
-                <option [value]="status">{{ formatLabel(status) }}</option>
-              }
-            </select>
-            <select
-              formControlName="stage"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
-            >
-              <option value="">Todas as fases</option>
-              @for (stage of stageOptions; track stage) {
-                <option [value]="stage">{{ formatLabel(stage) }}</option>
-              }
-            </select>
-            <button
-              type="button"
-              (click)="clearFilters()"
-              class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
-            >
-              Limpar filtros
-            </button>
-          </form>
-        </div>
-      </div>
+      <app-page-header
+        title="Lista de projetos integrados ao backend"
+        eyebrow="Projetos"
+        subtitle="Consulta em /projects com acesso governado pelo backend e navegação para o detalhe ampliado."
+      >
+        <form page-header-actions [formGroup]="filtersForm" class="grid w-full gap-4 xl:grid-cols-[1.3fr_0.8fr_0.8fr_auto]">
+          <input
+            type="search"
+            formControlName="search"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            placeholder="Buscar por titulo ou campos relacionados"
+          />
+          <select
+            formControlName="status"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+          >
+            <option value="">Todos os status</option>
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ formatLabel(status) }}</option>
+            }
+          </select>
+          <select
+            formControlName="stage"
+            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+          >
+            <option value="">Todas as fases</option>
+            @for (stage of stageOptions; track stage) {
+              <option [value]="stage">{{ formatLabel(stage) }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+          >
+            Limpar filtros
+          </button>
+        </form>
+      </app-page-header>
 
       @if (loading()) {
-        <div class="grid gap-4">
-          @for (item of [1, 2, 3]; track item) {
-            <div class="h-28 animate-pulse rounded-[2rem] border border-slate-200 bg-white/80 shadow-[var(--sagep-shadow)]"></div>
-          }
-        </div>
+        <app-loading-state variant="list" [count]="3" />
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite consultar a lista de projetos."
@@ -75,32 +81,19 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           secondaryLabel="Permanecer aqui"
         />
       } @else if (errorMessage()) {
-        <div class="rounded-[2rem] border border-red-200 bg-red-50 p-6 text-red-700 shadow-[var(--sagep-shadow)]">
-          <h2 class="text-lg font-semibold">Nao foi possivel consultar os projetos</h2>
-          <p class="mt-2 text-sm leading-6">{{ errorMessage() }}</p>
-          <button
-            type="button"
-            (click)="loadProjects()"
-            class="mt-5 rounded-full border border-red-300 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-500"
-          >
-            Tentar novamente
-          </button>
-        </div>
+        <app-error-state
+          title="Nao foi possivel consultar os projetos"
+          [message]="errorMessage()"
+          retryLabel="Tentar novamente"
+          (retry)="loadProjects()"
+        />
       } @else if (!projects().length) {
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-[var(--sagep-shadow)]">
-          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">Nenhum resultado</p>
-          <h2 class="mt-3 text-2xl font-semibold text-slate-900">Nenhum projeto encontrado com os filtros atuais</h2>
-          <p class="mt-3 text-sm leading-6 text-slate-600">
-            Tente remover parte da busca ou ajustar status e fase para ampliar o resultado.
-          </p>
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="mt-6 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Limpar filtros
-          </button>
-        </div>
+        <app-empty-state
+          title="Nenhum projeto encontrado com os filtros atuais"
+          description="Tente remover parte da busca ou ajustar status e fase para ampliar o resultado."
+          actionLabel="Limpar filtros"
+          [action]="clearFilters.bind(this)"
+        />
       } @else {
         <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[var(--sagep-shadow)]">
           <div class="mb-5 flex flex-col gap-3 rounded-3xl bg-slate-50 px-5 py-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
@@ -137,14 +130,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                       <p class="mt-1 text-sm text-slate-500">{{ project.description || 'Sem descricao cadastrada.' }}</p>
                     </td>
                     <td class="px-5 py-4 text-sm text-slate-700">
-                      <span class="inline-flex rounded-full border px-3 py-1 font-medium" [class]="statusBadge(project.status)">
-                        {{ formatLabel(project.status) }}
-                      </span>
+                      <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
                     </td>
                     <td class="px-5 py-4 text-sm text-slate-700">
-                      <span class="inline-flex rounded-full border px-3 py-1 font-medium" [class]="statusBadge(project.stage)">
-                        {{ formatLabel(project.stage) }}
-                      </span>
+                      <app-status-badge [label]="formatLabel(project.stage)" [status]="project.stage" />
                     </td>
                     <td class="px-5 py-4 text-sm text-slate-700">{{ project.ownerName || project.owner?.name || 'Nao informado' }}</td>
                     <td class="px-5 py-4 text-sm text-slate-700">{{ formatDate(project.createdAt) }}</td>
@@ -308,10 +297,6 @@ export class ProjectsPageComponent implements OnInit {
   changePageSize(value: string): void {
     this.pageSize.set(Number(value));
     this.loadProjects(1);
-  }
-
-  statusBadge(value: string): string {
-    return getStatusBadgeClasses(value);
   }
 
   projectIdentifier(project: Project): string {

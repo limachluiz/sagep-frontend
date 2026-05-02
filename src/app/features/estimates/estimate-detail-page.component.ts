@@ -1,9 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ErrorStateComponent } from '../../shared/components/error-state.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { SectionCardComponent } from '../../shared/components/section-card.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
 import {
   buildEstimateIdentifier,
@@ -11,7 +18,6 @@ import {
   formatCurrency,
   formatDate,
   formatLabel,
-  getStatusBadgeClasses,
 } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 import { Estimate } from './estimate.model';
@@ -19,26 +25,31 @@ import { EstimatesService } from './estimates.service';
 
 @Component({
   selector: 'app-estimate-detail-page',
-  imports: [CommonModule, RouterLink, EmptyValuePipe, AccessDeniedStateComponent],
+  imports: [
+    CommonModule,
+    EmptyValuePipe,
+    AccessDeniedStateComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    LoadingStateComponent,
+    PageHeaderComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
+    SummaryCardComponent,
+  ],
   template: `
     <section class="space-y-6">
-      <div class="flex items-center justify-between gap-4">
-        <a routerLink="/estimates" class="inline-flex items-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-900">
-          ← Voltar para estimativas
-        </a>
-        @if (estimate()) {
-          <span class="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-600 shadow-sm">
-            Fonte: GET /estimates/:identifier
-          </span>
-        }
-      </div>
+      <app-page-header
+        [title]="estimate()?.project?.title || 'Detalhe da estimativa'"
+        [eyebrow]="estimateDisplayCode()"
+        subtitle="Detalhe da estimativa com vínculo ao projeto, resumo geral e itens retornados pela API."
+        badge="Fonte: GET /estimates/:identifier"
+        backLabel="← Voltar para estimativas"
+        backLink="/estimates"
+      />
 
       @if (loading()) {
-        <div class="grid gap-4">
-          @for (item of [1, 2, 3]; track item) {
-            <div class="h-36 animate-pulse rounded-[2rem] border border-slate-200 bg-white/80 shadow-[var(--sagep-shadow)]"></div>
-          }
-        </div>
+        <app-loading-state variant="detail" [count]="3" />
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite abrir esta estimativa."
@@ -49,75 +60,32 @@ import { EstimatesService } from './estimates.service';
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (errorMessage()) {
-        <div class="rounded-[2rem] border border-red-200 bg-red-50 p-6 text-red-700 shadow-[var(--sagep-shadow)]">
-          <h2 class="text-lg font-semibold">Nao foi possivel carregar o detalhe da estimativa</h2>
-          <p class="mt-2 text-sm leading-6">{{ errorMessage() }}</p>
-          <div class="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              (click)="reload()"
-              class="rounded-full border border-red-300 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-500"
-            >
-              Tentar novamente
-            </button>
-            <a
-              routerLink="/estimates"
-              class="rounded-full border border-red-200 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-400"
-            >
-              Voltar para listagem
-            </a>
-          </div>
-        </div>
+        <app-error-state
+          title="Nao foi possivel carregar o detalhe da estimativa"
+          [message]="errorMessage()"
+          retryLabel="Tentar novamente"
+          (retry)="reload()"
+        />
       } @else if (!estimate()) {
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-[var(--sagep-shadow)]">
-          <p class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Sem dados</p>
-          <h2 class="mt-3 text-2xl font-semibold text-slate-900">O backend não retornou conteúdo para esta estimativa</h2>
-          <p class="mt-3 text-sm leading-6 text-slate-600">Retorne para a listagem e selecione outro registro.</p>
-          <a
-            routerLink="/estimates"
-            class="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Voltar à listagem
-          </a>
-        </div>
+        <app-empty-state
+          eyebrow="Sem dados"
+          title="O backend não retornou conteúdo para esta estimativa"
+          description="Retorne para a listagem e selecione outro registro."
+        />
       } @else {
-        <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[var(--sagep-shadow)]">
-          <div class="bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_100%)] px-6 py-8 text-white">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">{{ estimateDisplayCode() }}</p>
-                <h1 class="mt-3 text-3xl font-semibold">{{ estimate()?.project?.title || 'Estimativa vinculada a projeto' }}</h1>
-                <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
-                  {{ estimate()?.notes | emptyValue:'Sem observacoes cadastradas para esta estimativa.' }}
-                </p>
-              </div>
-              <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium">
-                {{ formatLabel(estimate()?.status || '') }}
-              </span>
-            </div>
-          </div>
-
-          <div class="grid gap-4 border-t border-slate-200 bg-slate-50 p-5 md:grid-cols-2 xl:grid-cols-5">
-            @for (item of highlightFacts(); track item.label) {
-              <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ item.label }}</p>
-                <p class="mt-2 text-sm font-semibold text-slate-900">{{ item.value }}</p>
-              </div>
-            }
-          </div>
-        </section>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          @for (item of highlightFacts(); track item.label) {
+            <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
+          }
+        </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h2 class="text-xl font-semibold text-slate-950">Dados gerais</h2>
-                <p class="mt-2 text-sm text-slate-600">Resumo do vínculo com projeto, ata, grupo de cobertura e OM.</p>
-              </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-medium" [class]="badgeClass(estimate()?.status)">
-                {{ formatLabel(estimate()?.status || '') }}
-              </span>
-            </div>
+          <app-section-card title="Dados gerais" subtitle="Resumo do vínculo com projeto, ata, grupo de cobertura e OM.">
+            <app-status-badge
+              section-card-actions
+              [label]="formatLabel(estimate()?.status || '')"
+              [status]="estimate()?.status"
+            />
             <div class="mt-5 grid gap-4 md:grid-cols-2">
               @for (item of generalFacts(); track item.label) {
                 <div class="rounded-2xl bg-slate-50 p-4">
@@ -126,10 +94,9 @@ import { EstimatesService } from './estimates.service';
                 </div>
               }
             </div>
-          </section>
+          </app-section-card>
 
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <h2 class="text-xl font-semibold text-slate-950">Projeto vinculado e observações</h2>
+          <app-section-card title="Projeto vinculado e observações">
             <div class="mt-5 rounded-[1.75rem] border border-teal-200 bg-teal-50 p-5">
               <p class="text-xs uppercase tracking-[0.18em] text-teal-700">Projeto vinculado</p>
               <p class="mt-3 text-lg font-semibold text-teal-950">
@@ -145,17 +112,11 @@ import { EstimatesService } from './estimates.service';
                 {{ estimate()?.notes | emptyValue:'Sem observações registradas nesta estimativa.' }}
               </p>
             </div>
-          </section>
+          </app-section-card>
         </div>
 
-        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-          <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 class="text-xl font-semibold text-slate-950">Itens da estimativa</h2>
-              <p class="mt-2 text-sm text-slate-600">Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações.</p>
-            </div>
-            <span class="text-sm text-slate-500">{{ (estimate()?.items ?? []).length }} item(ns)</span>
-          </div>
+        <app-section-card title="Itens da estimativa" subtitle="Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações.">
+          <span section-card-actions class="text-sm text-slate-500">{{ (estimate()?.items ?? []).length }} item(ns)</span>
 
           @if ((estimate()?.items ?? []).length) {
             <div class="mt-6 hidden overflow-x-auto lg:block">
@@ -221,7 +182,7 @@ import { EstimatesService } from './estimates.service';
               A API não retornou itens para esta estimativa.
             </div>
           }
-        </section>
+        </app-section-card>
       }
     </section>
   `,
@@ -321,10 +282,6 @@ export class EstimateDetailPageComponent implements OnInit {
     const city = estimate?.om?.cityName || estimate?.destinationCityName;
     const state = estimate?.om?.stateUf || estimate?.destinationStateUf;
     return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
-  }
-
-  badgeClass(status: string | null | undefined): string {
-    return getStatusBadgeClasses(status);
   }
 
   protected readonly formatLabel = formatLabel;

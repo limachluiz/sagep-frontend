@@ -1,11 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 import { ProjectDetails } from '../../core/models/project.model';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ErrorStateComponent } from '../../shared/components/error-state.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { SectionCardComponent } from '../../shared/components/section-card.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
+import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
 import {
   buildProjectIdentifier,
@@ -13,32 +20,36 @@ import {
   formatCurrency,
   formatDate,
   formatLabel,
-  getStatusBadgeClasses,
 } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-project-detail-page',
-  imports: [CommonModule, RouterLink, EmptyValuePipe, AccessDeniedStateComponent],
+  imports: [
+    CommonModule,
+    EmptyValuePipe,
+    AccessDeniedStateComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    LoadingStateComponent,
+    PageHeaderComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
+    SummaryCardComponent,
+  ],
   template: `
     <section class="space-y-6">
-      <div class="flex items-center justify-between gap-4">
-        <a routerLink="/projects" class="inline-flex items-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-900">
-          ← Voltar para projetos
-        </a>
-        @if (details()) {
-          <span class="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-600 shadow-sm">
-            Fonte: GET /projects/:identifier/details
-          </span>
-        }
-      </div>
+      <app-page-header
+        [title]="details()?.project?.title || 'Detalhe do projeto'"
+        [eyebrow]="projectDisplayCode()"
+        subtitle="Visão consolidada do projeto com workflow, documentos relacionados e timeline."
+        badge="Fonte: GET /projects/:identifier/details"
+        backLabel="← Voltar para projetos"
+        backLink="/projects"
+      />
 
       @if (loading()) {
-        <div class="grid gap-4">
-          @for (item of [1, 2, 3]; track item) {
-            <div class="h-36 animate-pulse rounded-[2rem] border border-slate-200 bg-white/80 shadow-[var(--sagep-shadow)]"></div>
-          }
-        </div>
+        <app-loading-state variant="detail" [count]="3" />
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite abrir este projeto."
@@ -49,82 +60,32 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (errorMessage()) {
-        <div class="rounded-[2rem] border border-red-200 bg-red-50 p-6 text-red-700 shadow-[var(--sagep-shadow)]">
-          <h2 class="text-lg font-semibold">Nao foi possivel carregar o detalhe do projeto</h2>
-          <p class="mt-2 text-sm leading-6">{{ errorMessage() }}</p>
-          <div class="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              (click)="reload()"
-              class="rounded-full border border-red-300 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-500"
-            >
-              Tentar novamente
-            </button>
-            <a
-              routerLink="/projects"
-              class="rounded-full border border-red-200 px-5 py-2 text-sm font-medium text-red-700 transition hover:border-red-400"
-            >
-              Voltar para listagem
-            </a>
-          </div>
-        </div>
+        <app-error-state
+          title="Nao foi possivel carregar o detalhe do projeto"
+          [message]="errorMessage()"
+          retryLabel="Tentar novamente"
+          (retry)="reload()"
+        />
       } @else if (!details()) {
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-[var(--sagep-shadow)]">
-          <p class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Sem dados</p>
-          <h2 class="mt-3 text-2xl font-semibold text-slate-900">O backend não retornou conteúdo para este projeto</h2>
-          <p class="mt-3 text-sm leading-6 text-slate-600">
-            Verifique se o registro ainda existe ou retorne para a listagem para escolher outro projeto.
-          </p>
-          <a
-            routerLink="/projects"
-            class="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Voltar à listagem
-          </a>
-        </div>
+        <app-empty-state
+          eyebrow="Sem dados"
+          title="O backend não retornou conteúdo para este projeto"
+          description="Verifique se o registro ainda existe ou retorne para a listagem para escolher outro projeto."
+        />
       } @else {
-        <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[var(--sagep-shadow)]">
-          <div class="bg-[linear-gradient(135deg,#0f172a_0%,#134e4a_100%)] px-6 py-8 text-white">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-200">{{ projectDisplayCode() }}</p>
-                <h1 class="mt-3 text-3xl font-semibold">{{ details()?.project?.title }}</h1>
-                <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
-                  {{ details()?.project?.description || 'Sem descricao cadastrada para este projeto.' }}
-                </p>
-              </div>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium">
-                  {{ formatLabel(details()?.workflow?.status || '') }}
-                </span>
-                <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium">
-                  {{ formatLabel(details()?.workflow?.stage || '') }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid gap-4 border-t border-slate-200 bg-slate-50 p-5 md:grid-cols-2 xl:grid-cols-5">
-            @for (item of highlightFacts(); track item.label) {
-              <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ item.label }}</p>
-                <p class="mt-2 text-sm font-semibold text-slate-900">{{ item.value }}</p>
-              </div>
-            }
-          </div>
-        </section>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          @for (item of highlightFacts(); track item.label) {
+            <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
+          }
+        </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h2 class="text-xl font-semibold text-slate-950">Dados gerais</h2>
-                <p class="mt-2 text-sm text-slate-600">Resumo institucional do projeto, responsáveis e marcos básicos.</p>
-              </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-medium" [class]="badgeClass(details()?.workflow?.stage)">
-                {{ formatLabel(details()?.workflow?.stage || '') }}
-              </span>
-            </div>
+          <app-section-card title="Dados gerais" subtitle="Resumo institucional do projeto, responsáveis e marcos básicos.">
+            <app-status-badge
+              section-card-actions
+              [label]="formatLabel(details()?.workflow?.stage || '')"
+              [status]="details()?.workflow?.stage"
+            />
             <div class="mt-5 grid gap-4 md:grid-cols-2">
               @for (item of generalFacts(); track item.label) {
                 <div class="rounded-2xl bg-slate-50 p-4">
@@ -133,10 +94,9 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </div>
               }
             </div>
-          </section>
+          </app-section-card>
 
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <h2 class="text-xl font-semibold text-slate-950">Próxima ação e workflow</h2>
+          <app-section-card title="Próxima ação e workflow">
             <div class="mt-5 rounded-[1.75rem] border border-teal-200 bg-teal-50 p-5">
               <p class="text-xs uppercase tracking-[0.18em] text-teal-700">Próxima ação recomendada</p>
               <p class="mt-3 text-lg font-semibold text-teal-950">
@@ -154,14 +114,15 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </div>
               }
             </div>
-          </section>
+          </app-section-card>
         </div>
 
         <div class="grid gap-6 xl:grid-cols-2">
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <h2 class="text-xl font-semibold text-slate-950">Documentos relacionados</h2>
-            <p class="mt-2 text-sm text-slate-600">Blocos retornados em <code>documents</code> no detalhe ampliado do projeto.</p>
-            <div class="mt-5 space-y-4">
+          <app-section-card
+            title="Documentos relacionados"
+            subtitle="Blocos retornados em documents no detalhe ampliado do projeto."
+          >
+            <div class="space-y-4">
               @for (group of documentGroups(); track group.label) {
                 <div class="rounded-[1.5rem] border border-slate-200 p-4">
                   <div class="flex items-center justify-between gap-3">
@@ -185,12 +146,13 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </div>
               }
             </div>
-          </section>
+          </app-section-card>
 
-          <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-            <h2 class="text-xl font-semibold text-slate-950">Resumo financeiro e operacional</h2>
-            <p class="mt-2 text-sm text-slate-600">Indicadores agregados retornados pela API para apoiar a leitura rápida do projeto.</p>
-            <div class="mt-5 space-y-3">
+          <app-section-card
+            title="Resumo financeiro e operacional"
+            subtitle="Indicadores agregados retornados pela API para apoiar a leitura rápida do projeto."
+          >
+            <div class="space-y-3">
               @for (item of summaryGroups(); track item.label) {
                 <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
                   <span class="text-sm text-slate-700">{{ item.label }}</span>
@@ -198,18 +160,15 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </div>
               }
             </div>
-          </section>
+          </app-section-card>
         </div>
 
-        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-[var(--sagep-shadow)]">
-          <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 class="text-xl font-semibold text-slate-950">Timeline</h2>
-              <p class="mt-2 text-sm text-slate-600">Histórico consolidado de eventos e entidades relacionadas ao projeto.</p>
-            </div>
-            <span class="text-sm text-slate-500">{{ (details()?.timeline ?? []).length }} evento(s)</span>
-          </div>
-          <div class="mt-6 space-y-4">
+        <app-section-card
+          title="Timeline"
+          subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto."
+        >
+          <span section-card-actions class="text-sm text-slate-500">{{ (details()?.timeline ?? []).length }} evento(s)</span>
+          <div class="space-y-4">
             @for (item of details()?.timeline ?? []; track item.id) {
               <article class="rounded-[1.5rem] border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -231,7 +190,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               <p class="text-sm text-slate-500">Sem eventos de timeline para este projeto.</p>
             }
           </div>
-        </section>
+        </app-section-card>
       }
     </section>
   `,
@@ -379,10 +338,6 @@ export class ProjectDetailPageComponent implements OnInit {
         this.loading.set(false);
       },
     });
-  }
-
-  badgeClass(value: string | null | undefined): string {
-    return getStatusBadgeClasses(value);
   }
 
   private pickValue(source: Record<string, unknown> | null | undefined, keys: string[]): string {
