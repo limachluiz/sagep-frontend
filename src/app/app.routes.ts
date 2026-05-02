@@ -53,9 +53,19 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'estimativas',
-        component: UnderConstructionComponent,
-        data: { title: 'Estimativas' },
+        path: 'estimates',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/estimates/estimates-page.component').then((m) => m.EstimatesPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/estimates/estimate-detail-page.component').then((m) => m.EstimateDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'diex',

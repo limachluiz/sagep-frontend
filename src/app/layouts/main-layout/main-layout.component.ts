@@ -100,7 +100,7 @@ export class MainLayoutComponent {
       permissions: ['dashboard.view_operational', 'dashboard.view_executive', 'dashboard.financial_view'],
     },
     { label: 'Projetos', path: '/projects' },
-    { label: 'Estimativas', path: '/estimativas', disabled: true, hint: 'Previsto para a próxima etapa do fluxo documental.' },
+    { label: 'Estimativas', path: '/estimates' },
     { label: 'DIEx', path: '/diex', disabled: true, hint: 'Será integrado a partir de estimativas finalizadas.' },
     { label: 'Ordens de Serviço', path: '/ordens-servico', disabled: true, hint: 'Módulo planejado após DIEx e Nota de Empenho.' },
     { label: 'ATAs', path: '/atas', disabled: true, hint: 'Estrutura já prevista, sem implementação nesta entrega.' },

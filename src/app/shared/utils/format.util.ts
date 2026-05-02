@@ -12,13 +12,16 @@ export function formatLabel(value: string | null | undefined): string {
 
 export function getStatusBadgeClasses(status: string | null | undefined): string {
   switch (status) {
+    case 'FINALIZADA':
     case 'CONCLUIDO':
     case 'SERVICO_CONCLUIDO':
       return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    case 'RASCUNHO':
     case 'EM_ANDAMENTO':
     case 'SERVICO_EM_EXECUCAO':
     case 'OS_LIBERADA':
       return 'border-sky-200 bg-sky-50 text-sky-700';
+    case 'CANCELADA':
     case 'PAUSADO':
     case 'ANALISANDO_AS_BUILT':
       return 'border-amber-200 bg-amber-50 text-amber-700';
