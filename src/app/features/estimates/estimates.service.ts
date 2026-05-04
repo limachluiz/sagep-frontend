@@ -4,6 +4,18 @@ import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Estimate, EstimateListResponse, EstimateStatus } from './estimate.model';
 
+export interface EstimateCreatePayload {
+  projectId: string;
+  ataId: string;
+  coverageGroupId: string;
+  omId: string;
+  notes?: string;
+  items: Array<{
+    ataItemId: string;
+    quantity: number;
+  }>;
+}
+
 export interface EstimateListParams {
   page?: number;
   pageSize?: number;
@@ -41,5 +53,9 @@ export class EstimatesService {
 
   getByIdentifier(estimateIdentifier: string) {
     return this.http.get<Estimate>(`${this.apiUrl}/estimates/${estimateIdentifier}`);
+  }
+
+  create(payload: EstimateCreatePayload) {
+    return this.http.post<Estimate>(`${this.apiUrl}/estimates`, payload);
   }
 }

@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -49,6 +50,15 @@ import { EstimatesService } from './estimates.service';
         eyebrow="Estimativas"
         subtitle="Integração com GET /estimates para leitura da fila atual sem implementar criação, edição ou finalização nesta etapa."
       >
+        @if (canCreateEstimate()) {
+          <a
+            page-header-actions
+            routerLink="/estimates/new"
+            class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Nova estimativa
+          </a>
+        }
         <form page-header-actions [formGroup]="filtersForm" class="grid w-full gap-4 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto]">
           <input
             type="search"
@@ -204,6 +214,7 @@ import { EstimatesService } from './estimates.service';
 })
 export class EstimatesPageComponent implements OnInit {
   private readonly estimatesService = inject(EstimatesService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
@@ -231,6 +242,10 @@ export class EstimatesPageComponent implements OnInit {
   });
 
   readonly estimates = computed<Estimate[]>(() => this.response()?.items ?? []);
+  readonly canCreateEstimate = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['estimates.create']) || role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
+  });
   readonly currentPage = computed(() => this.response()?.meta.page ?? 1);
   readonly totalPages = computed(() => this.response()?.meta.totalPages ?? 1);
   readonly canGoPrevious = computed(() => (this.response()?.meta.hasPreviousPage ?? false) && this.currentPage() > 1);

@@ -56,6 +56,11 @@ export const routes: Routes = [
         path: 'estimates',
         children: [
           {
+            path: 'new',
+            loadComponent: () =>
+              import('./features/estimates/estimate-create-page.component').then((m) => m.EstimateCreatePageComponent),
+          },
+          {
             path: '',
             loadComponent: () =>
               import('./features/estimates/estimates-page.component').then((m) => m.EstimatesPageComponent),
