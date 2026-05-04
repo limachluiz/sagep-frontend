@@ -9,6 +9,7 @@ import { AccessDeniedStateComponent } from '../../shared/components/access-denie
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { MetadataGridComponent, MetadataItem } from '../../shared/components/metadata-grid.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -32,6 +33,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
+    MetadataGridComponent,
     PageHeaderComponent,
     SectionCardComponent,
     StatusBadgeComponent,
@@ -86,14 +88,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               [label]="formatLabel(details()?.workflow?.stage || '')"
               [status]="details()?.workflow?.stage"
             />
-            <div class="mt-5 grid gap-4 md:grid-cols-2">
-              @for (item of generalFacts(); track item.label) {
-                <div class="rounded-2xl bg-slate-50 p-4">
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ item.label }}</p>
-                  <p class="mt-2 text-sm font-medium text-slate-900">{{ item.value }}</p>
-                </div>
-              }
-            </div>
+            <app-metadata-grid class="mt-5 block" [items]="generalFacts()" />
           </app-section-card>
 
           <app-section-card title="Próxima ação e workflow">
@@ -106,14 +101,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 {{ details()?.workflow?.nextAction?.description | emptyValue:'O backend nao forneceu descricao adicional para esta recomendacao.' }}
               </p>
             </div>
-            <div class="mt-5 space-y-3">
-              @for (item of workflowFacts(); track item.label) {
-                <div class="rounded-2xl border border-slate-200 px-4 py-3">
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ item.label }}</p>
-                  <p class="mt-2 text-sm text-slate-900">{{ item.value }}</p>
-                </div>
-              }
-            </div>
+            <app-metadata-grid class="mt-5 block" [items]="workflowFacts()" gridClass="grid-cols-1" />
           </app-section-card>
         </div>
 
@@ -224,7 +212,7 @@ export class ProjectDetailPageComponent implements OnInit {
     ];
   });
 
-  readonly generalFacts = computed(() => {
+  readonly generalFacts = computed<MetadataItem[]>(() => {
     const details = this.details();
     const project = details?.project;
     const estimates = (details?.documents?.estimates as Array<Record<string, unknown>> | undefined) ?? [];
@@ -245,7 +233,7 @@ export class ProjectDetailPageComponent implements OnInit {
     ];
   });
 
-  readonly workflowFacts = computed(() => {
+  readonly workflowFacts = computed<MetadataItem[]>(() => {
     const workflow = this.details()?.workflow;
     const milestones = workflow?.milestones ?? {};
 

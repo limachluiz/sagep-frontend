@@ -7,6 +7,7 @@ import { AccessDeniedStateComponent } from '../../shared/components/access-denie
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { MetadataGridComponent, MetadataItem } from '../../shared/components/metadata-grid.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -32,6 +33,7 @@ import { EstimatesService } from './estimates.service';
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
+    MetadataGridComponent,
     PageHeaderComponent,
     SectionCardComponent,
     StatusBadgeComponent,
@@ -86,14 +88,7 @@ import { EstimatesService } from './estimates.service';
               [label]="formatLabel(estimate()?.status || '')"
               [status]="estimate()?.status"
             />
-            <div class="mt-5 grid gap-4 md:grid-cols-2">
-              @for (item of generalFacts(); track item.label) {
-                <div class="rounded-2xl bg-slate-50 p-4">
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ item.label }}</p>
-                  <p class="mt-2 text-sm font-medium text-slate-900">{{ item.value }}</p>
-                </div>
-              }
-            </div>
+            <app-metadata-grid class="mt-5 block" [items]="generalFacts()" />
           </app-section-card>
 
           <app-section-card title="Projeto vinculado e observações">
@@ -212,7 +207,7 @@ export class EstimateDetailPageComponent implements OnInit {
     ];
   });
 
-  readonly generalFacts = computed(() => {
+  readonly generalFacts = computed<MetadataItem[]>(() => {
     const estimate = this.estimate();
     return [
       { label: 'Código da estimativa', value: estimate?.estimateCode ? `EST-${estimate.estimateCode}` : 'Nao informado' },

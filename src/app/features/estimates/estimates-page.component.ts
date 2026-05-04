@@ -9,6 +9,12 @@ import { EmptyStateComponent } from '../../shared/components/empty-state.compone
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import {
+  ResponsiveTableActionsDirective,
+  ResponsiveTableCellDirective,
+  ResponsiveTableColumn,
+  ResponsiveTableComponent,
+} from '../../shared/components/responsive-table.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import {
   buildEstimateIdentifier,
@@ -31,6 +37,9 @@ import { EstimatesService } from './estimates.service';
     ErrorStateComponent,
     LoadingStateComponent,
     PageHeaderComponent,
+    ResponsiveTableActionsDirective,
+    ResponsiveTableCellDirective,
+    ResponsiveTableComponent,
     StatusBadgeComponent,
   ],
   template: `
@@ -117,90 +126,43 @@ import { EstimatesService } from './estimates.service';
             <div class="text-xs uppercase tracking-[0.18em] text-slate-500">Fonte: GET /estimates</div>
           </div>
 
-          <div class="hidden overflow-x-auto lg:block">
-            <table class="min-w-full divide-y divide-slate-200">
-              <thead class="bg-slate-50">
-                <tr class="text-left text-xs uppercase tracking-[0.2em] text-slate-500">
-                  <th class="px-5 py-4">Estimativa</th>
-                  <th class="px-5 py-4">Status</th>
-                  <th class="px-5 py-4">Projeto</th>
-                  <th class="px-5 py-4">OM</th>
-                  <th class="px-5 py-4">Valor total</th>
-                  <th class="px-5 py-4">Atualizada em</th>
-                  <th class="px-5 py-4"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                @for (estimate of estimates(); track estimate.id) {
-                  <tr class="align-top transition hover:bg-slate-50/80">
-                    <td class="px-5 py-4">
-                      <p class="font-semibold text-slate-900">EST-{{ estimate.estimateCode }}</p>
-                      <p class="mt-1 text-sm text-slate-500">{{ estimate.notes || 'Sem observacoes cadastradas.' }}</p>
-                    </td>
-                    <td class="px-5 py-4 text-sm text-slate-700">
-                      <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
-                    </td>
-                    <td class="px-5 py-4 text-sm text-slate-700">
-                      <p class="font-medium text-slate-900">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
-                      <p class="mt-1 text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
-                    </td>
-                    <td class="px-5 py-4 text-sm text-slate-700">
-                      <p class="font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Nao informado' }}</p>
-                      <p class="mt-1 text-slate-500">{{ locationLabel(estimate) }}</p>
-                    </td>
-                    <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ formatCurrency(estimate.totalAmount) }}</td>
-                    <td class="px-5 py-4 text-sm text-slate-700">{{ formatDate(estimate.updatedAt || estimate.createdAt) }}</td>
-                    <td class="px-5 py-4 text-right">
-                      <a
-                        [routerLink]="['/estimates', estimateIdentifier(estimate)]"
-                        class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
-                      >
-                        Ver detalhe
-                      </a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="grid gap-4 lg:hidden">
-            @for (estimate of estimates(); track estimate.id) {
-              <article class="rounded-[1.5rem] border border-slate-200 p-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="font-semibold text-slate-900">EST-{{ estimate.estimateCode }}</p>
-                    <p class="mt-1 text-sm text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
-                  </div>
-                  <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
-                </div>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-2xl bg-slate-50 p-3">
-                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Projeto</p>
-                    <p class="mt-2 text-sm font-medium text-slate-900">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
-                  </div>
-                  <div class="rounded-2xl bg-slate-50 p-3">
-                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">OM</p>
-                    <p class="mt-2 text-sm font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Nao informado' }}</p>
-                  </div>
-                  <div class="rounded-2xl bg-slate-50 p-3">
-                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Valor total</p>
-                    <p class="mt-2 text-sm font-medium text-slate-900">{{ formatCurrency(estimate.totalAmount) }}</p>
-                  </div>
-                  <div class="rounded-2xl bg-slate-50 p-3">
-                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Atualizada em</p>
-                    <p class="mt-2 text-sm font-medium text-slate-900">{{ formatDate(estimate.updatedAt || estimate.createdAt) }}</p>
-                  </div>
-                </div>
-                <a
-                  [routerLink]="['/estimates', estimateIdentifier(estimate)]"
-                  class="mt-4 inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
-                >
-                  Abrir detalhe
-                </a>
-              </article>
-            }
-          </div>
+          <app-responsive-table
+            [columns]="columns"
+            [data]="estimates()"
+            [trackBy]="trackEstimate"
+            emptyTitle="Nenhuma estimativa encontrada"
+            emptyDescription="Ajuste a busca ou limpe os filtros para ampliar a consulta."
+          >
+            <ng-template appResponsiveTableCell="estimate" let-estimate>
+              <p class="font-semibold text-slate-900">EST-{{ estimate.estimateCode }}</p>
+              <p class="mt-1 text-sm text-slate-500">{{ estimate.notes || 'Sem observacoes cadastradas.' }}</p>
+            </ng-template>
+            <ng-template appResponsiveTableCell="status" let-estimate>
+              <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
+            </ng-template>
+            <ng-template appResponsiveTableCell="project" let-estimate>
+              <p class="font-medium text-slate-900">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
+              <p class="mt-1 text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
+            </ng-template>
+            <ng-template appResponsiveTableCell="om" let-estimate>
+              <p class="font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Nao informado' }}</p>
+              <p class="mt-1 text-slate-500">{{ locationLabel(estimate) }}</p>
+            </ng-template>
+            <ng-template appResponsiveTableCell="totalAmount" let-estimate>
+              <span class="font-semibold text-slate-900">{{ formatCurrency(estimate.totalAmount) }}</span>
+            </ng-template>
+            <ng-template appResponsiveTableCell="updatedAt" let-estimate>
+              {{ formatDate(estimate.updatedAt || estimate.createdAt) }}
+            </ng-template>
+            <ng-template appResponsiveTableActions let-estimate>
+              <a
+                [routerLink]="['/estimates', estimateIdentifier(estimate)]"
+                class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+              >
+                Ver detalhe
+              </a>
+            </ng-template>
+          </app-responsive-table>
 
           <div class="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3 text-sm text-slate-600">
@@ -252,6 +214,14 @@ export class EstimatesPageComponent implements OnInit {
 
   readonly statusOptions: EstimateStatus[] = ['RASCUNHO', 'FINALIZADA', 'CANCELADA'];
   readonly pageSizeOptions = [10, 20, 50];
+  readonly columns: ResponsiveTableColumn[] = [
+    { key: 'estimate', label: 'Estimativa' },
+    { key: 'status', label: 'Status' },
+    { key: 'project', label: 'Projeto' },
+    { key: 'om', label: 'OM' },
+    { key: 'totalAmount', label: 'Valor total' },
+    { key: 'updatedAt', label: 'Atualizada em' },
+  ];
 
   readonly filtersForm = this.fb.nonNullable.group({
     search: [''],
@@ -356,6 +326,10 @@ export class EstimatesPageComponent implements OnInit {
 
   estimateIdentifier(estimate: Estimate): string {
     return buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt);
+  }
+
+  trackEstimate(estimate: Estimate): string {
+    return estimate.id;
   }
 
   protected readonly formatLabel = formatLabel;
