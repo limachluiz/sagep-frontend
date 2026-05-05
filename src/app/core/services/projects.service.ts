@@ -10,6 +10,22 @@ import {
   ProjectTimelineItem,
 } from '../models/project.model';
 
+export interface ProjectFlowUpdatePayload {
+  stage:
+    | 'ESTIMATIVA_PRECO'
+    | 'AGUARDANDO_NOTA_CREDITO'
+    | 'DIEX_REQUISITORIO'
+    | 'AGUARDANDO_NOTA_EMPENHO'
+    | 'OS_LIBERADA'
+    | 'SERVICO_EM_EXECUCAO'
+    | 'ANALISANDO_AS_BUILT'
+    | 'ATESTAR_NF'
+    | 'SERVICO_CONCLUIDO'
+    | 'CANCELADO';
+  creditNoteNumber?: string | null;
+  creditNoteReceivedAt?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
   private readonly http = inject(HttpClient);
@@ -46,5 +62,9 @@ export class ProjectsService {
         },
       })),
     );
+  }
+
+  updateFlow(projectId: string, payload: ProjectFlowUpdatePayload) {
+    return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${projectId}/flow`, payload);
   }
 }

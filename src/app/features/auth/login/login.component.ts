@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -65,10 +65,13 @@ import { getErrorMessage } from '../../../shared/utils/http-error.util';
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly loading = signal(false);
-  readonly errorMessage = signal('');
+  readonly errorMessage = signal(this.route.snapshot.queryParamMap.get('reason') === 'expired'
+    ? 'Sessao expirada. Faca login novamente.'
+    : '');
   readonly form = this.fb.nonNullable.group({
     email: ['admin@sagep.com', [Validators.required, Validators.email]],
     password: ['123456', [Validators.required, Validators.minLength(6)]],

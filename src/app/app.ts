@@ -12,7 +12,7 @@ export class App {
   private readonly authService = inject(AuthService);
 
   constructor() {
-    if (this.authService.getAccessToken()) {
+    if (this.authService.getAccessToken() || this.authService.hasRefreshToken()) {
       this.authService.hydrateSession().subscribe();
     }
   }

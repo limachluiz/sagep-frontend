@@ -1,9 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, finalize, throwError } from 'rxjs';
 
+import { Diex } from '../../core/models/diex.model';
+import { ProjectDetails } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
+import { DiexService } from '../../core/services/diex.service';
+import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -29,6 +34,7 @@ import { EstimatesService } from './estimates.service';
   selector: 'app-estimate-detail-page',
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     EmptyValuePipe,
     AccessDeniedStateComponent,
     EmptyStateComponent,
@@ -68,6 +74,16 @@ import { EstimatesService } from './estimates.service';
             Estimativa finalizada
           </span>
         }
+        @if (canGenerateDiex()) {
+          <button
+            page-header-actions
+            type="button"
+            (click)="toggleDiexPanel()"
+            class="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+          >
+            Gerar DIEx requisitório
+          </button>
+        }
       </app-page-header>
 
       @if (finalizeSuccess()) {
@@ -76,21 +92,55 @@ import { EstimatesService } from './estimates.service';
         </div>
       }
 
+      @if (creditNoteSuccess()) {
+        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+          Nota de Crédito informada com sucesso. A geração do DIEx requisitório foi liberada.
+        </div>
+      }
+
+      @if (diexSuccess()) {
+        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+          DIEx requisitório gerado com sucesso{{ createdDiexLabel() ? ': ' + createdDiexLabel() : '' }}.
+        </div>
+      }
+
       @if (finalizeForbidden()) {
         <app-access-denied-state
-          title="Seu acesso atual nÃ£o permite finalizar esta estimativa."
-          description="A API recusou a operaÃ§Ã£o de finalizaÃ§Ã£o para o perfil ou permissÃµes atuais. Sua sessÃ£o permanece ativa."
+          title="Seu acesso atual não permite finalizar esta estimativa."
+          description="A API recusou a operação de finalização para o perfil ou permissões atuais. Sua sessão permanece ativa."
           primaryLink="/estimates"
-          primaryLabel="Voltar Ã  listagem"
+          primaryLabel="Voltar à listagem"
           secondaryLink="/dashboard"
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (finalizeError()) {
-        <app-error-state
-          title="Nao foi possivel finalizar a estimativa"
-          [message]="finalizeError()"
-          retryLabel=""
+        <app-error-state title="Não foi possível finalizar a estimativa" [message]="finalizeError()" retryLabel="" />
+      }
+
+      @if (creditNoteForbidden()) {
+        <app-access-denied-state
+          title="Seu acesso atual não permite informar a Nota de Crédito."
+          description="A API recusou a atualização do fluxo do projeto para o perfil ou permissões atuais."
+          primaryLink="/estimates"
+          primaryLabel="Voltar à listagem"
+          secondaryLink="/dashboard"
+          secondaryLabel="Ir para o dashboard"
         />
+      } @else if (creditNoteError()) {
+        <app-error-state title="Não foi possível informar a Nota de Crédito" [message]="creditNoteError()" retryLabel="" />
+      }
+
+      @if (diexForbidden()) {
+        <app-access-denied-state
+          title="Seu acesso atual não permite gerar DIEx requisitório."
+          description="A API recusou a emissão do DIEx para o perfil ou permissões atuais. Sua sessão permanece ativa."
+          primaryLink="/estimates"
+          primaryLabel="Voltar à listagem"
+          secondaryLink="/dashboard"
+          secondaryLabel="Ir para o dashboard"
+        />
+      } @else if (diexError()) {
+        <app-error-state title="Não foi possível gerar o DIEx requisitório" [message]="diexError()" retryLabel="" />
       }
 
       @if (loading()) {
@@ -106,7 +156,7 @@ import { EstimatesService } from './estimates.service';
         />
       } @else if (errorMessage()) {
         <app-error-state
-          title="Nao foi possivel carregar o detalhe da estimativa"
+          title="Não foi possível carregar o detalhe da estimativa"
           [message]="errorMessage()"
           retryLabel="Tentar novamente"
           (retry)="reload()"
@@ -118,6 +168,149 @@ import { EstimatesService } from './estimates.service';
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
+        @if (showCreditNotePrompt()) {
+          <app-section-card
+            title="Nota de Crédito pendente"
+            subtitle="Antes de gerar o DIEx requisitório, informe a Nota de Crédito do projeto."
+          >
+            @if (!showCreditNotePanel()) {
+              <div class="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-amber-900">
+                <p class="text-sm leading-6">
+                  A estimativa já está finalizada, mas o projeto ainda não possui Nota de Crédito informada.
+                  Essa etapa é obrigatória antes da emissão do DIEx requisitório.
+                </p>
+                <button
+                  type="button"
+                  (click)="toggleCreditNotePanel()"
+                  class="mt-5 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Informar Nota de Crédito
+                </button>
+              </div>
+            } @else {
+              <form [formGroup]="creditNoteForm" class="grid gap-4 md:grid-cols-2">
+                <label class="text-sm font-medium text-slate-700">
+                  Número da Nota de Crédito
+                  <input
+                    type="text"
+                    formControlName="creditNoteNumber"
+                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    placeholder="Ex.: NC-2026-001"
+                  />
+                </label>
+                <label class="text-sm font-medium text-slate-700">
+                  Data de recebimento
+                  <input
+                    type="date"
+                    formControlName="creditNoteReceivedAt"
+                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  />
+                </label>
+              </form>
+              <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+                <button
+                  type="button"
+                  (click)="toggleCreditNotePanel()"
+                  [disabled]="savingCreditNote()"
+                  class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  (click)="saveCreditNote()"
+                  [disabled]="creditNoteForm.invalid || savingCreditNote()"
+                  class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {{ savingCreditNote() ? 'Salvando...' : 'Salvar Nota de Crédito' }}
+                </button>
+              </div>
+            }
+          </app-section-card>
+        }
+
+        @if (showDiexPanel()) {
+          <app-section-card
+            title="Gerar DIEx requisitório"
+            subtitle="Informe os dados documentais mínimos exigidos pela API para emitir o DIEx a partir desta estimativa finalizada."
+          >
+            <form [formGroup]="diexForm" class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+              <label class="text-sm font-medium text-slate-700">
+                CNPJ do fornecedor
+                <input
+                  type="text"
+                  formControlName="supplierCnpj"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Somente números"
+                />
+              </label>
+              <label class="text-sm font-medium text-slate-700">
+                Número do DIEx
+                <input
+                  type="text"
+                  formControlName="diexNumber"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Opcional"
+                />
+              </label>
+              <label class="text-sm font-medium text-slate-700">
+                Requisitante
+                <input
+                  type="text"
+                  formControlName="requesterName"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Opcional"
+                />
+              </label>
+              <label class="text-sm font-medium text-slate-700">
+                Posto/graduação
+                <input
+                  type="text"
+                  formControlName="requesterRank"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Opcional"
+                />
+              </label>
+              <label class="text-sm font-medium text-slate-700">
+                CPF do requisitante
+                <input
+                  type="text"
+                  formControlName="requesterCpf"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Opcional"
+                />
+              </label>
+              <label class="text-sm font-medium text-slate-700 lg:col-span-2">
+                Observações
+                <textarea
+                  formControlName="notes"
+                  rows="3"
+                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  placeholder="Opcional"
+                ></textarea>
+              </label>
+            </form>
+            <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+              <button
+                type="button"
+                (click)="toggleDiexPanel()"
+                [disabled]="generatingDiex()"
+                class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                (click)="confirmGenerateDiex()"
+                [disabled]="diexForm.invalid || generatingDiex()"
+                class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {{ generatingDiex() ? 'Gerando DIEx...' : 'Confirmar geração' }}
+              </button>
+            </div>
+          </app-section-card>
+        }
+
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           @for (item of highlightFacts(); track item.label) {
             <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
@@ -141,7 +334,10 @@ import { EstimatesService } from './estimates.service';
                 #{{ estimate()?.project?.projectCode || estimate()?.projectCode }} - {{ estimate()?.project?.title || 'Projeto não informado' }}
               </p>
               <p class="mt-2 text-sm leading-6 text-teal-900/80">
-                Status do projeto: {{ formatLabel(estimate()?.project?.status || '') }}
+                Fase do projeto: {{ formatLabel(projectStage()) }}
+              </p>
+              <p class="mt-1 text-sm leading-6 text-teal-900/80">
+                Nota de Crédito: {{ creditNoteLabel() }}
               </p>
             </div>
             <div class="mt-5 rounded-[1.75rem] border border-slate-200 p-5">
@@ -175,7 +371,7 @@ import { EstimatesService } from './estimates.service';
                       <td class="px-4 py-4">
                         <p class="font-semibold text-slate-900">{{ item.referenceCode }} - {{ item.description }}</p>
                         <p class="mt-1 text-sm text-slate-500">
-                          ATA item: {{ item.ataItem?.ataItemCode || 'Nao informado' }} • {{ item.ataItem?.referenceCode || 'Sem referencia' }}
+                          ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
                         </p>
                       </td>
                       <td class="px-4 py-4 text-sm text-slate-700">{{ item.quantity }}</td>
@@ -227,8 +423,24 @@ import { EstimatesService } from './estimates.service';
 })
 export class EstimateDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly diexService = inject(DiexService);
   private readonly estimatesService = inject(EstimatesService);
+  private readonly projectsService = inject(ProjectsService);
+
+  readonly creditNoteForm = this.fb.nonNullable.group({
+    creditNoteNumber: ['', Validators.required],
+    creditNoteReceivedAt: [''],
+  });
+  readonly diexForm = this.fb.nonNullable.group({
+    supplierCnpj: ['', [Validators.required, Validators.minLength(14)]],
+    diexNumber: [''],
+    requesterName: [''],
+    requesterRank: [''],
+    requesterCpf: [''],
+    notes: [''],
+  });
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
@@ -237,13 +449,44 @@ export class EstimateDetailPageComponent implements OnInit {
   readonly finalizeError = signal('');
   readonly finalizeForbidden = signal(false);
   readonly finalizeSuccess = signal(false);
+  readonly showCreditNotePanel = signal(false);
+  readonly savingCreditNote = signal(false);
+  readonly creditNoteError = signal('');
+  readonly creditNoteForbidden = signal(false);
+  readonly creditNoteSuccess = signal(false);
+  readonly showDiexPanel = signal(false);
+  readonly generatingDiex = signal(false);
+  readonly diexError = signal('');
+  readonly diexForbidden = signal(false);
+  readonly diexSuccess = signal(false);
+  readonly createdDiex = signal<Diex | null>(null);
   readonly estimate = signal<Estimate | null>(null);
+  readonly projectDetails = signal<ProjectDetails | null>(null);
   private estimateIdentifier: string | null = null;
+
   readonly estimateDisplayCode = computed(() => {
     const estimate = this.estimate();
     return estimate ? buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt) : 'Estimativa';
   });
   readonly isFinalized = computed(() => this.estimate()?.status === 'FINALIZADA');
+  readonly projectStage = computed(() => this.projectDetails()?.workflow?.stage || this.estimateProjectValue('stage') || 'Não informado');
+  readonly hasCreditNote = computed(() => {
+    const milestones = this.projectDetails()?.workflow?.milestones ?? {};
+    return Boolean(
+      milestones['creditNoteNumber'] ||
+        milestones['creditNoteReceivedAt'] ||
+        this.estimateProjectValue('creditNoteNumber') ||
+        this.estimateProjectValue('creditNoteReceivedAt'),
+    );
+  });
+  readonly creditNoteLabel = computed(() => {
+    const milestones = this.projectDetails()?.workflow?.milestones ?? {};
+    return String(
+      milestones['creditNoteNumber'] ||
+        this.estimateProjectValue('creditNoteNumber') ||
+        'Não informada',
+    );
+  });
   readonly canFinalizeEstimate = computed(() => {
     const role = this.authService.getUserRole();
     const status = this.estimate()?.status as string | undefined;
@@ -253,27 +496,66 @@ export class EstimateDetailPageComponent implements OnInit {
 
     return isDraft && (hasPermission || roleAllowed);
   });
+  readonly hasLinkedDiex = computed(() => {
+    const estimate = this.estimate() as (Estimate & Record<string, unknown>) | null;
 
+    if (!estimate) return false;
+
+    return Boolean(
+      estimate['diexId'] ||
+        estimate['diexRequestId'] ||
+        estimate['diex'] ||
+        estimate['diexRequest'] ||
+        (Array.isArray(estimate['diexRequests']) && estimate['diexRequests'].length),
+    );
+  });
+  readonly canInformCreditNote = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly showCreditNotePrompt = computed(() =>
+    this.isFinalized() && !this.hasCreditNote() && !this.hasLinkedDiex() && this.canInformCreditNote(),
+  );
+  readonly canGenerateDiex = computed(() => {
+    const role = this.authService.getUserRole();
+    const hasPermission = this.authService.hasAnyPermission(['diex.issue']);
+    const roleAllowed = role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
+    const compatibleStage = ['DIEX_REQUISITORIO', 'AGUARDANDO_NOTA_EMPENHO', 'OS_LIBERADA'].includes(this.projectStage());
+
+    return this.isFinalized() &&
+      this.hasCreditNote() &&
+      compatibleStage &&
+      !this.hasLinkedDiex() &&
+      !this.createdDiex() &&
+      (hasPermission || roleAllowed);
+  });
+  readonly createdDiexLabel = computed(() => {
+    const diex = this.createdDiex();
+    if (!diex) return '';
+    return diex.diexNumber || diex.number || (diex.diexCode ? `DIEx #${diex.diexCode}` : diex.id);
+  });
   readonly highlightFacts = computed(() => {
     const estimate = this.estimate();
     return [
       { label: 'Status', value: formatLabel(estimate?.status ?? '') },
       { label: 'Projeto', value: estimate?.project?.projectCode ? `#${estimate.project.projectCode}` : `#${estimate?.projectCode ?? '-'}` },
-      { label: 'OM', value: estimate?.om?.sigla || estimate?.omName || 'Nao informado' },
+      { label: 'OM', value: estimate?.om?.sigla || estimate?.omName || 'Não informado' },
       { label: 'Cidade / UF', value: this.locationLabel(estimate) },
       { label: 'Valor total', value: formatCurrency(estimate?.totalAmount) },
     ];
   });
-
   readonly generalFacts = computed<MetadataItem[]>(() => {
     const estimate = this.estimate();
     return [
-      { label: 'Código da estimativa', value: estimate?.estimateCode ? `EST-${estimate.estimateCode}` : 'Nao informado' },
-      { label: 'Projeto vinculado', value: estimate?.project?.title || 'Nao informado' },
-      { label: 'Ata', value: estimate?.ata ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}` : 'Nao informado' },
-      { label: 'Fornecedor', value: estimate?.ata?.vendorName || 'Nao informado' },
-      { label: 'Grupo de cobertura', value: estimate?.coverageGroup ? `${estimate.coverageGroup.code} - ${estimate.coverageGroup.name}` : 'Nao informado' },
-      { label: 'OM', value: estimate?.om ? `${estimate.om.sigla} - ${estimate.om.name}` : estimate?.omName || 'Nao informado' },
+      { label: 'Código da estimativa', value: estimate?.estimateCode ? `EST-${estimate.estimateCode}` : 'Não informado' },
+      { label: 'Projeto vinculado', value: estimate?.project?.title || 'Não informado' },
+      { label: 'Ata', value: estimate?.ata ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}` : 'Não informado' },
+      { label: 'Fornecedor', value: estimate?.ata?.vendorName || 'Não informado' },
+      { label: 'Grupo de cobertura', value: estimate?.coverageGroup ? `${estimate.coverageGroup.code} - ${estimate.coverageGroup.name}` : 'Não informado' },
+      { label: 'OM', value: estimate?.om ? `${estimate.om.sigla} - ${estimate.om.name}` : estimate?.omName || 'Não informado' },
       { label: 'Criada em', value: formatDate(estimate?.createdAt) },
       { label: 'Atualizada em', value: formatDate(estimate?.updatedAt || estimate?.createdAt) },
     ];
@@ -283,7 +565,7 @@ export class EstimateDetailPageComponent implements OnInit {
     this.estimateIdentifier = this.route.snapshot.paramMap.get('id');
 
     if (!this.estimateIdentifier) {
-      this.errorMessage.set('Identificador da estimativa nao informado na rota.');
+      this.errorMessage.set('Identificador da estimativa não informado na rota.');
       this.loading.set(false);
       return;
     }
@@ -294,45 +576,33 @@ export class EstimateDetailPageComponent implements OnInit {
   reload(showLoading = true): void {
     if (!this.estimateIdentifier) return;
 
-    if (showLoading) {
-      this.loading.set(true);
-    }
+    if (showLoading) this.loading.set(true);
     this.forbidden.set(false);
     this.errorMessage.set('');
 
     const routeIdentifier = this.estimateIdentifier;
     const codeCandidate = extractEstimateCodeFromFriendlyIdentifier(routeIdentifier);
-    const shouldTryCodeLookup =
-      routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
-
+    const shouldTryCodeLookup = routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
     const estimateRequest$ = shouldTryCodeLookup
-      ? this.estimatesService.getByCode(codeCandidate).pipe(
-          catchError(() => this.estimatesService.getByIdentifier(routeIdentifier)),
-        )
+      ? this.estimatesService.getByCode(codeCandidate).pipe(catchError(() => this.estimatesService.getByIdentifier(routeIdentifier)))
       : this.estimatesService.getByIdentifier(routeIdentifier).pipe(
           catchError((originalError) =>
-            this.estimatesService.getByCode(codeCandidate).pipe(
-              catchError(() => throwError(() => originalError)),
-            ),
+            this.estimatesService.getByCode(codeCandidate).pipe(catchError(() => throwError(() => originalError))),
           ),
         );
 
     estimateRequest$.subscribe({
       next: (response) => {
         this.estimate.set(response);
-        if (showLoading) {
-          this.loading.set(false);
-        }
+        this.loadProjectContext(response);
+        if (showLoading) this.loading.set(false);
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
-        this.errorMessage.set(
-          getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'),
-        );
+        this.errorMessage.set(getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'));
         this.estimate.set(null);
-        if (showLoading) {
-          this.loading.set(false);
-        }
+        this.projectDetails.set(null);
+        if (showLoading) this.loading.set(false);
       },
     });
   }
@@ -340,25 +610,131 @@ export class EstimateDetailPageComponent implements OnInit {
   locationLabel(estimate: Estimate | null): string {
     const city = estimate?.om?.cityName || estimate?.destinationCityName;
     const state = estimate?.om?.stateUf || estimate?.destinationStateUf;
-    return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
+    return [city, state].filter(Boolean).join(' / ') || 'Não informado';
   }
 
   confirmFinalizeEstimate(): void {
     const estimate = this.estimate();
+    if (!estimate || !this.canFinalizeEstimate()) return;
 
-    if (!estimate || !this.canFinalizeEstimate()) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      'Deseja finalizar esta estimativa? ApÃ³s a finalizaÃ§Ã£o, ela poderÃ¡ avanÃ§ar no fluxo documental.',
-    );
-
-    if (!confirmed) {
+    if (!window.confirm('Deseja finalizar esta estimativa? Após a finalização, ela poderá avançar no fluxo documental.')) {
       return;
     }
 
     this.finalizeEstimate(estimate.id);
+  }
+
+  toggleCreditNotePanel(): void {
+    this.showCreditNotePanel.update((visible) => !visible);
+    this.clearCreditNoteFeedback();
+  }
+
+  saveCreditNote(): void {
+    const estimate = this.estimate();
+    const projectId = estimate?.project?.id || estimate?.projectId;
+
+    if (!projectId) {
+      this.creditNoteError.set('Projeto vinculado não informado para esta estimativa.');
+      return;
+    }
+
+    if (this.creditNoteForm.invalid) {
+      this.creditNoteForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingCreditNote.set(true);
+    this.clearCreditNoteFeedback();
+
+    const formValue = this.creditNoteForm.getRawValue();
+    this.projectsService
+      .updateFlow(projectId, {
+        stage: 'DIEX_REQUISITORIO',
+        creditNoteNumber: formValue.creditNoteNumber,
+        creditNoteReceivedAt: formValue.creditNoteReceivedAt
+          ? new Date(`${formValue.creditNoteReceivedAt}T00:00:00`).toISOString()
+          : new Date().toISOString(),
+      })
+      .pipe(finalize(() => this.savingCreditNote.set(false)))
+      .subscribe({
+        next: () => {
+          this.creditNoteSuccess.set(true);
+          this.showCreditNotePanel.set(false);
+          this.reload(false);
+        },
+        error: (error) => {
+          this.creditNoteForbidden.set(isForbiddenError(error));
+          this.creditNoteError.set(getErrorMessage(error, 'Falha ao informar a Nota de Crédito.'));
+        },
+      });
+  }
+
+  toggleDiexPanel(): void {
+    this.showDiexPanel.update((visible) => !visible);
+    this.clearDiexFeedback();
+  }
+
+  confirmGenerateDiex(): void {
+    const estimate = this.estimate();
+    if (!estimate || !this.canGenerateDiex()) return;
+
+    if (this.diexForm.invalid || this.onlyDigits(this.diexForm.controls.supplierCnpj.value).length < 14) {
+      this.diexForm.markAllAsTouched();
+      this.diexError.set('Informe o CNPJ do fornecedor com ao menos 14 dígitos.');
+      return;
+    }
+
+    if (!window.confirm('Deseja gerar o DIEx requisitório desta estimativa? O documento será vinculado ao projeto e dará continuidade ao fluxo documental.')) {
+      return;
+    }
+
+    this.generateDiex(estimate);
+  }
+
+  private loadProjectContext(estimate: Estimate): void {
+    const projectId = estimate.project?.id || estimate.projectId;
+    if (!projectId) {
+      this.projectDetails.set(null);
+      return;
+    }
+
+    this.projectsService.getDetails(projectId).subscribe({
+      next: (details) => this.projectDetails.set(details),
+      error: () => this.projectDetails.set(null),
+    });
+  }
+
+  private generateDiex(estimate: Estimate): void {
+    this.generatingDiex.set(true);
+    this.clearDiexFeedback();
+
+    const formValue = this.diexForm.getRawValue();
+    const payload = {
+      projectId: estimate.project?.id || estimate.projectId,
+      estimateId: estimate.id,
+      supplierCnpj: this.onlyDigits(formValue.supplierCnpj),
+      diexNumber: formValue.diexNumber || undefined,
+      requesterName: formValue.requesterName || undefined,
+      requesterRank: formValue.requesterRank || undefined,
+      requesterCpf: formValue.requesterCpf ? this.onlyDigits(formValue.requesterCpf) : undefined,
+      notes: formValue.notes || undefined,
+    };
+
+    this.diexService
+      .createDiex(payload)
+      .pipe(finalize(() => this.generatingDiex.set(false)))
+      .subscribe({
+        next: (diex) => {
+          this.createdDiex.set(diex);
+          this.diexSuccess.set(true);
+          this.showDiexPanel.set(false);
+          this.reload(false);
+        },
+        error: (error) => {
+          this.diexForbidden.set(isForbiddenError(error));
+          this.diexError.set(getErrorMessage(error, 'Falha ao gerar o DIEx requisitório.'));
+        },
+      });
   }
 
   private finalizeEstimate(id: string): void {
@@ -372,7 +748,7 @@ export class EstimateDetailPageComponent implements OnInit {
         next: (response) => {
           this.finalizeSuccess.set(true);
           this.estimate.set(response);
-          this.reload(false);
+          this.loadProjectContext(response);
         },
         error: (error) => {
           this.finalizeForbidden.set(isForbiddenError(error));
@@ -381,10 +757,32 @@ export class EstimateDetailPageComponent implements OnInit {
       });
   }
 
+  private estimateProjectValue(key: string): string {
+    const project = this.estimate()?.project as Record<string, unknown> | undefined;
+    const value = project?.[key];
+    return value ? String(value) : '';
+  }
+
   private clearFinalizeFeedback(): void {
     this.finalizeError.set('');
     this.finalizeForbidden.set(false);
     this.finalizeSuccess.set(false);
+  }
+
+  private clearCreditNoteFeedback(): void {
+    this.creditNoteError.set('');
+    this.creditNoteForbidden.set(false);
+    this.creditNoteSuccess.set(false);
+  }
+
+  private clearDiexFeedback(): void {
+    this.diexError.set('');
+    this.diexForbidden.set(false);
+    this.diexSuccess.set(false);
+  }
+
+  private onlyDigits(value: string): string {
+    return value.replace(/\D/g, '');
   }
 
   protected readonly formatLabel = formatLabel;
