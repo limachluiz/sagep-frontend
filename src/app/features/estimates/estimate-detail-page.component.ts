@@ -168,6 +168,12 @@ import { EstimatesService } from './estimates.service';
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
+        @if (hasDiexIssued()) {
+          <app-section-card title="DIEx requisitório já emitido">
+            <app-metadata-grid [items]="diexIssuedFacts()" gridClass="md:grid-cols-2" />
+          </app-section-card>
+        }
+
         @if (showCreditNotePrompt()) {
           <app-section-card
             title="Nota de Crédito pendente"
@@ -509,6 +515,49 @@ export class EstimateDetailPageComponent implements OnInit {
         (Array.isArray(estimate['diexRequests']) && estimate['diexRequests'].length),
     );
   });
+  readonly hasDiexIssued = computed(() => Boolean(this.diexNumber() || this.diexIssuedAt() || this.hasLinkedDiex()));
+  readonly diexNumber = computed(() => {
+    const details = this.projectDetails();
+    const milestones = details?.workflow?.milestones ?? {};
+    const project = details?.project as Record<string, unknown> | undefined;
+    const documents = details?.documents ?? {};
+    const diexRequests = this.asRecordArray(documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest']);
+    const firstDiex = diexRequests[0];
+
+    return this.firstValue([
+      milestones['diexNumber'],
+      project?.['diexNumber'],
+      firstDiex?.['diexNumber'],
+      firstDiex?.['number'],
+      firstDiex?.['diexCode'],
+      firstDiex?.['code'],
+      this.createdDiex()?.diexNumber,
+      this.createdDiex()?.number,
+      this.createdDiex()?.diexCode,
+      this.createdDiex()?.code,
+    ]);
+  });
+  readonly diexIssuedAt = computed(() => {
+    const details = this.projectDetails();
+    const milestones = details?.workflow?.milestones ?? {};
+    const project = details?.project as Record<string, unknown> | undefined;
+    const documents = details?.documents ?? {};
+    const diexRequests = this.asRecordArray(documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest']);
+    const firstDiex = diexRequests[0];
+
+    return this.firstValue([
+      milestones['diexIssuedAt'],
+      project?.['diexIssuedAt'],
+      firstDiex?.['issuedAt'],
+      firstDiex?.['createdAt'],
+      this.createdDiex()?.issuedAt,
+      this.createdDiex()?.createdAt,
+    ]);
+  });
+  readonly diexIssuedFacts = computed<MetadataItem[]>(() => [
+    { label: 'Número do DIEx', value: this.diexNumber() || 'Não informado', highlight: true },
+    { label: 'Emitido em', value: this.diexIssuedAt() ? formatDate(this.diexIssuedAt()) : 'Não informado' },
+  ]);
   readonly canInformCreditNote = computed(() => {
     const role = this.authService.getUserRole();
     return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
@@ -528,8 +577,7 @@ export class EstimateDetailPageComponent implements OnInit {
     return this.isFinalized() &&
       this.hasCreditNote() &&
       compatibleStage &&
-      !this.hasLinkedDiex() &&
-      !this.createdDiex() &&
+      !this.hasDiexIssued() &&
       (hasPermission || roleAllowed);
   });
   readonly createdDiexLabel = computed(() => {
@@ -760,6 +808,23 @@ export class EstimateDetailPageComponent implements OnInit {
   private estimateProjectValue(key: string): string {
     const project = this.estimate()?.project as Record<string, unknown> | undefined;
     const value = project?.[key];
+    return value ? String(value) : '';
+  }
+
+  private asRecordArray(value: unknown): Array<Record<string, unknown>> {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object');
+    }
+
+    if (value && typeof value === 'object') {
+      return [value as Record<string, unknown>];
+    }
+
+    return [];
+  }
+
+  private firstValue(values: unknown[]): string {
+    const value = values.find((item) => item !== null && item !== undefined && item !== '');
     return value ? String(value) : '';
   }
 
