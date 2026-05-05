@@ -58,4 +58,10 @@ export class EstimatesService {
   create(payload: EstimateCreatePayload) {
     return this.http.post<Estimate>(`${this.apiUrl}/estimates`, payload);
   }
+
+  finalizeEstimate(id: string) {
+    return this.http.patch<Estimate>(`${this.apiUrl}/estimates/${id}/status`, {
+      status: 'FINALIZADA',
+    });
+  }
 }

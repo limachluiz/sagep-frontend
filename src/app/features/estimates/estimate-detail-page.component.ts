@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, finalize, throwError } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -48,7 +49,49 @@ import { EstimatesService } from './estimates.service';
         badge="Fonte: GET /estimates/:identifier"
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
-      />
+      >
+        @if (canFinalizeEstimate()) {
+          <button
+            page-header-actions
+            type="button"
+            (click)="confirmFinalizeEstimate()"
+            [disabled]="finalizing()"
+            class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            {{ finalizing() ? 'Finalizando...' : 'Finalizar estimativa' }}
+          </button>
+        } @else if (isFinalized()) {
+          <span
+            page-header-actions
+            class="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs uppercase tracking-[0.18em] text-emerald-700"
+          >
+            Estimativa finalizada
+          </span>
+        }
+      </app-page-header>
+
+      @if (finalizeSuccess()) {
+        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+          Estimativa finalizada com sucesso. O detalhe foi atualizado com o status mais recente.
+        </div>
+      }
+
+      @if (finalizeForbidden()) {
+        <app-access-denied-state
+          title="Seu acesso atual nÃ£o permite finalizar esta estimativa."
+          description="A API recusou a operaÃ§Ã£o de finalizaÃ§Ã£o para o perfil ou permissÃµes atuais. Sua sessÃ£o permanece ativa."
+          primaryLink="/estimates"
+          primaryLabel="Voltar Ã  listagem"
+          secondaryLink="/dashboard"
+          secondaryLabel="Ir para o dashboard"
+        />
+      } @else if (finalizeError()) {
+        <app-error-state
+          title="Nao foi possivel finalizar a estimativa"
+          [message]="finalizeError()"
+          retryLabel=""
+        />
+      }
 
       @if (loading()) {
         <app-loading-state variant="detail" [count]="3" />
@@ -184,16 +227,31 @@ import { EstimatesService } from './estimates.service';
 })
 export class EstimateDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly authService = inject(AuthService);
   private readonly estimatesService = inject(EstimatesService);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly finalizing = signal(false);
+  readonly finalizeError = signal('');
+  readonly finalizeForbidden = signal(false);
+  readonly finalizeSuccess = signal(false);
   readonly estimate = signal<Estimate | null>(null);
   private estimateIdentifier: string | null = null;
   readonly estimateDisplayCode = computed(() => {
     const estimate = this.estimate();
     return estimate ? buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt) : 'Estimativa';
+  });
+  readonly isFinalized = computed(() => this.estimate()?.status === 'FINALIZADA');
+  readonly canFinalizeEstimate = computed(() => {
+    const role = this.authService.getUserRole();
+    const status = this.estimate()?.status as string | undefined;
+    const isDraft = status === 'RASCUNHO' || status === 'DRAFT';
+    const hasPermission = this.authService.hasAnyPermission(['estimates.finalize', 'estimates.edit']);
+    const roleAllowed = role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
+
+    return isDraft && (hasPermission || roleAllowed);
   });
 
   readonly highlightFacts = computed(() => {
@@ -233,10 +291,12 @@ export class EstimateDetailPageComponent implements OnInit {
     this.reload();
   }
 
-  reload(): void {
+  reload(showLoading = true): void {
     if (!this.estimateIdentifier) return;
 
-    this.loading.set(true);
+    if (showLoading) {
+      this.loading.set(true);
+    }
     this.forbidden.set(false);
     this.errorMessage.set('');
 
@@ -260,7 +320,9 @@ export class EstimateDetailPageComponent implements OnInit {
     estimateRequest$.subscribe({
       next: (response) => {
         this.estimate.set(response);
-        this.loading.set(false);
+        if (showLoading) {
+          this.loading.set(false);
+        }
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
@@ -268,7 +330,9 @@ export class EstimateDetailPageComponent implements OnInit {
           getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'),
         );
         this.estimate.set(null);
-        this.loading.set(false);
+        if (showLoading) {
+          this.loading.set(false);
+        }
       },
     });
   }
@@ -277,6 +341,50 @@ export class EstimateDetailPageComponent implements OnInit {
     const city = estimate?.om?.cityName || estimate?.destinationCityName;
     const state = estimate?.om?.stateUf || estimate?.destinationStateUf;
     return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
+  }
+
+  confirmFinalizeEstimate(): void {
+    const estimate = this.estimate();
+
+    if (!estimate || !this.canFinalizeEstimate()) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Deseja finalizar esta estimativa? ApÃ³s a finalizaÃ§Ã£o, ela poderÃ¡ avanÃ§ar no fluxo documental.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.finalizeEstimate(estimate.id);
+  }
+
+  private finalizeEstimate(id: string): void {
+    this.finalizing.set(true);
+    this.clearFinalizeFeedback();
+
+    this.estimatesService
+      .finalizeEstimate(id)
+      .pipe(finalize(() => this.finalizing.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.finalizeSuccess.set(true);
+          this.estimate.set(response);
+          this.reload(false);
+        },
+        error: (error) => {
+          this.finalizeForbidden.set(isForbiddenError(error));
+          this.finalizeError.set(getErrorMessage(error, 'Falha ao finalizar a estimativa.'));
+        },
+      });
+  }
+
+  private clearFinalizeFeedback(): void {
+    this.finalizeError.set('');
+    this.finalizeForbidden.set(false);
+    this.finalizeSuccess.set(false);
   }
 
   protected readonly formatLabel = formatLabel;
