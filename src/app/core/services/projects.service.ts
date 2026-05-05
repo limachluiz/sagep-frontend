@@ -24,6 +24,13 @@ export interface ProjectFlowUpdatePayload {
     | 'CANCELADO';
   creditNoteNumber?: string | null;
   creditNoteReceivedAt?: string | null;
+  commitmentNoteNumber?: string | null;
+  commitmentNoteReceivedAt?: string | null;
+}
+
+export interface InformCommitmentNotePayload {
+  commitmentNoteNumber: string;
+  commitmentNoteReceivedAt?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -66,5 +73,13 @@ export class ProjectsService {
 
   updateFlow(projectId: string, payload: ProjectFlowUpdatePayload) {
     return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${projectId}/flow`, payload);
+  }
+
+  informCommitmentNote(projectId: string, payload: InformCommitmentNotePayload) {
+    return this.updateFlow(projectId, {
+      stage: 'OS_LIBERADA',
+      commitmentNoteNumber: payload.commitmentNoteNumber,
+      commitmentNoteReceivedAt: payload.commitmentNoteReceivedAt ?? new Date().toISOString(),
+    });
   }
 }

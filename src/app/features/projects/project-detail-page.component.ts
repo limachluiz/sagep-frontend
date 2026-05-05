@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, finalize, switchMap, throwError } from 'rxjs';
 
 import { ProjectDetails } from '../../core/models/project.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -28,6 +30,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
   selector: 'app-project-detail-page',
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     EmptyValuePipe,
     AccessDeniedStateComponent,
     EmptyStateComponent,
@@ -46,7 +49,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         [eyebrow]="projectDisplayCode()"
         subtitle="Visão consolidada do projeto com workflow, documentos relacionados e timeline."
         badge="Fonte: GET /projects/:identifier/details"
-        backLabel="← Voltar para projetos"
+        backLabel="Voltar para projetos"
         backLink="/projects"
       />
 
@@ -63,7 +66,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else if (errorMessage()) {
         <app-error-state
-          title="Nao foi possivel carregar o detalhe do projeto"
+          title="Não foi possível carregar o detalhe do projeto"
           [message]="errorMessage()"
           retryLabel="Tentar novamente"
           (retry)="reload()"
@@ -75,6 +78,90 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           description="Verifique se o registro ainda existe ou retorne para a listagem para escolher outro projeto."
         />
       } @else {
+        @if (commitmentNoteSuccess()) {
+          <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+            Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.
+          </div>
+        }
+
+        @if (commitmentNoteForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite informar a Nota de Empenho."
+            description="A API recusou a atualização do fluxo do projeto para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (commitmentNoteError()) {
+          <app-error-state title="Não foi possível informar a Nota de Empenho" [message]="commitmentNoteError()" retryLabel="" />
+        }
+
+        @if (showCommitmentNotePrompt()) {
+          <app-section-card
+            title="Nota de Empenho pendente"
+            subtitle="O DIEx já foi emitido. Informe a Nota de Empenho para liberar a próxima etapa do fluxo."
+          >
+            @if (!showCommitmentNotePanel()) {
+              <div class="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-amber-900">
+                <p class="text-sm leading-6">
+                  A próxima ação indicada pelo backend é informar a Nota de Empenho. Depois disso,
+                  o projeto poderá avançar para a etapa de Ordem de Serviço conforme as regras do backend.
+                </p>
+                <button
+                  type="button"
+                  (click)="toggleCommitmentNotePanel()"
+                  class="mt-5 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Informar Nota de Empenho
+                </button>
+              </div>
+            } @else {
+              <form [formGroup]="commitmentNoteForm" class="grid gap-4 md:grid-cols-2">
+                <label class="text-sm font-medium text-slate-700">
+                  Número da Nota de Empenho
+                  <input
+                    type="text"
+                    formControlName="commitmentNoteNumber"
+                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    placeholder="Ex.: NE-2026-001"
+                  />
+                </label>
+                <label class="text-sm font-medium text-slate-700">
+                  Data de recebimento
+                  <input
+                    type="date"
+                    formControlName="commitmentNoteReceivedAt"
+                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  />
+                </label>
+              </form>
+              <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+                <button
+                  type="button"
+                  (click)="toggleCommitmentNotePanel()"
+                  [disabled]="savingCommitmentNote()"
+                  class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  (click)="saveCommitmentNote()"
+                  [disabled]="commitmentNoteForm.invalid || savingCommitmentNote()"
+                  class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {{ savingCommitmentNote() ? 'Salvando...' : 'Salvar Nota de Empenho' }}
+                </button>
+              </div>
+            }
+          </app-section-card>
+        } @else if (hasCommitmentNote()) {
+          <app-section-card title="Nota de Empenho informada">
+            <app-metadata-grid [items]="commitmentNoteFacts()" gridClass="md:grid-cols-2" />
+          </app-section-card>
+        }
+
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           @for (item of highlightFacts(); track item.label) {
             <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
@@ -95,10 +182,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             <div class="mt-5 rounded-[1.75rem] border border-teal-200 bg-teal-50 p-5">
               <p class="text-xs uppercase tracking-[0.18em] text-teal-700">Próxima ação recomendada</p>
               <p class="mt-3 text-lg font-semibold text-teal-950">
-                {{ details()?.workflow?.nextAction?.label | emptyValue:'Sem proxima acao calculada' }}
+                {{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}
               </p>
               <p class="mt-2 text-sm leading-6 text-teal-900/80">
-                {{ details()?.workflow?.nextAction?.description | emptyValue:'O backend nao forneceu descricao adicional para esta recomendacao.' }}
+                {{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}
               </p>
             </div>
             <app-metadata-grid class="mt-5 block" [items]="workflowFacts()" gridClass="grid-cols-1" />
@@ -170,7 +257,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.entityType }}</span>
-                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.actorName | emptyValue:'Ator nao informado' }}</span>
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.actorName | emptyValue:'Ator não informado' }}</span>
                   <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.action }}</span>
                 </div>
               </article>
@@ -185,17 +272,57 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
 })
 export class ProjectDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
   private readonly projectsService = inject(ProjectsService);
 
+  readonly commitmentNoteForm = this.fb.nonNullable.group({
+    commitmentNoteNumber: ['', Validators.required],
+    commitmentNoteReceivedAt: [''],
+  });
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly showCommitmentNotePanel = signal(false);
+  readonly savingCommitmentNote = signal(false);
+  readonly commitmentNoteError = signal('');
+  readonly commitmentNoteForbidden = signal(false);
+  readonly commitmentNoteSuccess = signal(false);
   readonly details = signal<ProjectDetails | null>(null);
   private projectIdentifier: string | null = null;
+
   readonly projectDisplayCode = computed(() => {
     const project = this.details()?.project;
     return project ? buildProjectIdentifier(project.projectCode, project.id, project.createdAt) : 'Projeto';
   });
+  readonly milestones = computed(() => this.details()?.workflow?.milestones ?? {});
+  readonly nextActionText = computed(() => {
+    const nextAction = this.details()?.workflow?.nextAction;
+    return [nextAction?.code, nextAction?.label, nextAction?.description].filter(Boolean).join(' ').toUpperCase();
+  });
+  readonly hasDiexIssued = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['diexNumber', 'diexIssuedAt'])));
+  readonly hasCommitmentNote = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['commitmentNoteNumber', 'commitmentNoteReceivedAt'])));
+  readonly canInformCommitmentNote = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly shouldInformCommitmentNote = computed(() => {
+    const nextAction = this.nextActionText();
+    return nextAction.includes('EMPENHO') || nextAction.includes('COMMITMENT');
+  });
+  readonly showCommitmentNotePrompt = computed(() =>
+    this.hasDiexIssued() &&
+    !this.hasCommitmentNote() &&
+    this.shouldInformCommitmentNote() &&
+    this.canInformCommitmentNote(),
+  );
+  readonly commitmentNoteFacts = computed<MetadataItem[]>(() => [
+    { label: 'Número da Nota de Empenho', value: this.pickValue(this.milestones(), ['commitmentNoteNumber']), highlight: true },
+    { label: 'Recebida em', value: this.pickValue(this.milestones(), ['commitmentNoteReceivedAt']) },
+  ]);
 
   readonly highlightFacts = computed(() => {
     const details = this.details();
@@ -219,11 +346,11 @@ export class ProjectDetailPageComponent implements OnInit {
     const firstEstimate = estimates[0] ?? {};
 
     return [
-      { label: 'Responsavel', value: project?.owner?.name ?? project?.ownerName ?? 'Nao informado' },
-      { label: 'Codigo interno', value: project?.projectCode ? `#${project.projectCode}` : 'Nao informado' },
+      { label: 'Responsável', value: project?.owner?.name ?? project?.ownerName ?? 'Não informado' },
+      { label: 'Código interno', value: project?.projectCode ? `#${project.projectCode}` : 'Não informado' },
       { label: 'OM', value: this.pickValue(project as unknown as Record<string, unknown>, ['omName', 'militaryOrganizationName']) },
       { label: 'Cidade / UF', value: this.buildLocation(firstEstimate) },
-      { label: 'Inicio', value: formatDate(project?.startDate) },
+      { label: 'Início', value: formatDate(project?.startDate) },
       { label: 'Fim', value: formatDate(project?.endDate) },
       { label: 'Criado em', value: formatDate(project?.createdAt) },
       {
@@ -238,11 +365,11 @@ export class ProjectDetailPageComponent implements OnInit {
     const milestones = workflow?.milestones ?? {};
 
     return [
-      { label: 'Proxima acao', value: this.pickValue(workflow?.nextAction, ['label', 'description', 'code']) },
-      { label: 'Nota de credito', value: this.pickValue(milestones, ['creditNoteNumber', 'creditNoteReceivedAt']) },
+      { label: 'Próxima ação', value: this.pickValue(workflow?.nextAction, ['label', 'description', 'code']) },
+      { label: 'Nota de Crédito', value: this.pickValue(milestones, ['creditNoteNumber', 'creditNoteReceivedAt']) },
       { label: 'DIEx', value: this.pickValue(milestones, ['diexNumber', 'diexIssuedAt']) },
-      { label: 'Nota de empenho', value: this.pickValue(milestones, ['commitmentNoteNumber', 'commitmentNoteReceivedAt']) },
-      { label: 'Ordem de servico', value: this.pickValue(milestones, ['serviceOrderNumber', 'serviceOrderIssuedAt']) },
+      { label: 'Nota de Empenho', value: this.pickValue(milestones, ['commitmentNoteNumber', 'commitmentNoteReceivedAt']) },
+      { label: 'Ordem de Serviço', value: this.pickValue(milestones, ['serviceOrderNumber', 'serviceOrderIssuedAt']) },
     ];
   });
 
@@ -252,7 +379,7 @@ export class ProjectDetailPageComponent implements OnInit {
     return [
       { label: 'Estimativas', items: this.mapDocumentItems(documents['estimates'], 'estimateCode') },
       { label: 'DIEx', items: this.mapDocumentItems(documents['diexRequests'], 'diexCode') },
-      { label: 'Ordens de Servico', items: this.mapDocumentItems(documents['serviceOrders'], 'serviceOrderCode') },
+      { label: 'Ordens de Serviço', items: this.mapDocumentItems(documents['serviceOrders'], 'serviceOrderCode') },
     ];
   });
 
@@ -268,7 +395,7 @@ export class ProjectDetailPageComponent implements OnInit {
       { label: 'Total OS', value: formatCurrency(financialSummary['serviceOrderTotalAmount']) },
       { label: 'Membros', value: this.pickValue(operationalSummary, ['membersCount']) },
       { label: 'Tarefas abertas', value: this.pickValue(operationalSummary, ['openTasksCount']) },
-      { label: 'Ordens de servico', value: this.pickValue(operationalSummary, ['serviceOrdersCount']) },
+      { label: 'Ordens de Serviço', value: this.pickValue(operationalSummary, ['serviceOrdersCount']) },
     ];
   });
 
@@ -276,7 +403,7 @@ export class ProjectDetailPageComponent implements OnInit {
     this.projectIdentifier = this.route.snapshot.paramMap.get('id');
 
     if (!this.projectIdentifier) {
-      this.errorMessage.set('Identificador do projeto nao informado na rota.');
+      this.errorMessage.set('Identificador do projeto não informado na rota.');
       this.loading.set(false);
       return;
     }
@@ -328,9 +455,59 @@ export class ProjectDetailPageComponent implements OnInit {
     });
   }
 
+  toggleCommitmentNotePanel(): void {
+    this.showCommitmentNotePanel.update((visible) => !visible);
+    this.clearCommitmentNoteFeedback();
+  }
+
+  saveCommitmentNote(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId) {
+      this.commitmentNoteError.set('Projeto não informado para atualização da Nota de Empenho.');
+      return;
+    }
+
+    if (this.commitmentNoteForm.invalid) {
+      this.commitmentNoteForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.commitmentNoteForm.getRawValue();
+    const commitmentNoteNumber = formValue.commitmentNoteNumber.trim();
+
+    if (!commitmentNoteNumber) {
+      this.commitmentNoteForm.controls.commitmentNoteNumber.setErrors({ required: true });
+      return;
+    }
+
+    this.savingCommitmentNote.set(true);
+    this.clearCommitmentNoteFeedback();
+
+    this.projectsService
+      .informCommitmentNote(projectId, {
+        commitmentNoteNumber,
+        commitmentNoteReceivedAt: formValue.commitmentNoteReceivedAt
+          ? new Date(`${formValue.commitmentNoteReceivedAt}T00:00:00`).toISOString()
+          : new Date().toISOString(),
+      })
+      .pipe(finalize(() => this.savingCommitmentNote.set(false)))
+      .subscribe({
+        next: () => {
+          this.commitmentNoteSuccess.set(true);
+          this.showCommitmentNotePanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.commitmentNoteForbidden.set(isForbiddenError(error));
+          this.commitmentNoteError.set(getErrorMessage(error, 'Falha ao informar a Nota de Empenho.'));
+        },
+      });
+  }
+
   private pickValue(source: Record<string, unknown> | null | undefined, keys: string[]): string {
     if (!source) {
-      return 'Nao informado';
+      return 'Não informado';
     }
 
     for (const key of keys) {
@@ -340,7 +517,18 @@ export class ProjectDetailPageComponent implements OnInit {
       }
     }
 
-    return 'Nao informado';
+    return 'Não informado';
+  }
+
+  private pickValueOrEmpty(source: Record<string, unknown> | null | undefined, keys: string[]): string {
+    const value = this.pickValue(source, keys);
+    return value === 'Não informado' ? '' : value;
+  }
+
+  private clearCommitmentNoteFeedback(): void {
+    this.commitmentNoteError.set('');
+    this.commitmentNoteForbidden.set(false);
+    this.commitmentNoteSuccess.set(false);
   }
 
   private buildLocation(source: Record<string, unknown>): string {
@@ -348,7 +536,7 @@ export class ProjectDetailPageComponent implements OnInit {
     const state = source['destinationStateUf'];
 
     if (!city && !state) {
-      return 'Nao informado';
+      return 'Não informado';
     }
 
     return [city, state].filter(Boolean).join(' / ');
@@ -363,7 +551,7 @@ export class ProjectDetailPageComponent implements OnInit {
       const source = item as Record<string, unknown>;
       const code = source[codeKey];
       const number = source['diexNumber'] ?? source['serviceOrderNumber'] ?? source['estimateCode'];
-      const amount = source['totalAmount'] ? formatCurrency(source['totalAmount']) : 'Valor nao informado';
+      const amount = source['totalAmount'] ? formatCurrency(source['totalAmount']) : 'Valor não informado';
       const status = source['status'] ?? source['documentStatus'];
       const issuedAt = source['issuedAt'] ?? source['createdAt'];
 
@@ -376,6 +564,6 @@ export class ProjectDetailPageComponent implements OnInit {
     });
   }
 
-  protected readonly formatLabel = formatLabel;
   protected readonly formatDate = formatDate;
+  protected readonly formatLabel = formatLabel;
 }
