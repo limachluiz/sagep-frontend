@@ -782,6 +782,13 @@ textarea:focus-visible {
   min-height: 134px;
 }
 
+.metric .icon {
+  color: var(--eb-olive-2);
+  font-size: 28px;
+  font-weight: 950;
+  line-height: 1;
+}
+
 .metric::before {
   content: '';
   position: absolute;
@@ -800,6 +807,14 @@ textarea:focus-visible {
 
 .metric.success::before {
   background: var(--success);
+}
+
+.metric.warning::before {
+  background: var(--warning);
+}
+
+.metric.danger::before {
+  background: var(--danger);
 }
 
 .metric .value {
@@ -823,6 +838,7 @@ textarea:focus-visible {
   font-size: 12px;
   margin-top: 10px;
   color: var(--muted);
+  line-height: 1.4;
 }
 
 .hero-panel {
@@ -880,6 +896,91 @@ textarea:focus-visible {
 .command-tile span {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.55);
+}
+
+.dashboard-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-workspace > .grid {
+  margin-top: 0;
+}
+
+.section-card {
+  height: 100%;
+}
+
+.command-summary {
+  grid-template-columns: 1fr;
+}
+
+.dashboard-list {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-list-compact {
+  gap: 8px;
+}
+
+.dashboard-row {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.dashboard-row > div:first-child,
+.action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-row b,
+.action-row b,
+.queue-item h3 {
+  color: var(--eb-night);
+  font-size: 14px;
+}
+
+.dashboard-row span,
+.action-row span,
+.queue-item p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.queue-item {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 14px;
+  padding: 13px;
+}
+
+.queue-item h3 {
+  margin: 9px 0 5px;
+}
+
+.action-row {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.action-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .badge {
@@ -1171,6 +1272,7 @@ textarea:focus-visible {
   .grid-5,
   .hero-panel,
   .command-tiles,
+  .inventory-grid,
   .detail-grid {
     grid-template-columns: 1fr;
   }

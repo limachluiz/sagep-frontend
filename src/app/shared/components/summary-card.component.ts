@@ -20,7 +20,7 @@ export class SummaryCardComponent {
   @Input({ required: true }) value = '';
   @Input() description = '';
   @Input() icon = '';
-  @Input() tone: 'default' | 'accent' | 'soft' = 'default';
+  @Input() tone: 'default' | 'accent' | 'soft' | 'success' | 'warning' | 'danger' = 'default';
 
   get toneClass(): string {
     switch (this.tone) {
@@ -28,6 +28,12 @@ export class SummaryCardComponent {
         return 'gold';
       case 'soft':
         return 'info';
+      case 'success':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'danger';
       default:
         return '';
     }

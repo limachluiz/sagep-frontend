@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-section-card',
   template: `
-    <section class="card">
+    <section class="card section-card">
       <div class="card-head">
         <div>
           <div class="card-title">{{ title }}</div>
