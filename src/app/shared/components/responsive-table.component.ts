@@ -46,17 +46,17 @@ export class ResponsiveTableActionsDirective<T = unknown> {
   imports: [CommonModule],
   template: `
     @if (!data.length) {
-      <div class="rounded-[var(--sagep-radius)] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] p-6 text-center">
+      <div class="empty">
         <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ emptyTitle }}</p>
         @if (emptyDescription) {
           <p class="mt-2 text-sm leading-6 text-[var(--sagep-muted)]">{{ emptyDescription }}</p>
         }
       </div>
     } @else {
-      <div class="hidden overflow-x-auto rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] lg:block">
-        <table class="min-w-full divide-y divide-[var(--sagep-line)]">
-          <thead class="bg-[var(--sagep-surface-subtle)]">
-            <tr class="text-left text-[10px] font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">
+      <div class="table-wrap hidden lg:block">
+        <table class="table">
+          <thead>
+            <tr>
               @for (column of columns; track column.key) {
                 <th class="px-5 py-4" [ngClass]="[alignClass(column.align), column.class || '']">
                   {{ column.label }}
@@ -67,11 +67,11 @@ export class ResponsiveTableActionsDirective<T = unknown> {
               }
             </tr>
           </thead>
-          <tbody class="divide-y divide-[var(--sagep-line)]">
+          <tbody>
             @for (row of data; track trackRow(row, $index)) {
-              <tr class="align-top transition hover:bg-[#fffaf0]">
+              <tr>
                 @for (column of columns; track column.key) {
-                  <td class="px-5 py-4 text-sm text-[var(--sagep-ink)]" [ngClass]="[alignClass(column.align), column.class || '']">
+                  <td [ngClass]="[alignClass(column.align), column.class || '']">
                     @if (cellTemplate(column.key); as template) {
                       <ng-container
                         [ngTemplateOutlet]="template"
@@ -83,7 +83,7 @@ export class ResponsiveTableActionsDirective<T = unknown> {
                   </td>
                 }
                 @if (actionsTemplate?.template; as template) {
-                  <td class="px-5 py-4 text-right">
+                  <td class="text-right">
                     <ng-container
                       [ngTemplateOutlet]="template"
                       [ngTemplateOutletContext]="actionContext(row)"
@@ -98,12 +98,12 @@ export class ResponsiveTableActionsDirective<T = unknown> {
 
       <div class="grid gap-4 lg:hidden">
         @for (row of data; track trackRow(row, $index)) {
-          <article class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 shadow-[var(--sagep-shadow-soft)]">
-            <div class="grid gap-3 sm:grid-cols-2">
+          <article class="card">
+            <div class="card-body grid grid-2">
               @for (column of columns; track column.key) {
-                <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3" [ngClass]="column.class || ''">
-                  <p class="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ column.label }}</p>
-                  <div class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]" [ngClass]="alignClass(column.align)">
+                <div class="detail-item" [ngClass]="column.class || ''">
+                  <label>{{ column.label }}</label>
+                  <b [ngClass]="alignClass(column.align)">
                     @if (cellTemplate(column.key); as template) {
                       <ng-container
                         [ngTemplateOutlet]="template"
@@ -112,7 +112,7 @@ export class ResponsiveTableActionsDirective<T = unknown> {
                     } @else {
                       {{ cellValue(row, column.key) || fallback }}
                     }
-                  </div>
+                  </b>
                 </div>
               }
             </div>

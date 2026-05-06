@@ -62,7 +62,7 @@ import { EstimatesService } from './estimates.service';
             type="button"
             (click)="confirmFinalizeEstimate()"
             [disabled]="finalizing()"
-            class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            class="inline-flex rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
           >
             {{ finalizing() ? 'Finalizando...' : 'Finalizar estimativa' }}
           </button>
@@ -79,7 +79,7 @@ import { EstimatesService } from './estimates.service';
             page-header-actions
             type="button"
             (click)="toggleDiexPanel()"
-            class="inline-flex rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+            class="inline-flex rounded-[14px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
           >
             Gerar DIEx requisitório
           </button>
@@ -87,19 +87,19 @@ import { EstimatesService } from './estimates.service';
       </app-page-header>
 
       @if (finalizeSuccess()) {
-        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
           Estimativa finalizada com sucesso. O detalhe foi atualizado com o status mais recente.
         </div>
       }
 
       @if (creditNoteSuccess()) {
-        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
           Nota de Crédito informada com sucesso. A geração do DIEx requisitório foi liberada.
         </div>
       }
 
       @if (diexSuccess()) {
-        <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
           DIEx requisitório gerado com sucesso{{ createdDiexLabel() ? ': ' + createdDiexLabel() : '' }}.
         </div>
       }
@@ -180,7 +180,7 @@ import { EstimatesService } from './estimates.service';
             subtitle="Antes de gerar o DIEx requisitório, informe a Nota de Crédito do projeto."
           >
             @if (!showCreditNotePanel()) {
-              <div class="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-amber-900">
+              <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-warn-soft)] bg-[var(--sagep-warn-soft)] p-5 text-[var(--sagep-warn)]">
                 <p class="text-sm leading-6">
                   A estimativa já está finalizada, mas o projeto ainda não possui Nota de Crédito informada.
                   Essa etapa é obrigatória antes da emissão do DIEx requisitório.
@@ -188,7 +188,7 @@ import { EstimatesService } from './estimates.service';
                 <button
                   type="button"
                   (click)="toggleCreditNotePanel()"
-                  class="mt-5 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  class="mt-5 rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
                 >
                   Informar Nota de Crédito
                 </button>
@@ -200,7 +200,7 @@ import { EstimatesService } from './estimates.service';
                   <input
                     type="text"
                     formControlName="creditNoteNumber"
-                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                     placeholder="Ex.: NC-2026-001"
                   />
                 </label>
@@ -209,16 +209,16 @@ import { EstimatesService } from './estimates.service';
                   <input
                     type="date"
                     formControlName="creditNoteReceivedAt"
-                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   />
                 </label>
               </form>
-              <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+              <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
                 <button
                   type="button"
                   (click)="toggleCreditNotePanel()"
                   [disabled]="savingCreditNote()"
-                  class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                  class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -226,7 +226,7 @@ import { EstimatesService } from './estimates.service';
                   type="button"
                   (click)="saveCreditNote()"
                   [disabled]="creditNoteForm.invalid || savingCreditNote()"
-                  class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
                 >
                   {{ savingCreditNote() ? 'Salvando...' : 'Salvar Nota de Crédito' }}
                 </button>
@@ -246,7 +246,7 @@ import { EstimatesService } from './estimates.service';
                 <input
                   type="text"
                   formControlName="supplierCnpj"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Somente números"
                 />
               </label>
@@ -255,7 +255,7 @@ import { EstimatesService } from './estimates.service';
                 <input
                   type="text"
                   formControlName="diexNumber"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Opcional"
                 />
               </label>
@@ -264,7 +264,7 @@ import { EstimatesService } from './estimates.service';
                 <input
                   type="text"
                   formControlName="requesterName"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Opcional"
                 />
               </label>
@@ -273,7 +273,7 @@ import { EstimatesService } from './estimates.service';
                 <input
                   type="text"
                   formControlName="requesterRank"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Opcional"
                 />
               </label>
@@ -282,7 +282,7 @@ import { EstimatesService } from './estimates.service';
                 <input
                   type="text"
                   formControlName="requesterCpf"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Opcional"
                 />
               </label>
@@ -291,17 +291,17 @@ import { EstimatesService } from './estimates.service';
                 <textarea
                   formControlName="notes"
                   rows="3"
-                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Opcional"
                 ></textarea>
               </label>
             </form>
-            <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+            <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
               <button
                 type="button"
                 (click)="toggleDiexPanel()"
                 [disabled]="generatingDiex()"
-                class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -309,7 +309,7 @@ import { EstimatesService } from './estimates.service';
                 type="button"
                 (click)="confirmGenerateDiex()"
                 [disabled]="diexForm.invalid || generatingDiex()"
-                class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
               >
                 {{ generatingDiex() ? 'Gerando DIEx...' : 'Confirmar geração' }}
               </button>
@@ -334,21 +334,21 @@ import { EstimatesService } from './estimates.service';
           </app-section-card>
 
           <app-section-card title="Projeto vinculado e observações">
-            <div class="mt-5 rounded-[1.75rem] border border-teal-200 bg-teal-50 p-5">
-              <p class="text-xs uppercase tracking-[0.18em] text-teal-700">Projeto vinculado</p>
-              <p class="mt-3 text-lg font-semibold text-teal-950">
+            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Projeto vinculado</p>
+              <p class="mt-3 text-lg font-semibold text-[var(--sagep-brand-deep)]">
                 #{{ estimate()?.project?.projectCode || estimate()?.projectCode }} - {{ estimate()?.project?.title || 'Projeto não informado' }}
               </p>
-              <p class="mt-2 text-sm leading-6 text-teal-900/80">
+              <p class="mt-2 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
                 Fase do projeto: {{ formatLabel(projectStage()) }}
               </p>
-              <p class="mt-1 text-sm leading-6 text-teal-900/80">
+              <p class="mt-1 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
                 Nota de Crédito: {{ creditNoteLabel() }}
               </p>
             </div>
-            <div class="mt-5 rounded-[1.75rem] border border-slate-200 p-5">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Observações</p>
-              <p class="mt-3 text-sm leading-6 text-slate-700">
+            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5">
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Observações</p>
+              <p class="mt-3 text-sm leading-6 text-[var(--sagep-ink)]">
                 {{ estimate()?.notes | emptyValue:'Sem observações registradas nesta estimativa.' }}
               </p>
             </div>
@@ -356,13 +356,13 @@ import { EstimatesService } from './estimates.service';
         </div>
 
         <app-section-card title="Itens da estimativa" subtitle="Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações.">
-          <span section-card-actions class="text-sm text-slate-500">{{ (estimate()?.items ?? []).length }} item(ns)</span>
+          <span section-card-actions class="text-sm text-[var(--sagep-muted)]">{{ (estimate()?.items ?? []).length }} item(ns)</span>
 
           @if ((estimate()?.items ?? []).length) {
             <div class="mt-6 hidden overflow-x-auto lg:block">
-              <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                  <tr class="text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+              <table class="min-w-full divide-y divide-[var(--sagep-line)]">
+                <thead class="bg-[var(--sagep-surface-subtle)]">
+                  <tr class="text-left text-xs font-black uppercase tracking-[0.2em] text-[var(--sagep-muted)]">
                     <th class="px-4 py-3">Item</th>
                     <th class="px-4 py-3">Qtd.</th>
                     <th class="px-4 py-3">Unidade</th>
@@ -371,20 +371,20 @@ import { EstimatesService } from './estimates.service';
                     <th class="px-4 py-3">Observações</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-[var(--sagep-line)]">
                   @for (item of estimate()?.items ?? []; track item.id) {
                     <tr class="align-top">
                       <td class="px-4 py-4">
-                        <p class="font-semibold text-slate-900">{{ item.referenceCode }} - {{ item.description }}</p>
-                        <p class="mt-1 text-sm text-slate-500">
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">
                           ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
                         </p>
                       </td>
-                      <td class="px-4 py-4 text-sm text-slate-700">{{ item.quantity }}</td>
-                      <td class="px-4 py-4 text-sm text-slate-700">{{ item.unit }}</td>
-                      <td class="px-4 py-4 text-sm text-slate-700">{{ formatCurrency(item.unitPrice) }}</td>
-                      <td class="px-4 py-4 text-sm font-semibold text-slate-900">{{ formatCurrency(item.subtotal) }}</td>
-                      <td class="px-4 py-4 text-sm text-slate-700">{{ item.notes | emptyValue:'Sem observações' }}</td>
+                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.quantity }}</td>
+                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.unit }}</td>
+                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ formatCurrency(item.unitPrice) }}</td>
+                      <td class="px-4 py-4 text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</td>
+                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.notes | emptyValue:'Sem observações' }}</td>
                     </tr>
                   }
                 </tbody>
@@ -393,32 +393,32 @@ import { EstimatesService } from './estimates.service';
 
             <div class="mt-6 grid gap-4 lg:hidden">
               @for (item of estimate()?.items ?? []; track item.id) {
-                <article class="rounded-[1.5rem] border border-slate-200 p-4">
-                  <p class="font-semibold text-slate-900">{{ item.referenceCode }} - {{ item.description }}</p>
+                <article class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
+                  <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl bg-slate-50 p-3">
-                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Quantidade</p>
-                      <p class="mt-2 text-sm font-medium text-slate-900">{{ item.quantity }}</p>
+                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
+                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Quantidade</p>
+                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.quantity }}</p>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 p-3">
-                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Unidade</p>
-                      <p class="mt-2 text-sm font-medium text-slate-900">{{ item.unit }}</p>
+                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
+                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Unidade</p>
+                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.unit }}</p>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 p-3">
-                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Valor unitário</p>
-                      <p class="mt-2 text-sm font-medium text-slate-900">{{ formatCurrency(item.unitPrice) }}</p>
+                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
+                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Valor unitário</p>
+                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.unitPrice) }}</p>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 p-3">
-                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Subtotal</p>
-                      <p class="mt-2 text-sm font-medium text-slate-900">{{ formatCurrency(item.subtotal) }}</p>
+                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
+                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Subtotal</p>
+                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</p>
                     </div>
                   </div>
-                  <p class="mt-4 text-sm text-slate-600">{{ item.notes | emptyValue:'Sem observações para esta linha.' }}</p>
+                  <p class="mt-4 text-sm text-[var(--sagep-muted)]">{{ item.notes | emptyValue:'Sem observações para esta linha.' }}</p>
                 </article>
               }
             </div>
           } @else {
-            <div class="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+            <div class="mt-6 rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
               A API não retornou itens para esta estimativa.
             </div>
           }

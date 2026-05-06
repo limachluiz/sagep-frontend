@@ -11,72 +11,41 @@ import { getErrorMessage } from '../../../shared/utils/http-error.util';
   selector: 'app-login',
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="mx-auto flex w-full max-w-md flex-col justify-center">
-      <div class="mb-8 lg:hidden">
-        <p class="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sagep-brand)]">4º CTA · Exército Brasileiro</p>
-        <h1 class="mt-3 text-3xl font-semibold leading-tight text-[var(--sagep-brand-deep)]">SAGEP</h1>
-        <p class="mt-2 text-sm text-[var(--sagep-muted)]">Sistema de Apoio à Gestão de Projetos</p>
-      </div>
+    <div class="login-card">
+      <p class="tag">Sessão segura</p>
+      <h2>Entrar no SAGEP</h2>
+      <p class="sub">
+        Use as credenciais provisionadas no backend. Exemplo local:
+        <strong>admin@sagep.com</strong> / <strong>123456</strong>.
+      </p>
 
-      <div class="rounded-[24px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-6 shadow-[var(--sagep-shadow)] sm:p-8">
-        <div class="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[var(--sagep-brand)]">Acesso ao sistema</p>
-            <h2 class="mt-3 text-3xl font-semibold text-[var(--sagep-brand-deep)]">Entrar no SAGEP</h2>
-          </div>
-          <div class="hidden h-12 w-12 place-items-center rounded-2xl bg-[var(--sagep-gold-soft)] text-sm font-black text-[var(--sagep-brand-deep)] sm:grid">
-            EB
-          </div>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="field">
+          <label for="email">E-mail</label>
+          <input id="email" type="email" formControlName="email" placeholder="admin@sagep.com" />
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <span class="mt-2 block text-xs text-[var(--danger)]">Informe um e-mail válido.</span>
+          }
         </div>
 
-        <p class="text-sm leading-6 text-[var(--sagep-muted)]">
-          Use as credenciais provisionadas no backend. Exemplo local:
-          <strong class="font-semibold text-[var(--sagep-ink)]">admin@sagep.com</strong> /
-          <strong class="font-semibold text-[var(--sagep-ink)]">123456</strong>.
-        </p>
-
-        <form [formGroup]="form" (ngSubmit)="submit()" class="mt-8 space-y-5">
-          <label class="block space-y-2">
-            <span class="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sagep-muted)]">E-mail</span>
-            <input
-              type="email"
-              formControlName="email"
-              class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 text-[var(--sagep-ink)] outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-              placeholder="admin@sagep.com"
-            />
-            @if (form.controls.email.invalid && form.controls.email.touched) {
-              <span class="text-xs text-[var(--sagep-danger)]">Informe um e-mail válido.</span>
-            }
-          </label>
-
-          <label class="block space-y-2">
-            <span class="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sagep-muted)]">Senha</span>
-            <input
-              type="password"
-              formControlName="password"
-              class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 text-[var(--sagep-ink)] outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-              placeholder="Digite sua senha"
-            />
-            @if (form.controls.password.invalid && form.controls.password.touched) {
-              <span class="text-xs text-[var(--sagep-danger)]">A senha precisa ter ao menos 6 caracteres.</span>
-            }
-          </label>
-
-          @if (errorMessage()) {
-            <div class="rounded-[14px] border border-[var(--sagep-danger-soft)] bg-[var(--sagep-danger-soft)] px-4 py-3 text-sm leading-6 text-[var(--sagep-danger)]">
-              {{ errorMessage() }}
-            </div>
+        <div class="field">
+          <label for="password">Senha</label>
+          <input id="password" type="password" formControlName="password" placeholder="Digite sua senha" />
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <span class="mt-2 block text-xs text-[var(--danger)]">A senha precisa ter ao menos 6 caracteres.</span>
           }
+        </div>
 
-          <button
-            type="submit"
-            [disabled]="loading()"
-            class="inline-flex w-full items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(61,76,32,0.24)] transition hover:-translate-y-0.5 hover:bg-[var(--sagep-brand-dark)] focus:ring-4 focus:ring-[rgba(200,166,75,0.24)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-400"
-          >
-            {{ loading() ? 'Entrando...' : 'Entrar' }}
-          </button>
-        </form>
-      </div>
+        @if (errorMessage()) {
+          <div class="mb-4 rounded-[14px] border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm leading-6 text-[var(--danger)]">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <button type="submit" [disabled]="loading()" class="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-60">
+          {{ loading() ? 'Entrando...' : 'Entrar' }}
+        </button>
+      </form>
     </div>
   `,
 })

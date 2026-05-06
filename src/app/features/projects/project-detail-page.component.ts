@@ -79,7 +79,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else {
         @if (commitmentNoteSuccess()) {
-          <div class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 shadow-[var(--sagep-shadow)]">
+          <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
             Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.
           </div>
         }
@@ -103,7 +103,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             subtitle="O DIEx já foi emitido. Informe a Nota de Empenho para liberar a próxima etapa do fluxo."
           >
             @if (!showCommitmentNotePanel()) {
-              <div class="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-amber-900">
+              <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-warn-soft)] bg-[var(--sagep-warn-soft)] p-5 text-[var(--sagep-warn)]">
                 <p class="text-sm leading-6">
                   A próxima ação indicada pelo backend é informar a Nota de Empenho. Depois disso,
                   o projeto poderá avançar para a etapa de Ordem de Serviço conforme as regras do backend.
@@ -111,7 +111,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 <button
                   type="button"
                   (click)="toggleCommitmentNotePanel()"
-                  class="mt-5 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  class="mt-5 rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
                 >
                   Informar Nota de Empenho
                 </button>
@@ -123,7 +123,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   <input
                     type="text"
                     formControlName="commitmentNoteNumber"
-                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                     placeholder="Ex.: NE-2026-001"
                   />
                 </label>
@@ -132,16 +132,16 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   <input
                     type="date"
                     formControlName="commitmentNoteReceivedAt"
-                    class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   />
                 </label>
               </form>
-              <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 md:flex-row md:items-center md:justify-end">
+              <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
                 <button
                   type="button"
                   (click)="toggleCommitmentNotePanel()"
                   [disabled]="savingCommitmentNote()"
-                  class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                  class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -149,7 +149,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   type="button"
                   (click)="saveCommitmentNote()"
                   [disabled]="commitmentNoteForm.invalid || savingCommitmentNote()"
-                  class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
                 >
                   {{ savingCommitmentNote() ? 'Salvando...' : 'Salvar Nota de Empenho' }}
                 </button>
@@ -179,12 +179,12 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           </app-section-card>
 
           <app-section-card title="Próxima ação e workflow">
-            <div class="mt-5 rounded-[1.75rem] border border-teal-200 bg-teal-50 p-5">
-              <p class="text-xs uppercase tracking-[0.18em] text-teal-700">Próxima ação recomendada</p>
-              <p class="mt-3 text-lg font-semibold text-teal-950">
+            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Próxima ação recomendada</p>
+              <p class="mt-3 text-lg font-semibold text-[var(--sagep-brand-deep)]">
                 {{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}
               </p>
-              <p class="mt-2 text-sm leading-6 text-teal-900/80">
+              <p class="mt-2 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
                 {{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}
               </p>
             </div>
@@ -199,24 +199,24 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           >
             <div class="space-y-4">
               @for (group of documentGroups(); track group.label) {
-                <div class="rounded-[1.5rem] border border-slate-200 p-4">
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="font-semibold text-slate-900">{{ group.label }}</p>
-                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ group.label }}</p>
+                    <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--sagep-muted)]">
                       {{ group.items.length }} item(ns)
                     </span>
                   </div>
                   @if (group.items.length) {
                     <div class="mt-4 space-y-3">
                       @for (item of group.items; track $index) {
-                        <div class="rounded-2xl bg-slate-50 p-4">
-                          <p class="text-sm font-medium text-slate-900">{{ item.title }}</p>
-                          <p class="mt-2 text-sm text-slate-600">{{ item.meta }}</p>
+                        <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-4">
+                          <p class="text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.title }}</p>
+                          <p class="mt-2 text-sm text-[var(--sagep-muted)]">{{ item.meta }}</p>
                         </div>
                       }
                     </div>
                   } @else {
-                    <p class="mt-3 text-sm text-slate-500">Nenhum registro retornado para este grupo.</p>
+                    <p class="mt-3 text-sm text-[var(--sagep-muted)]">Nenhum registro retornado para este grupo.</p>
                   }
                 </div>
               }
@@ -229,9 +229,9 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           >
             <div class="space-y-3">
               @for (item of summaryGroups(); track item.label) {
-                <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                  <span class="text-sm text-slate-700">{{ item.label }}</span>
-                  <span class="text-sm font-semibold text-slate-950">{{ item.value }}</span>
+                <div class="flex items-center justify-between rounded-[14px] bg-[var(--sagep-surface-subtle)] px-4 py-3">
+                  <span class="text-sm text-[var(--sagep-ink)]">{{ item.label }}</span>
+                  <span class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ item.value }}</span>
                 </div>
               }
             </div>
@@ -242,27 +242,27 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           title="Timeline"
           subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto."
         >
-          <span section-card-actions class="text-sm text-slate-500">{{ (details()?.timeline ?? []).length }} evento(s)</span>
+          <span section-card-actions class="text-sm text-[var(--sagep-muted)]">{{ (details()?.timeline ?? []).length }} evento(s)</span>
           <div class="space-y-4">
             @for (item of details()?.timeline ?? []; track item.id) {
-              <article class="rounded-[1.5rem] border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
+              <article class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 transition hover:border-[var(--sagep-line-strong)] hover:bg-[#fffaf0]">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p class="font-semibold text-slate-900">{{ item.label }}</p>
-                    <p class="mt-1 text-sm text-slate-600">{{ item.summary | emptyValue:'Sem resumo informado' }}</p>
+                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.label }}</p>
+                    <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.summary | emptyValue:'Sem resumo informado' }}</p>
                   </div>
-                  <div class="text-sm text-slate-500">
+                  <div class="text-sm text-[var(--sagep-muted)]">
                     {{ formatDate(item.at) }}
                   </div>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.entityType }}</span>
-                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.actorName | emptyValue:'Ator não informado' }}</span>
-                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">{{ item.action }}</span>
+                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.entityType }}</span>
+                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.actorName | emptyValue:'Ator não informado' }}</span>
+                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.action }}</span>
                 </div>
               </article>
             } @empty {
-              <p class="text-sm text-slate-500">Sem eventos de timeline para este projeto.</p>
+              <p class="text-sm text-[var(--sagep-muted)]">Sem eventos de timeline para este projeto.</p>
             }
           </div>
         </app-section-card>

@@ -9,20 +9,14 @@ import { TopbarComponent } from './topbar.component';
   selector: 'app-main-layout',
   imports: [RouterOutlet, SidebarComponent, TopbarComponent, BreadcrumbComponent],
   template: `
-    <div class="min-h-screen bg-transparent">
-      <div class="mx-auto grid min-h-screen max-w-[1680px] lg:grid-cols-[306px_minmax(0,1fr)]">
+    <div class="app-shell">
+      <app-topbar />
+      <div class="main-layout">
         <app-sidebar />
-
-        <div class="flex min-h-screen min-w-0 flex-col">
-          <app-topbar />
-
-          <main class="flex-1 bg-[linear-gradient(180deg,var(--sagep-surface),#fbf9f1)] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-            <div class="mx-auto w-full max-w-7xl">
-              <app-breadcrumb />
-              <router-outlet />
-            </div>
-          </main>
-        </div>
+        <main class="content">
+          <app-breadcrumb />
+          <router-outlet />
+        </main>
       </div>
     </div>
   `,

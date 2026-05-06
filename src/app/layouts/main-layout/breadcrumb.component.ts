@@ -12,17 +12,15 @@ interface BreadcrumbItem {
   selector: 'app-breadcrumb',
   imports: [RouterLink],
   template: `
-    @if (items().length > 0) {
-      <nav class="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--sagep-muted-soft)]" aria-label="Breadcrumb">
-        <a routerLink="/dashboard" class="font-semibold text-[var(--sagep-brand)] transition hover:text-[var(--sagep-brand-deep)]">Início</a>
+    <div class="px-[30px] pt-5 max-[820px]:px-4">
+      <nav class="crumb" aria-label="Breadcrumb">
+        <a routerLink="/dashboard">Início</a>
         @for (item of items(); track item.path) {
-          <span class="text-[var(--sagep-line-strong)]">/</span>
-          <a [routerLink]="item.path" class="font-medium text-[var(--sagep-muted)] transition hover:text-[var(--sagep-ink)]">
-            {{ item.label }}
-          </a>
+          <span> / </span>
+          <a [routerLink]="item.path">{{ item.label }}</a>
         }
       </nav>
-    }
+    </div>
   `,
 })
 export class BreadcrumbComponent {
@@ -66,11 +64,11 @@ export class BreadcrumbComponent {
       return;
     }
 
-    const items = segments.map((segment, index) => ({
-      label: this.labels[segment] ?? (index > 0 ? 'Detalhe' : segment),
-      path: `/${segments.slice(0, index + 1).join('/')}`,
-    }));
-
-    this.items.set(items);
+    this.items.set(
+      segments.map((segment, index) => ({
+        label: this.labels[segment] ?? (index > 0 ? 'Detalhe' : segment),
+        path: `/${segments.slice(0, index + 1).join('/')}`,
+      })),
+    );
   }
 }

@@ -3,17 +3,17 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-section-card',
   template: `
-    <section class="overflow-hidden rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] shadow-[var(--sagep-shadow-soft)]">
-      <div class="flex flex-col gap-3 border-b border-[var(--sagep-line)] bg-[linear-gradient(180deg,#fffdf7,var(--sagep-surface-subtle))] px-5 py-4 md:flex-row md:items-start md:justify-between">
+    <section class="card">
+      <div class="card-head">
         <div>
-          <h2 class="text-xl font-semibold text-[var(--sagep-brand-deep)]">{{ title }}</h2>
+          <div class="card-title">{{ title }}</div>
           @if (subtitle) {
-            <p class="mt-2 text-sm leading-6 text-[var(--sagep-muted)]">{{ subtitle }}</p>
+            <div class="card-sub">{{ subtitle }}</div>
           }
         </div>
         <ng-content select="[section-card-actions]"></ng-content>
       </div>
-      <div class="p-5">
+      <div class="card-body">
         <ng-content></ng-content>
       </div>
     </section>

@@ -54,7 +54,7 @@ import { EstimatesService } from './estimates.service';
           <a
             page-header-actions
             routerLink="/estimates/new"
-            class="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            class="inline-flex rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
           >
             Nova estimativa
           </a>
@@ -63,12 +63,12 @@ import { EstimatesService } from './estimates.service';
           <input
             type="search"
             formControlName="search"
-            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
             placeholder="Buscar por projeto, OM, ata ou observações"
           />
           <select
             formControlName="status"
-            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
           >
             <option value="">Todos os status</option>
             @for (status of statusOptions; track status) {
@@ -79,20 +79,20 @@ import { EstimatesService } from './estimates.service';
             type="number"
             min="1"
             formControlName="projectCode"
-            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
             placeholder="Código do projeto"
           />
           <input
             type="number"
             min="1"
             formControlName="omCode"
-            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
             placeholder="Código da OM"
           />
           <button
             type="button"
             (click)="clearFilters()"
-            class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+            class="rounded-[14px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
           >
             Limpar filtros
           </button>
@@ -123,17 +123,17 @@ import { EstimatesService } from './estimates.service';
           [action]="clearFilters.bind(this)"
         />
       } @else {
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[var(--sagep-shadow)]">
-          <div class="mb-5 flex flex-col gap-3 rounded-3xl bg-slate-50 px-5 py-4 text-sm text-slate-600 lg:flex-row lg:items-center lg:justify-between">
+        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)]">
+          <div class="mb-5 flex flex-col gap-3 rounded-[18px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] px-5 py-4 text-sm text-[var(--sagep-muted)] lg:flex-row lg:items-center lg:justify-between">
             <div class="flex flex-wrap items-center gap-3">
-              <span class="font-medium text-slate-900">{{ metaLabel() }}</span>
+              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ metaLabel() }}</span>
               @if (activeFilterSummary()) {
-                <span class="rounded-full border border-slate-300 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-600">
+                <span class="rounded-full border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sagep-muted)]">
                   {{ activeFilterSummary() }}
                 </span>
               }
             </div>
-            <div class="text-xs uppercase tracking-[0.18em] text-slate-500">Fonte: GET /estimates</div>
+            <div class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted-soft)]">Fonte: GET /estimates</div>
           </div>
 
           <app-responsive-table
@@ -144,22 +144,22 @@ import { EstimatesService } from './estimates.service';
             emptyDescription="Ajuste a busca ou limpe os filtros para ampliar a consulta."
           >
             <ng-template appResponsiveTableCell="estimate" let-estimate>
-              <p class="font-semibold text-slate-900">EST-{{ estimate.estimateCode }}</p>
-              <p class="mt-1 text-sm text-slate-500">{{ estimate.notes || 'Sem observacoes cadastradas.' }}</p>
+              <p class="font-semibold text-[var(--sagep-brand-deep)]">EST-{{ estimate.estimateCode }}</p>
+              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ estimate.notes || 'Sem observações cadastradas.' }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="status" let-estimate>
               <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
             </ng-template>
             <ng-template appResponsiveTableCell="project" let-estimate>
-              <p class="font-medium text-slate-900">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
-              <p class="mt-1 text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
+              <p class="font-medium text-[var(--sagep-brand-deep)]">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
+              <p class="mt-1 text-[var(--sagep-muted)]">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="om" let-estimate>
-              <p class="font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Não informado' }}</p>
-              <p class="mt-1 text-slate-500">{{ locationLabel(estimate) }}</p>
+              <p class="font-medium text-[var(--sagep-brand-deep)]">{{ estimate.om?.sigla || estimate.omName || 'Não informado' }}</p>
+              <p class="mt-1 text-[var(--sagep-muted)]">{{ locationLabel(estimate) }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="totalAmount" let-estimate>
-              <span class="font-semibold text-slate-900">{{ formatCurrency(estimate.totalAmount) }}</span>
+              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(estimate.totalAmount) }}</span>
             </ng-template>
             <ng-template appResponsiveTableCell="updatedAt" let-estimate>
               {{ formatDate(estimate.updatedAt || estimate.createdAt) }}
@@ -167,20 +167,20 @@ import { EstimatesService } from './estimates.service';
             <ng-template appResponsiveTableActions let-estimate>
               <a
                 [routerLink]="['/estimates', estimateIdentifier(estimate)]"
-                class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950"
+                class="inline-flex rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
               >
                 Ver detalhe
               </a>
             </ng-template>
           </app-responsive-table>
 
-          <div class="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-5 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex items-center gap-3 text-sm text-slate-600">
+          <div class="mt-5 flex flex-col gap-4 border-t border-[var(--sagep-line)] pt-5 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3 text-sm text-[var(--sagep-muted)]">
               <span>Itens por página</span>
               <select
                 [value]="pageSize()"
                 (change)="changePageSize($any($event.target).value)"
-                class="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-teal-600"
+                class="rounded-[12px] border border-[var(--sagep-line)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--sagep-brand-mid)]"
               >
                 @for (option of pageSizeOptions; track option) {
                   <option [value]="option">{{ option }}</option>
@@ -192,16 +192,16 @@ import { EstimatesService } from './estimates.service';
                 type="button"
                 [disabled]="!canGoPrevious()"
                 (click)="changePage(currentPage() - 1)"
-                class="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Anterior
               </button>
-              <span class="px-3 text-sm text-slate-600">Página {{ currentPage() }} de {{ totalPages() }}</span>
+              <span class="px-3 text-sm text-[var(--sagep-muted)]">Página {{ currentPage() }} de {{ totalPages() }}</span>
               <button
                 type="button"
                 [disabled]="!canGoNext()"
                 (click)="changePage(currentPage() + 1)"
-                class="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Próxima
               </button>

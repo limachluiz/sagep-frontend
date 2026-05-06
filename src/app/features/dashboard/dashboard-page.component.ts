@@ -7,6 +7,7 @@ import { AccessDeniedStateComponent } from '../../shared/components/access-denie
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { formatCurrency, formatLabel } from '../../shared/utils/format.util';
@@ -20,153 +21,176 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
+    PageHeaderComponent,
     SectionCardComponent,
     SummaryCardComponent,
   ],
   template: `
-    <section class="space-y-6">
-      <header class="overflow-hidden rounded-[var(--sagep-radius)] border border-[rgba(200,166,75,0.22)] bg-[radial-gradient(circle_at_88%_18%,rgba(200,166,75,0.18),transparent_32%),linear-gradient(135deg,var(--sagep-brand-dark),var(--sagep-brand-deep))] text-white shadow-[var(--sagep-shadow)]">
-        <div class="px-5 py-6 sm:px-6 lg:px-7">
-          <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <p class="text-xs font-black uppercase tracking-[0.24em] text-[var(--sagep-gold)]">Painel de comando · 4º CTA</p>
-              <h1 class="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">Visão inicial do fluxo de projetos</h1>
-              <p class="mt-3 max-w-3xl text-sm leading-6 text-white/[0.68]">
-                Dados reais de /dashboard/operational, respeitando as permissões efetivas do usuário logado.
-              </p>
-            </div>
+    <app-page-header
+      title="Painel de Comando"
+      eyebrow="Dashboard operacional"
+      subtitle="Visão padrão para acompanhamento rápido do fluxo de projetos, gargalos e próximas ações."
+      [badge]="dashboard() ? 'Atualizado em ' + (dashboard()?.generatedAt | date: 'short') : 'Fonte: /dashboard/operational'"
+    />
 
-            @if (dashboard()) {
-              <span class="inline-flex w-fit rounded-full border border-white/[0.12] bg-white/[0.07] px-4 py-2 text-xs font-semibold text-white/[0.72]">
-                Atualizado em {{ dashboard()?.generatedAt | date: 'short' }}
-              </span>
-            }
+    @if (loading()) {
+      <div class="workspace">
+        <div class="card">
+          <div class="card-body">
+            <app-loading-state variant="cards" [count]="4" />
           </div>
-
-          @if (dashboard()) {
-            <div class="mt-6 grid gap-3 md:grid-cols-3">
-              <div class="rounded-[16px] border border-white/[0.12] bg-white/[0.06] p-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/[0.42]">Etapas pendentes</p>
-                <p class="mt-2 text-2xl font-semibold text-[var(--sagep-gold)]">{{ pendingStageEntries().length }}</p>
-              </div>
-              <div class="rounded-[16px] border border-white/[0.12] bg-white/[0.06] p-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/[0.42]">Fila operacional</p>
-                <p class="mt-2 text-2xl font-semibold text-[var(--sagep-gold)]">{{ dashboard()?.operationalQueue?.length ?? 0 }}</p>
-              </div>
-              <div class="rounded-[16px] border border-white/[0.12] bg-white/[0.06] p-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/[0.42]">Próximas ações</p>
-                <p class="mt-2 text-2xl font-semibold text-[var(--sagep-gold)]">{{ dashboard()?.frequentNextActions?.length ?? 0 }}</p>
+        </div>
+      </div>
+    } @else if (forbidden()) {
+      <div class="workspace">
+        <app-access-denied-state
+          title="Seu perfil atual não possui acesso a este dashboard."
+          description="A API retornou acesso negado para a visão operacional. A sessão permanece ativa e você pode seguir para outros módulos disponíveis."
+          primaryLink="/projects"
+          primaryLabel="Ir para projetos"
+          secondaryLink="/dashboard"
+          secondaryLabel="Recarregar rota"
+        />
+      </div>
+    } @else if (errorMessage()) {
+      <div class="workspace">
+        <app-error-state
+          title="Não foi possível carregar o dashboard"
+          [message]="errorMessage()"
+          retryLabel="Tentar novamente"
+          (retry)="loadDashboard()"
+        />
+      </div>
+    } @else if (!dashboard()) {
+      <div class="workspace">
+        <app-empty-state
+          title="Nenhum dado foi retornado pela API para o dashboard operacional"
+          description="Verifique se existem dados disponíveis no backend ou tente novamente mais tarde."
+        />
+      </div>
+    } @else {
+      <div class="workspace">
+        <div class="hero-panel">
+          <section class="card command-card">
+            <div class="card-body">
+              <span class="badge b-neutral">4º CTA · Operação</span>
+              <h2>Controle diário do fluxo de projetos</h2>
+              <p>
+                Leitura consolidada dos dados reais retornados pelo backend para orientar priorização, pendências e acompanhamento documental.
+              </p>
+              <div class="command-tiles">
+                <div class="command-tile">
+                  <b>{{ pendingStageEntries().length }}</b>
+                  <span>etapas com pendência</span>
+                </div>
+                <div class="command-tile">
+                  <b>{{ dashboard()?.operationalQueue?.length ?? 0 }}</b>
+                  <span>itens na fila</span>
+                </div>
+                <div class="command-tile">
+                  <b>{{ dashboard()?.frequentNextActions?.length ?? 0 }}</b>
+                  <span>ações agregadas</span>
+                </div>
+                <div class="command-tile">
+                  <b>{{ inventoryEntries().length }}</b>
+                  <span>indicadores de ATA</span>
+                </div>
               </div>
             </div>
-          }
-        </div>
-      </header>
+          </section>
 
-      @if (loading()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)]">
-          <app-loading-state variant="cards" [count]="4" />
+          <app-section-card title="Resumo do comando" subtitle="Sinais operacionais disponíveis no payload atual.">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Geração</label>
+                <b>{{ dashboard()?.generatedAt ? (dashboard()?.generatedAt | date: 'short') : 'Não informado' }}</b>
+              </div>
+              <div class="detail-item">
+                <label>Fila</label>
+                <b>{{ dashboard()?.operationalQueue?.length ?? 'Não informado' }}</b>
+              </div>
+              <div class="detail-item">
+                <label>Ações</label>
+                <b>{{ dashboard()?.frequentNextActions?.length ?? 'Não informado' }}</b>
+              </div>
+            </div>
+          </app-section-card>
         </div>
-      } @else if (forbidden()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 shadow-[var(--sagep-shadow-soft)]">
-          <app-access-denied-state
-            title="Seu perfil atual não possui acesso a este dashboard."
-            description="A API retornou acesso negado para a visão operacional. A sessão permanece ativa e você pode seguir para outros módulos disponíveis."
-            primaryLink="/projects"
-            primaryLabel="Ir para projetos"
-            secondaryLink="/dashboard"
-            secondaryLabel="Recarregar rota"
-          />
-        </div>
-      } @else if (errorMessage()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 shadow-[var(--sagep-shadow-soft)]">
-          <app-error-state
-            title="Não foi possível carregar o dashboard"
-            [message]="errorMessage()"
-            retryLabel="Tentar novamente"
-            (retry)="loadDashboard()"
-          />
-        </div>
-      } @else if (!dashboard()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 shadow-[var(--sagep-shadow-soft)]">
-          <app-empty-state
-            title="Nenhum dado foi retornado pela API para o dashboard operacional"
-            description="Verifique se existem dados disponíveis no backend ou tente novamente mais tarde."
-          />
-        </div>
-      } @else {
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+        <div class="grid grid-4" style="margin-top:16px">
           @for (card of summaryCards(); track card.label) {
             <app-summary-card [title]="card.label" [value]="card.value" [tone]="card.tone" />
           }
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div class="grid grid-2" style="margin-top:16px">
           <app-section-card title="Pendências por etapa" subtitle="Distribuição informada pelo dashboard operacional.">
-            <div class="divide-y divide-[var(--sagep-line)]">
+            <div class="grid">
               @for (item of pendingStageEntries(); track item.label) {
-                <div class="flex items-center justify-between gap-4 py-3">
-                  <span class="text-sm font-medium text-[var(--sagep-ink)]">{{ item.label }}</span>
-                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ item.value }}</span>
+                <div>
+                  <div class="mb-1 flex justify-between text-sm">
+                    <b>{{ item.label }}</b>
+                    <span>{{ item.value }}</span>
+                  </div>
+                  <div class="progress"><i [style.width.%]="barWidth(item.value)"></i></div>
                 </div>
               } @empty {
-                <p class="rounded-[14px] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] px-4 py-5 text-sm text-[var(--sagep-muted)]">
-                  Nenhuma etapa pendente retornada.
-                </p>
+                <div class="empty">
+                  <p>Nenhuma etapa pendente retornada.</p>
+                </div>
               }
             </div>
           </app-section-card>
 
           <app-section-card title="Estoque e saldo da ATA" subtitle="Resumo de disponibilidade retornado pela API.">
-            <div class="divide-y divide-[var(--sagep-line)]">
+            <div class="grid">
               @for (item of inventoryEntries(); track item.label) {
-                <div class="flex items-center justify-between gap-4 py-3">
-                  <span class="text-sm text-[var(--sagep-ink)]">{{ item.label }}</span>
-                  <span class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ item.value }}</span>
+                <div class="detail-item">
+                  <label>{{ item.label }}</label>
+                  <b>{{ item.value }}</b>
                 </div>
               } @empty {
-                <p class="rounded-[14px] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] px-4 py-5 text-sm text-[var(--sagep-muted)]">
-                  O backend não retornou resumo de inventário.
-                </p>
+                <div class="empty">
+                  <p>O backend não retornou resumo de inventário.</p>
+                </div>
               }
             </div>
           </app-section-card>
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-2">
+        <div class="grid grid-2" style="margin-top:16px">
           <app-section-card title="Fila operacional" subtitle="Itens priorizados conforme resposta do dashboard.">
-            <div class="space-y-3">
+            <div class="grid">
               @for (item of dashboard()?.operationalQueue ?? []; track $index) {
-                <article class="rounded-[14px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] px-4 py-3">
-                  <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ getFirstString(item, ['title', 'label', 'projectTitle']) }}</p>
-                  <p class="mt-2 text-sm leading-6 text-[var(--sagep-muted)]">{{ stringifyItem(item) }}</p>
+                <article class="detail-item">
+                  <label>{{ getFirstString(item, ['title', 'label', 'projectTitle']) }}</label>
+                  <b>{{ stringifyItem(item) }}</b>
                 </article>
               } @empty {
-                <p class="rounded-[14px] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] px-4 py-5 text-sm text-[var(--sagep-muted)]">
-                  Sem itens na fila operacional.
-                </p>
+                <div class="empty">
+                  <p>Sem itens na fila operacional.</p>
+                </div>
               }
             </div>
           </app-section-card>
 
           <app-section-card title="Próximas ações mais frequentes" subtitle="Agregados operacionais calculados pelo backend.">
-            <div class="divide-y divide-[var(--sagep-line)]">
+            <div class="grid">
               @for (item of dashboard()?.frequentNextActions ?? []; track $index) {
-                <div class="flex items-center justify-between gap-4 py-3">
-                  <span class="text-sm text-[var(--sagep-ink)]">{{ getFirstString(item, ['label', 'code', 'action']) }}</span>
-                  <span class="rounded-full bg-[var(--sagep-brand-soft)] px-3 py-1 text-sm font-semibold text-[var(--sagep-brand-dark)]">
-                    {{ getFirstString(item, ['count', 'value']) }}
-                  </span>
+                <div class="flex items-center justify-between border-b border-[var(--line)] py-3">
+                  <span>{{ getFirstString(item, ['label', 'code', 'action']) }}</span>
+                  <span class="badge b-info">{{ getFirstString(item, ['count', 'value']) }}</span>
                 </div>
               } @empty {
-                <p class="rounded-[14px] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] px-4 py-5 text-sm text-[var(--sagep-muted)]">
-                  Sem agregados de próxima ação no momento.
-                </p>
+                <div class="empty">
+                  <p>Sem agregados de próxima ação no momento.</p>
+                </div>
               }
             </div>
           </app-section-card>
         </div>
-      }
-    </section>
+      </div>
+    }
   `,
 })
 export class DashboardPageComponent implements OnInit {
@@ -246,5 +270,10 @@ export class DashboardPageComponent implements OnInit {
       .slice(0, 4)
       .map(([key, value]) => `${formatLabel(key)}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`)
       .join(' | ');
+  }
+
+  barWidth(value: string): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(8, Math.min(100, parsed * 10)) : 12;
   }
 }

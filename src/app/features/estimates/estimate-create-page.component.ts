@@ -97,8 +97,8 @@ interface SelectedItemSummary {
               type="button"
               (click)="goToStep(step.id)"
               [disabled]="step.id > maxReachableStep()"
-              class="rounded-2xl border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
-              [ngClass]="currentStep() === step.id ? 'border-teal-300 bg-teal-50 text-teal-950' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'"
+              class="rounded-[14px] border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
+              [ngClass]="currentStep() === step.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)] text-[var(--sagep-brand-deep)] shadow-[var(--sagep-shadow-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] text-[var(--sagep-muted)] hover:border-[var(--sagep-line-strong)]'"
             >
               <span class="text-xs font-semibold uppercase tracking-[0.18em]">Etapa {{ step.id }}</span>
               <span class="mt-1 block text-sm font-medium">{{ step.label }}</span>
@@ -119,7 +119,7 @@ interface SelectedItemSummary {
             <input
               type="search"
               [formControl]="projectSearchControl"
-              class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+              class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
               placeholder="Buscar projeto por título ou código"
             />
 
@@ -131,15 +131,15 @@ interface SelectedItemSummary {
                   <button
                     type="button"
                     (click)="selectProject(project)"
-                    class="rounded-[1.5rem] border p-4 text-left transition hover:border-teal-300 hover:bg-teal-50/50"
-                    [ngClass]="selectedProject()?.id === project.id ? 'border-teal-300 bg-teal-50' : 'border-slate-200 bg-white'"
+                    class="rounded-[var(--sagep-radius-sm)] border p-4 text-left transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)]"
+                    [ngClass]="selectedProject()?.id === project.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)]'"
                   >
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <p class="font-semibold text-slate-950">
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">
                           {{ projectFriendlyCode(project) }} - {{ project.title }}
                         </p>
-                        <p class="mt-1 text-sm text-slate-600">{{ project.description || 'Sem descrição cadastrada.' }}</p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ project.description || 'Sem descrição cadastrada.' }}</p>
                       </div>
                       <div class="flex flex-wrap gap-2">
                         <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
@@ -149,7 +149,7 @@ interface SelectedItemSummary {
                     <app-metadata-grid class="mt-4 block" [items]="projectMetadata(project)" gridClass="md:grid-cols-3" />
                   </button>
                 } @empty {
-                  <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                  <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
                     Nenhum projeto retornado para a busca atual.
                   </div>
                 }
@@ -165,7 +165,7 @@ interface SelectedItemSummary {
                 <input
                   type="search"
                   [formControl]="ataSearchControl"
-                  class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                  class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   placeholder="Filtrar ATAs por número, tipo ou fornecedor"
                 />
                 <div class="mt-5 grid gap-4">
@@ -173,22 +173,22 @@ interface SelectedItemSummary {
                     <button
                       type="button"
                       (click)="selectAta(ata)"
-                      class="rounded-[1.5rem] border p-4 text-left transition hover:border-teal-300 hover:bg-teal-50/50"
-                      [ngClass]="selectedAta()?.id === ata.id ? 'border-teal-300 bg-teal-50' : 'border-slate-200 bg-white'"
+                      class="rounded-[var(--sagep-radius-sm)] border p-4 text-left transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)]"
+                      [ngClass]="selectedAta()?.id === ata.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)]'"
                     >
                       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <p class="font-semibold text-slate-950">{{ ataLabel(ata) }}</p>
-                          <p class="mt-1 text-sm text-slate-600">{{ ata.vendorName || 'Fornecedor não informado' }}</p>
+                          <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ ataLabel(ata) }}</p>
+                          <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ ata.vendorName || 'Fornecedor não informado' }}</p>
                         </div>
-                        <span class="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">
+                        <span class="rounded-full border border-[var(--sagep-line)] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sagep-muted)]">
                           {{ ata.isActive === false ? 'Inativa' : formatLabel(ata.status || 'Ativa') }}
                         </span>
                       </div>
                       <app-metadata-grid class="mt-4 block" [items]="ataMetadata(ata)" gridClass="md:grid-cols-3" />
                     </button>
                   } @empty {
-                    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                    <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
                       Nenhuma ATA disponível para o filtro atual.
                     </div>
                   }
@@ -196,15 +196,15 @@ interface SelectedItemSummary {
               </div>
 
               <div class="space-y-4" [formGroup]="form">
-                <div class="rounded-[1.5rem] border border-slate-200 p-4">
-                  <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" for="coverageGroupId">
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
+                  <label class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]" for="coverageGroupId">
                     Grupo de cobertura
                   </label>
                   <select
                     id="coverageGroupId"
                     formControlName="coverageGroupId"
                     (change)="selectCoverageGroup($any($event.target).value)"
-                    class="mt-3 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-3 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   >
                     <option value="">Selecione</option>
                     @for (group of coverageGroups(); track group.id) {
@@ -216,13 +216,13 @@ interface SelectedItemSummary {
                   }
                 </div>
 
-                <div class="rounded-[1.5rem] border border-slate-200 p-4">
-                  <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" for="omId">OM</label>
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
+                  <label class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]" for="omId">OM</label>
                   <select
                     id="omId"
                     formControlName="omId"
                     (change)="selectOm($any($event.target).value)"
-                    class="mt-3 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                    class="mt-3 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                   >
                     <option value="">Selecione</option>
                     @for (om of oms(); track om.id) {
@@ -243,26 +243,26 @@ interface SelectedItemSummary {
           <app-section-card title="Selecionar itens" subtitle="Marque os itens da ATA que farão parte da estimativa.">
             <div class="grid gap-4">
               @for (item of ataItems(); track item.id) {
-                <label class="flex flex-col gap-4 rounded-[1.5rem] border border-slate-200 p-4 transition hover:border-teal-300 hover:bg-teal-50/40 md:flex-row md:items-start">
+                <label class="flex flex-col gap-4 rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)] md:flex-row md:items-start">
                   <input
                     type="checkbox"
-                    class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-700"
+                    class="mt-1 h-5 w-5 rounded border-[var(--sagep-line)] text-[var(--sagep-brand)]"
                     [checked]="isItemSelected(item.id)"
                     (change)="toggleItem(item, $any($event.target).checked)"
                   />
                   <div class="flex-1">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <p class="font-semibold text-slate-950">{{ item.referenceCode || 'Item sem referência' }} - {{ item.description || 'Sem descrição' }}</p>
-                        <p class="mt-1 text-sm text-slate-600">Unidade: {{ item.unit || 'Não informado' }}</p>
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode || 'Item sem referência' }} - {{ item.description || 'Sem descrição' }}</p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">Unidade: {{ item.unit || 'Não informado' }}</p>
                       </div>
-                      <p class="text-sm font-semibold text-slate-950">{{ formatCurrency(item.unitPrice) }}</p>
+                      <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.unitPrice) }}</p>
                     </div>
                     <app-metadata-grid class="mt-4 block" [items]="itemMetadata(item)" gridClass="md:grid-cols-4" />
                   </div>
                 </label>
               } @empty {
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
                   Selecione uma ATA para carregar os itens disponíveis.
                 </div>
               }
@@ -274,20 +274,20 @@ interface SelectedItemSummary {
           <app-section-card title="Informar quantidades" subtitle="Defina a quantidade desejada para cada item selecionado.">
             <div class="grid gap-4">
               @for (entry of selectedItemSummaries(); track entry.item.id) {
-                <div class="rounded-[1.5rem] border border-slate-200 p-4">
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
                   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p class="font-semibold text-slate-950">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descrição' }}</p>
-                      <p class="mt-1 text-sm text-slate-600">Valor unitário: {{ formatCurrency(entry.item.unitPrice) }}</p>
+                      <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descrição' }}</p>
+                      <p class="mt-1 text-sm text-[var(--sagep-muted)]">Valor unitário: {{ formatCurrency(entry.item.unitPrice) }}</p>
                     </div>
-                    <label class="w-full max-w-48 text-sm font-medium text-slate-700">
+                    <label class="w-full max-w-48 text-sm font-semibold text-[var(--sagep-ink)]">
                       Quantidade
                       <input
                         type="number"
                         min="0.01"
                         step="0.01"
                         [formControl]="quantityControl(entry.item.id)"
-                        class="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition focus:border-teal-600 focus:bg-white"
+                        class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
                       />
                     </label>
                   </div>
@@ -298,7 +298,7 @@ interface SelectedItemSummary {
                   />
                 </div>
               } @empty {
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
                   Selecione ao menos um item antes de informar quantidades.
                 </div>
               }
@@ -311,22 +311,22 @@ interface SelectedItemSummary {
             <div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
               <div class="space-y-4">
                 <app-metadata-grid [items]="reviewMetadata()" gridClass="grid-cols-1" />
-                <div class="rounded-[1.5rem] border border-teal-200 bg-teal-50 p-5">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">Total estimado</p>
-                  <p class="mt-3 text-2xl font-semibold text-teal-950">{{ formatCurrency(totalPreview()) }}</p>
+                <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
+                  <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Total estimado</p>
+                  <p class="mt-3 text-2xl font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(totalPreview()) }}</p>
                 </div>
               </div>
-              <div class="overflow-hidden rounded-[1.5rem] border border-slate-200">
-                <div class="grid grid-cols-[1fr_7rem_8rem] gap-3 bg-slate-50 px-4 py-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+              <div class="overflow-hidden rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)]">
+                <div class="grid grid-cols-[1fr_7rem_8rem] gap-3 bg-[var(--sagep-surface-subtle)] px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">
                   <span>Item</span>
                   <span class="text-right">Qtd.</span>
                   <span class="text-right">Subtotal</span>
                 </div>
                 @for (entry of selectedItemSummaries(); track entry.item.id) {
                   <div class="grid grid-cols-[1fr_7rem_8rem] gap-3 border-t border-slate-100 px-4 py-3 text-sm">
-                    <span class="font-medium text-slate-900">{{ entry.item.referenceCode || 'Item' }}</span>
-                    <span class="text-right text-slate-700">{{ entry.quantity }}</span>
-                    <span class="text-right font-semibold text-slate-950">{{ formatCurrency(entry.subtotal) }}</span>
+                    <span class="font-medium text-[var(--sagep-brand-deep)]">{{ entry.item.referenceCode || 'Item' }}</span>
+                    <span class="text-right text-[var(--sagep-ink)]">{{ entry.quantity }}</span>
+                    <span class="text-right font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(entry.subtotal) }}</span>
                   </div>
                 }
               </div>
@@ -334,12 +334,12 @@ interface SelectedItemSummary {
           </app-section-card>
         }
 
-        <div class="flex flex-col gap-3 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[var(--sagep-shadow)] md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-3 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)] md:flex-row md:items-center md:justify-between">
           <button
             type="button"
             (click)="previousStep()"
             [disabled]="currentStep() === 1 || saving()"
-            class="rounded-full border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-950 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Anterior
           </button>
@@ -349,7 +349,7 @@ interface SelectedItemSummary {
               type="button"
               (click)="nextStep()"
               [disabled]="!canGoNext() || saving()"
-              class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
             >
               Próxima etapa
             </button>
@@ -358,7 +358,7 @@ interface SelectedItemSummary {
               type="button"
               (click)="saveEstimate()"
               [disabled]="!canSave() || saving()"
-              class="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
             >
               {{ saving() ? 'Salvando...' : 'Salvar estimativa' }}
             </button>
