@@ -37,8 +37,8 @@ apiUrl: 'http://localhost:3000/api'
 
 Arquivos:
 
-- [src/environments/environment.ts](C:/Users/Luiz/Documents/INDT/sagep-frontend/src/environments/environment.ts)
-- [src/environments/environment.development.ts](C:/Users/Luiz/Documents/INDT/sagep-frontend/src/environments/environment.development.ts)
+- [src/environments/environment.ts](src/environments/environment.ts)
+- [src/environments/environment.development.ts](src/environments/environment.development.ts)
 
 ## Módulos implementados
 
