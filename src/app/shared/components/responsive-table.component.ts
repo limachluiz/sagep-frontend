@@ -53,7 +53,7 @@ export class ResponsiveTableActionsDirective<T = unknown> {
         }
       </div>
     } @else {
-      <div class="table-wrap hidden lg:block">
+      <div class="table-wrap responsive-table__desktop">
         <table class="table">
           <thead>
             <tr>
@@ -96,7 +96,7 @@ export class ResponsiveTableActionsDirective<T = unknown> {
         </table>
       </div>
 
-      <div class="grid gap-4 lg:hidden">
+      <div class="responsive-table__cards">
         @for (row of data; track trackRow(row, $index)) {
           <article class="card">
             <div class="card-body grid grid-2">
@@ -129,6 +129,28 @@ export class ResponsiveTableActionsDirective<T = unknown> {
       </div>
     }
   `,
+  styles: [
+    `
+      .responsive-table__desktop {
+        display: block;
+      }
+
+      .responsive-table__cards {
+        display: none;
+      }
+
+      @media (max-width: 1023.98px) {
+        .responsive-table__desktop {
+          display: none;
+        }
+
+        .responsive-table__cards {
+          display: grid;
+          gap: 1rem;
+        }
+      }
+    `,
+  ],
 })
 export class ResponsiveTableComponent<T = unknown> {
   @Input() columns: ResponsiveTableColumn[] = [];
