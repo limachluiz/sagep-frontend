@@ -12,7 +12,7 @@ interface BreadcrumbItem {
   selector: 'app-breadcrumb',
   imports: [RouterLink],
   template: `
-    <div class="px-[30px] pt-5 max-[820px]:px-4">
+    <div class="breadcrumb-strip">
       <nav class="crumb" aria-label="Breadcrumb">
         <a routerLink="/dashboard">Início</a>
         @for (item of items(); track item.path) {
