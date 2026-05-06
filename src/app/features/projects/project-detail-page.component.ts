@@ -43,18 +43,22 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
     SummaryCardComponent,
   ],
   template: `
-    <section class="space-y-6">
-      <app-page-header
-        [title]="details()?.project?.title || 'Detalhe do projeto'"
-        [eyebrow]="projectDisplayCode()"
-        subtitle="Visão consolidada do projeto com workflow, documentos relacionados e timeline."
-        badge="Fonte: GET /projects/:identifier/details"
-        backLabel="Voltar para projetos"
-        backLink="/projects"
-      />
+    <app-page-header
+      [title]="details()?.project?.title || 'Detalhe do projeto'"
+      [eyebrow]="projectDisplayCode()"
+      subtitle="Visão consolidada do projeto com workflow documental, dados gerais, documentos vinculados e timeline."
+      badge="Fonte: GET /projects/:id/details"
+      backLabel="Voltar para projetos"
+      backLink="/projects"
+    />
 
+    <div class="workspace project-detail-workspace">
       @if (loading()) {
-        <app-loading-state variant="detail" [count]="3" />
+        <div class="card">
+          <div class="card-body">
+            <app-loading-state variant="detail" [count]="3" />
+          </div>
+        </div>
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite abrir este projeto."
@@ -79,9 +83,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else {
         @if (commitmentNoteSuccess()) {
-          <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
-            Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.
-          </div>
+          <div class="form-alert success">Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.</div>
         }
 
         @if (commitmentNoteForbidden()) {
@@ -97,177 +99,151 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <app-error-state title="Não foi possível informar a Nota de Empenho" [message]="commitmentNoteError()" retryLabel="" />
         }
 
-        @if (showCommitmentNotePrompt()) {
-          <app-section-card
-            title="Nota de Empenho pendente"
-            subtitle="O DIEx já foi emitido. Informe a Nota de Empenho para liberar a próxima etapa do fluxo."
-          >
-            @if (!showCommitmentNotePanel()) {
-              <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-warn-soft)] bg-[var(--sagep-warn-soft)] p-5 text-[var(--sagep-warn)]">
-                <p class="text-sm leading-6">
-                  A próxima ação indicada pelo backend é informar a Nota de Empenho. Depois disso,
-                  o projeto poderá avançar para a etapa de Ordem de Serviço conforme as regras do backend.
-                </p>
-                <button
-                  type="button"
-                  (click)="toggleCommitmentNotePanel()"
-                  class="mt-5 rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
-                >
-                  Informar Nota de Empenho
-                </button>
-              </div>
-            } @else {
-              <form [formGroup]="commitmentNoteForm" class="grid gap-4 md:grid-cols-2">
-                <label class="text-sm font-medium text-slate-700">
-                  Número da Nota de Empenho
-                  <input
-                    type="text"
-                    formControlName="commitmentNoteNumber"
-                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                    placeholder="Ex.: NE-2026-001"
-                  />
-                </label>
-                <label class="text-sm font-medium text-slate-700">
-                  Data de recebimento
-                  <input
-                    type="date"
-                    formControlName="commitmentNoteReceivedAt"
-                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  />
-                </label>
-              </form>
-              <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
-                <button
-                  type="button"
-                  (click)="toggleCommitmentNotePanel()"
-                  [disabled]="savingCommitmentNote()"
-                  class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  (click)="saveCommitmentNote()"
-                  [disabled]="commitmentNoteForm.invalid || savingCommitmentNote()"
-                  class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
-                >
-                  {{ savingCommitmentNote() ? 'Salvando...' : 'Salvar Nota de Empenho' }}
-                </button>
-              </div>
-            }
-          </app-section-card>
-        } @else if (hasCommitmentNote()) {
-          <app-section-card title="Nota de Empenho informada">
-            <app-metadata-grid [items]="commitmentNoteFacts()" gridClass="md:grid-cols-2" />
-          </app-section-card>
-        }
+        <section class="card command-card project-hero-card">
+          <div class="card-body">
+            <div>
+              <span class="badge b-neutral">{{ projectDisplayCode() }}</span>
+              <h2>{{ details()?.project?.title }}</h2>
+              <p>{{ details()?.project?.description | emptyValue:'Sem descrição cadastrada para este projeto.' }}</p>
+            </div>
+            <div class="project-hero-meta">
+              <app-status-badge [label]="formatLabel(details()?.workflow?.status || '')" [status]="details()?.workflow?.status" />
+              <app-status-badge [label]="formatLabel(details()?.workflow?.stage || '')" [status]="details()?.workflow?.stage" />
+            </div>
+          </div>
+        </section>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div class="grid grid-5">
           @for (item of highlightFacts(); track item.label) {
             <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
           }
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <app-section-card title="Workflow documental" subtitle="Etapas principais do fluxo do projeto conforme dados retornados pelo backend.">
+          <div class="workflow project-workflow">
+            @for (step of workflowSteps(); track step.key) {
+              <div class="wf-step" [class.done]="step.done" [class.active]="step.active" [class.cancel]="step.cancel">
+                {{ step.label }}
+              </div>
+            }
+          </div>
+        </app-section-card>
+
+        <div class="grid grid-2 project-main-grid">
           <app-section-card title="Dados gerais" subtitle="Resumo institucional do projeto, responsáveis e marcos básicos.">
-            <app-status-badge
-              section-card-actions
-              [label]="formatLabel(details()?.workflow?.stage || '')"
-              [status]="details()?.workflow?.stage"
-            />
-            <app-metadata-grid class="mt-5 block" [items]="generalFacts()" />
+            <app-metadata-grid [items]="generalFacts()" />
           </app-section-card>
 
-          <app-section-card title="Próxima ação e workflow">
-            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Próxima ação recomendada</p>
-              <p class="mt-3 text-lg font-semibold text-[var(--sagep-brand-deep)]">
-                {{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}
-              </p>
-              <p class="mt-2 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
-                {{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}
-              </p>
+          <app-section-card title="Próxima ação" subtitle="Recomendação calculada por GET /projects/:id/next-action.">
+            <div class="next-action-card">
+              <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+              <h3>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</h3>
+              <p>{{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}</p>
             </div>
-            <app-metadata-grid class="mt-5 block" [items]="workflowFacts()" gridClass="grid-cols-1" />
+            <app-metadata-grid class="metadata-stack" [items]="workflowFacts()" gridClass="grid-cols-1" />
           </app-section-card>
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-2">
-          <app-section-card
-            title="Documentos relacionados"
-            subtitle="Blocos retornados em documents no detalhe ampliado do projeto."
-          >
-            <div class="space-y-4">
+        <div class="grid grid-2 project-main-grid">
+          <app-section-card title="Documentos vinculados" subtitle="Documentos retornados no detalhe ampliado do projeto.">
+            <div class="document-groups">
               @for (group of documentGroups(); track group.label) {
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ group.label }}</p>
-                    <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--sagep-muted)]">
-                      {{ group.items.length }} item(ns)
-                    </span>
+                <div class="document-group">
+                  <div class="document-group-head">
+                    <b>{{ group.label }}</b>
+                    <span class="badge b-neutral">{{ group.items.length }} item(ns)</span>
                   </div>
                   @if (group.items.length) {
-                    <div class="mt-4 space-y-3">
+                    <div class="document-list">
                       @for (item of group.items; track $index) {
-                        <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-4">
-                          <p class="text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.title }}</p>
-                          <p class="mt-2 text-sm text-[var(--sagep-muted)]">{{ item.meta }}</p>
+                        <div class="document-item">
+                          <b>{{ item.title }}</b>
+                          <span>{{ item.meta }}</span>
                         </div>
                       }
                     </div>
                   } @else {
-                    <p class="mt-3 text-sm text-[var(--sagep-muted)]">Nenhum registro retornado para este grupo.</p>
+                    <p>Nenhum registro retornado para este grupo.</p>
                   }
                 </div>
               }
             </div>
           </app-section-card>
 
-          <app-section-card
-            title="Resumo financeiro e operacional"
-            subtitle="Indicadores agregados retornados pela API para apoiar a leitura rápida do projeto."
-          >
-            <div class="space-y-3">
-              @for (item of summaryGroups(); track item.label) {
-                <div class="flex items-center justify-between rounded-[14px] bg-[var(--sagep-surface-subtle)] px-4 py-3">
-                  <span class="text-sm text-[var(--sagep-ink)]">{{ item.label }}</span>
-                  <span class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ item.value }}</span>
+          <app-section-card title="Ações do fluxo" subtitle="Ações disponíveis para a etapa atual sem criar novos módulos.">
+            @if (showCommitmentNotePrompt()) {
+              @if (!showCommitmentNotePanel()) {
+                <div class="flow-action-panel">
+                  <span class="badge b-warn">Nota de Empenho pendente</span>
+                  <p>A próxima ação indicada pelo backend é informar a Nota de Empenho para liberar a etapa seguinte.</p>
+                  <button type="button" (click)="toggleCommitmentNotePanel()" class="btn btn-primary">Informar Nota de Empenho</button>
                 </div>
+              } @else {
+                <form [formGroup]="commitmentNoteForm" class="flow-form">
+                  <div class="field">
+                    <label for="commitmentNoteNumber">Número da Nota de Empenho</label>
+                    <input id="commitmentNoteNumber" type="text" formControlName="commitmentNoteNumber" placeholder="Ex.: NE-2026-001" />
+                  </div>
+                  <div class="field">
+                    <label for="commitmentNoteReceivedAt">Data de recebimento</label>
+                    <input id="commitmentNoteReceivedAt" type="date" formControlName="commitmentNoteReceivedAt" />
+                  </div>
+                  <div class="flow-form-actions">
+                    <button type="button" (click)="toggleCommitmentNotePanel()" [disabled]="savingCommitmentNote()" class="btn btn-ghost">Cancelar</button>
+                    <button
+                      type="button"
+                      (click)="saveCommitmentNote()"
+                      [disabled]="commitmentNoteForm.invalid || savingCommitmentNote()"
+                      class="btn btn-primary"
+                    >
+                      {{ savingCommitmentNote() ? 'Salvando...' : 'Salvar Nota de Empenho' }}
+                    </button>
+                  </div>
+                </form>
               }
-            </div>
+            } @else if (hasCommitmentNote()) {
+              <app-metadata-grid [items]="commitmentNoteFacts()" gridClass="grid-cols-1" />
+            } @else {
+              <div class="empty"><p>Nenhuma ação manual disponível para a etapa atual.</p></div>
+            }
           </app-section-card>
         </div>
 
-        <app-section-card
-          title="Timeline"
-          subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto."
-        >
-          <span section-card-actions class="text-sm text-[var(--sagep-muted)]">{{ (details()?.timeline ?? []).length }} evento(s)</span>
-          <div class="space-y-4">
+        <app-section-card title="Resumo financeiro e operacional" subtitle="Indicadores agregados retornados pela API.">
+          <div class="detail-grid">
+            @for (item of summaryGroups(); track item.label) {
+              <div class="detail-item">
+                <label>{{ item.label }}</label>
+                <b>{{ item.value }}</b>
+              </div>
+            }
+          </div>
+        </app-section-card>
+
+        <app-section-card title="Timeline" subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto.">
+          <span section-card-actions class="badge b-neutral">{{ (details()?.timeline ?? []).length }} evento(s)</span>
+          <div class="timeline">
             @for (item of details()?.timeline ?? []; track item.id) {
-              <article class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 transition hover:border-[var(--sagep-line-strong)] hover:bg-[#fffaf0]">
-                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.label }}</p>
-                    <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.summary | emptyValue:'Sem resumo informado' }}</p>
-                  </div>
-                  <div class="text-sm text-[var(--sagep-muted)]">
-                    {{ formatDate(item.at) }}
+              <article class="tl" [class]="timelineTone(item.action)">
+                <div class="tl-dot">•</div>
+                <div>
+                  <h4>{{ item.label }}</h4>
+                  <p>{{ item.summary | emptyValue:'Sem resumo informado' }}</p>
+                  <div class="timeline-tags">
+                    <span>{{ item.entityType }}</span>
+                    <span>{{ item.actorName | emptyValue:'Ator não informado' }}</span>
+                    <span>{{ item.action }}</span>
                   </div>
                 </div>
-                <div class="mt-3 flex flex-wrap gap-2">
-                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.entityType }}</span>
-                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.actorName | emptyValue:'Ator não informado' }}</span>
-                  <span class="rounded-full bg-[var(--sagep-surface-subtle)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ item.action }}</span>
-                </div>
+                <div class="tl-time">{{ formatDate(item.at) }}</div>
               </article>
             } @empty {
-              <p class="text-sm text-[var(--sagep-muted)]">Sem eventos de timeline para este projeto.</p>
+              <div class="empty"><p>Sem eventos de timeline para este projeto.</p></div>
             }
           </div>
         </app-section-card>
       }
-    </section>
+    </div>
   `,
 })
 export class ProjectDetailPageComponent implements OnInit {
@@ -339,6 +315,30 @@ export class ProjectDetailPageComponent implements OnInit {
     ];
   });
 
+  readonly workflowSteps = computed(() => {
+    const currentStage = this.details()?.workflow?.stage;
+    const stages = [
+      ['ESTIMATIVA_PRECO', 'Estimativa'],
+      ['AGUARDANDO_NOTA_CREDITO', 'Nota de Crédito'],
+      ['DIEX_REQUISITORIO', 'DIEx'],
+      ['AGUARDANDO_NOTA_EMPENHO', 'Empenho'],
+      ['OS_LIBERADA', 'OS Liberada'],
+      ['SERVICO_EM_EXECUCAO', 'Execução'],
+      ['ANALISANDO_AS_BUILT', 'As-Built'],
+      ['ATESTAR_NF', 'Atesto'],
+      ['SERVICO_CONCLUIDO', 'Concluído'],
+    ] as const;
+    const currentIndex = stages.findIndex(([key]) => key === currentStage);
+
+    return stages.map(([key, label], index) => ({
+      key,
+      label,
+      done: currentIndex > index,
+      active: currentIndex === index,
+      cancel: currentStage === 'CANCELADO' && index === 0,
+    }));
+  });
+
   readonly generalFacts = computed<MetadataItem[]>(() => {
     const details = this.details();
     const project = details?.project;
@@ -353,10 +353,7 @@ export class ProjectDetailPageComponent implements OnInit {
       { label: 'Início', value: formatDate(project?.startDate) },
       { label: 'Fim', value: formatDate(project?.endDate) },
       { label: 'Criado em', value: formatDate(project?.createdAt) },
-      {
-        label: 'Valor estimado',
-        value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']),
-      },
+      { label: 'Valor estimado', value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']) },
     ];
   });
 
@@ -503,6 +500,24 @@ export class ProjectDetailPageComponent implements OnInit {
           this.commitmentNoteError.set(getErrorMessage(error, 'Falha ao informar a Nota de Empenho.'));
         },
       });
+  }
+
+  timelineTone(action: string): string {
+    const normalized = action.toUpperCase();
+
+    if (normalized.includes('CANCEL') || normalized.includes('DELETE')) {
+      return 'red';
+    }
+
+    if (normalized.includes('CREATE') || normalized.includes('CONCL')) {
+      return 'green';
+    }
+
+    if (normalized.includes('UPDATE') || normalized.includes('FLOW')) {
+      return 'gold';
+    }
+
+    return 'blue';
   }
 
   private pickValue(source: Record<string, unknown> | null | undefined, keys: string[]): string {

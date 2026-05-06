@@ -4,7 +4,7 @@ import { Component, Input } from '@angular/core';
   selector: 'app-status-badge',
   template: `
     <span class="badge" [class]="resolvedClass">
-      {{ label }}
+      {{ label || 'Não informado' }}
     </span>
   `,
 })
