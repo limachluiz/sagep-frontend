@@ -16,31 +16,16 @@ import { RouterOutlet } from '@angular/router';
         </div>
 
         <div class="login-hero">
-          <span class="tag">4º CTA · Divisão Técnica</span>
-          <h2>Gestão institucional de projetos para a Região Amazônica.</h2>
-          <p>
-            Acompanhe projetos, estimativas, documentos e próximas ações em um fluxo integrado ao backend real do SAGEP.
-          </p>
-          <div class="login-metrics">
-            <div class="login-metric">
-              <b>4º</b>
-              <span>Centro de Telemática de Área</span>
-            </div>
-            <div class="login-metric">
-              <b>DT</b>
-              <span>Divisão Técnica</span>
-            </div>
-            <div class="login-metric">
-              <b>EB</b>
-              <span>Exército Brasileiro</span>
-            </div>
-          </div>
+          <span class="tag">Exército Brasileiro</span>
+          <h2>4º Centro de Telemática de Área</h2>
+          <p>Divisão Técnica</p>
+          <p class="login-copy">Ambiente institucional para apoio à gestão de projetos.</p>
         </div>
 
         <p class="login-unit">Manaus-AM · Comando Militar da Amazônia</p>
       </section>
 
-      <section class="login-card-area">
+      <section class="login-card-area" aria-label="Acesso ao sistema">
         <router-outlet />
       </section>
     </main>
