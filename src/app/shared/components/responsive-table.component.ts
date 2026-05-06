@@ -46,17 +46,17 @@ export class ResponsiveTableActionsDirective<T = unknown> {
   imports: [CommonModule],
   template: `
     @if (!data.length) {
-      <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-center">
-        <p class="text-sm font-semibold text-slate-900">{{ emptyTitle }}</p>
+      <div class="rounded-[var(--sagep-radius)] border border-dashed border-[var(--sagep-line-strong)] bg-[var(--sagep-surface-subtle)] p-6 text-center">
+        <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ emptyTitle }}</p>
         @if (emptyDescription) {
-          <p class="mt-2 text-sm leading-6 text-slate-600">{{ emptyDescription }}</p>
+          <p class="mt-2 text-sm leading-6 text-[var(--sagep-muted)]">{{ emptyDescription }}</p>
         }
       </div>
     } @else {
-      <div class="hidden overflow-x-auto lg:block">
-        <table class="min-w-full divide-y divide-slate-200">
-          <thead class="bg-slate-50">
-            <tr class="text-left text-xs uppercase tracking-[0.2em] text-slate-500">
+      <div class="hidden overflow-x-auto rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] lg:block">
+        <table class="min-w-full divide-y divide-[var(--sagep-line)]">
+          <thead class="bg-[var(--sagep-surface-subtle)]">
+            <tr class="text-left text-[10px] font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">
               @for (column of columns; track column.key) {
                 <th class="px-5 py-4" [ngClass]="[alignClass(column.align), column.class || '']">
                   {{ column.label }}
@@ -67,11 +67,11 @@ export class ResponsiveTableActionsDirective<T = unknown> {
               }
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
+          <tbody class="divide-y divide-[var(--sagep-line)]">
             @for (row of data; track trackRow(row, $index)) {
-              <tr class="align-top transition hover:bg-slate-50/80">
+              <tr class="align-top transition hover:bg-[#fffaf0]">
                 @for (column of columns; track column.key) {
-                  <td class="px-5 py-4 text-sm text-slate-700" [ngClass]="[alignClass(column.align), column.class || '']">
+                  <td class="px-5 py-4 text-sm text-[var(--sagep-ink)]" [ngClass]="[alignClass(column.align), column.class || '']">
                     @if (cellTemplate(column.key); as template) {
                       <ng-container
                         [ngTemplateOutlet]="template"
@@ -98,12 +98,12 @@ export class ResponsiveTableActionsDirective<T = unknown> {
 
       <div class="grid gap-4 lg:hidden">
         @for (row of data; track trackRow(row, $index)) {
-          <article class="rounded-[1.5rem] border border-slate-200 p-4">
+          <article class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 shadow-[var(--sagep-shadow-soft)]">
             <div class="grid gap-3 sm:grid-cols-2">
               @for (column of columns; track column.key) {
-                <div class="rounded-2xl bg-slate-50 p-3" [ngClass]="column.class || ''">
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">{{ column.label }}</p>
-                  <div class="mt-2 text-sm font-medium text-slate-900" [ngClass]="alignClass(column.align)">
+                <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3" [ngClass]="column.class || ''">
+                  <p class="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--sagep-muted)]">{{ column.label }}</p>
+                  <div class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]" [ngClass]="alignClass(column.align)">
                     @if (cellTemplate(column.key); as template) {
                       <ng-container
                         [ngTemplateOutlet]="template"

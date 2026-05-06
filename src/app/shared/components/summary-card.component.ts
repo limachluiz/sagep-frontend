@@ -3,14 +3,15 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-summary-card',
   template: `
-    <article class="rounded-3xl border p-5 shadow-[var(--sagep-shadow)]" [class]="resolvedClass">
+    <article class="relative overflow-hidden rounded-[var(--sagep-radius)] border p-5 shadow-[var(--sagep-shadow-soft)]" [class]="resolvedClass">
+      <div class="absolute inset-x-0 top-0 h-1" [class]="toneBarClass"></div>
       @if (icon) {
-        <p class="text-xs uppercase tracking-[0.24em] opacity-70">{{ icon }}</p>
+        <p class="text-xl opacity-80">{{ icon }}</p>
       }
-      <p class="mt-1 text-xs uppercase tracking-[0.24em] text-slate-500">{{ title }}</p>
-      <p class="mt-4 text-3xl font-semibold text-slate-950">{{ value }}</p>
+      <p class="mt-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">{{ title }}</p>
+      <p class="mt-4 text-3xl font-semibold tracking-[-0.03em] text-[var(--sagep-brand-deep)]">{{ value }}</p>
       @if (description) {
-        <p class="mt-2 text-sm text-slate-600">{{ description }}</p>
+        <p class="mt-2 text-sm leading-6 text-[var(--sagep-muted)]">{{ description }}</p>
       }
     </article>
   `,
@@ -25,11 +26,22 @@ export class SummaryCardComponent {
   get resolvedClass(): string {
     switch (this.tone) {
       case 'accent':
-        return 'border-teal-200 bg-teal-50';
+        return 'border-[var(--sagep-line)] bg-[var(--sagep-gold-soft)]';
       case 'soft':
-        return 'border-slate-200 bg-slate-50';
+        return 'border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)]';
       default:
-        return 'border-slate-200 bg-white';
+        return 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)]';
+    }
+  }
+
+  get toneBarClass(): string {
+    switch (this.tone) {
+      case 'accent':
+        return 'bg-[var(--sagep-gold)]';
+      case 'soft':
+        return 'bg-[var(--sagep-brand-mid)]';
+      default:
+        return 'bg-[var(--sagep-brand)]';
     }
   }
 }

@@ -5,7 +5,8 @@ import { getStatusBadgeClasses } from '../utils/format.util';
 @Component({
   selector: 'app-status-badge',
   template: `
-    <span class="inline-flex rounded-full border px-3 py-1 text-sm font-medium" [class]="resolvedClass">
+    <span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em]" [class]="resolvedClass">
+      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
       {{ label }}
     </span>
   `,

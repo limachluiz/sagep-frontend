@@ -23,42 +23,45 @@ interface MenuSection {
   selector: 'app-sidebar',
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <aside class="border-b border-slate-200/80 bg-slate-950 px-4 py-5 text-slate-100 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+    <aside class="border-b border-[var(--sagep-line)] bg-[linear-gradient(180deg,var(--sagep-brand-dark),var(--sagep-brand-deep))] px-4 py-5 text-slate-100 lg:border-b-0 lg:border-r lg:border-[rgba(200,166,75,0.18)] lg:px-5 lg:py-6">
       <div class="lg:sticky lg:top-6">
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <p class="text-xs uppercase tracking-[0.35em] text-teal-300">SAGEP</p>
-          <h1 class="mt-3 text-2xl font-semibold">Sistema de Apoio à Gestão de Projetos</h1>
-          <p class="mt-2 text-sm leading-6 text-slate-300">
-            Navegação organizada por área, perfil e permissões efetivas do backend.
+        <div class="rounded-[18px] border border-[rgba(200,166,75,0.22)] bg-[rgba(255,255,255,0.06)] p-5 shadow-[0_18px_42px_-34px_rgba(0,0,0,0.9)]">
+          <div class="flex items-center justify-between gap-4">
+            <p class="text-xs font-black uppercase tracking-[0.35em] text-[var(--sagep-gold)]">SAGEP</p>
+            <span class="h-2 w-10 rounded-full bg-[var(--sagep-gold)]"></span>
+          </div>
+          <h1 class="mt-4 text-xl font-semibold leading-tight">Sistema de Apoio à Gestão de Projetos</h1>
+          <p class="mt-3 text-sm leading-6 text-white/[0.62]">
+            4º CTA · Divisão Técnica · Exército Brasileiro
           </p>
         </div>
 
         <nav class="mt-6 space-y-6" aria-label="Navegação principal">
           @for (section of visibleSections(); track section.title) {
             <section>
-              <p class="px-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <p class="px-3 text-[10px] font-black uppercase tracking-[0.22em] text-[rgba(200,166,75,0.62)]">
                 {{ section.title }}
               </p>
 
-              <div class="mt-2 space-y-1.5">
+              <div class="mt-2 space-y-1">
                 @for (item of section.items; track item.path) {
                   @if (item.disabled) {
-                    <div class="rounded-xl border border-white/8 px-3 py-3 text-sm text-slate-400">
+                    <div class="rounded-[14px] border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-sm text-white/[0.42]">
                       <div class="flex items-center justify-between gap-3">
-                        <span>{{ item.label }}</span>
-                        <span class="shrink-0 rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                        <span class="font-medium">{{ item.label }}</span>
+                        <span class="shrink-0 rounded-full border border-white/10 bg-black/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/[0.38]">
                           Em construção
                         </span>
                       </div>
                       @if (item.hint) {
-                        <p class="mt-2 text-xs leading-5 text-slate-500">{{ item.hint }}</p>
+                        <p class="mt-2 text-xs leading-5 text-white/[0.35]">{{ item.hint }}</p>
                       }
                     </div>
                   } @else {
                     <a
                       [routerLink]="item.path"
-                      routerLinkActive="border-teal-400/60 bg-teal-500/20 text-white"
-                      class="block rounded-xl border border-transparent px-3 py-3 text-sm font-medium text-slate-300 transition hover:border-white/10 hover:bg-white/5 hover:text-white"
+                      routerLinkActive="border-[rgba(200,166,75,0.42)] bg-[rgba(200,166,75,0.16)] text-[var(--sagep-gold)] shadow-sm"
+                      class="block rounded-[14px] border border-transparent px-3 py-3 text-sm font-medium text-white/[0.68] transition hover:border-white/10 hover:bg-white/[0.07] hover:text-white focus:ring-4 focus:ring-[rgba(200,166,75,0.16)]"
                     >
                       {{ item.label }}
                     </a>

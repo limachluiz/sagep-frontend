@@ -2,17 +2,33 @@
 
 :root {
   color-scheme: light;
-  --sagep-ink: #0f172a;
-  --sagep-muted: #475569;
-  --sagep-line: #d7dee7;
-  --sagep-surface: #f8fafc;
-  --sagep-surface-strong: #ffffff;
-  --sagep-brand: #0f766e;
-  --sagep-brand-dark: #115e59;
-  --sagep-brand-soft: #ccfbf1;
-  --sagep-warn: #b45309;
-  --sagep-danger: #b91c1c;
-  --sagep-shadow: 0 24px 50px -26px rgba(15, 23, 42, 0.28);
+  --sagep-ink: #1e2118;
+  --sagep-muted: #6e6c5c;
+  --sagep-muted-soft: #8f8a73;
+  --sagep-line: #d8ceb9;
+  --sagep-line-strong: #b9ad90;
+  --sagep-surface: #f7f3e8;
+  --sagep-surface-strong: #fffdf7;
+  --sagep-surface-subtle: #f0eadb;
+  --sagep-brand: #3d4c20;
+  --sagep-brand-dark: #1b2814;
+  --sagep-brand-deep: #11180c;
+  --sagep-brand-mid: #52662b;
+  --sagep-brand-soft: #e6edd8;
+  --sagep-gold: #c8a64b;
+  --sagep-gold-soft: #f4ead1;
+  --sagep-danger: #9d2424;
+  --sagep-danger-soft: #f8e4e0;
+  --sagep-warn: #a66a0d;
+  --sagep-warn-soft: #fff1d6;
+  --sagep-success: #2d7a41;
+  --sagep-success-soft: #dff3e4;
+  --sagep-info: #1d5d85;
+  --sagep-info-soft: #e0eef6;
+  --sagep-radius: 18px;
+  --sagep-radius-sm: 12px;
+  --sagep-shadow: 0 14px 40px rgba(17, 24, 12, 0.15);
+  --sagep-shadow-soft: 0 8px 20px rgba(17, 24, 12, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -24,9 +40,9 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 26%),
-    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.1), transparent 30%),
-    linear-gradient(180deg, #f8fafc 0%, #eef4f5 100%);
+    radial-gradient(circle at 8% 10%, rgba(200, 166, 75, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(61, 76, 32, 0.09), transparent 36%),
+    linear-gradient(180deg, var(--sagep-surface) 0%, #fbf9f1 100%);
   color: var(--sagep-ink);
 }
 
@@ -39,4 +55,26 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  outline-color: var(--sagep-brand-mid);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--sagep-gold);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--sagep-gold-soft);
+  color: var(--sagep-brand-deep);
 }

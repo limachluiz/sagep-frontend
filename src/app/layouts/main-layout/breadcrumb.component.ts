@@ -13,11 +13,11 @@ interface BreadcrumbItem {
   imports: [RouterLink],
   template: `
     @if (items().length > 0) {
-      <nav class="mb-5 flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Breadcrumb">
-        <a routerLink="/dashboard" class="font-medium text-teal-700 transition hover:text-teal-900">Início</a>
+      <nav class="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--sagep-muted-soft)]" aria-label="Breadcrumb">
+        <a routerLink="/dashboard" class="font-semibold text-[var(--sagep-brand)] transition hover:text-[var(--sagep-brand-deep)]">Início</a>
         @for (item of items(); track item.path) {
-          <span class="text-slate-300">/</span>
-          <a [routerLink]="item.path" class="font-medium text-slate-600 transition hover:text-slate-950">
+          <span class="text-[var(--sagep-line-strong)]">/</span>
+          <a [routerLink]="item.path" class="font-medium text-[var(--sagep-muted)] transition hover:text-[var(--sagep-ink)]">
             {{ item.label }}
           </a>
         }
