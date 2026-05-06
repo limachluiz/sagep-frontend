@@ -1048,9 +1048,19 @@ textarea:focus-visible {
   gap: 16px;
 }
 
+.estimates-workspace {
+  display: grid;
+  gap: 16px;
+}
+
 .projects-filters {
   display: grid;
   grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 0.75fr) minmax(180px, 0.75fr) auto;
+}
+
+.estimates-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.25fr) minmax(160px, 0.7fr) minmax(160px, 0.7fr) minmax(160px, 0.7fr) auto;
 }
 
 .projects-table-head {
@@ -1084,6 +1094,37 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
+.estimates-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.estimates-table-head > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.estimates-table-head strong {
+  color: var(--eb-night);
+  font-size: 14px;
+}
+
+.estimates-table-head > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .project-title-cell {
   display: grid;
   gap: 4px;
@@ -1102,6 +1143,16 @@ textarea:focus-visible {
 }
 
 .projects-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.estimates-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1509,6 +1560,10 @@ textarea:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .estimates-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .grid-4,
   .grid-5,
   .hero-panel,
@@ -1621,6 +1676,7 @@ textarea:focus-visible {
   .command-tiles,
   .inventory-grid,
   .projects-filters,
+  .estimates-filters,
   .project-workflow,
   .detail-grid {
     grid-template-columns: 1fr;
@@ -1660,13 +1716,16 @@ textarea:focus-visible {
   }
 
   .projects-table-head,
+  .estimates-table-head,
   .projects-pagination,
+  .estimates-pagination,
   .pagination-actions {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .projects-table-head > span {
+  .projects-table-head > span,
+  .estimates-table-head > span {
     white-space: normal;
   }
 

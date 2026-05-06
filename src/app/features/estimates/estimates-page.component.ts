@@ -44,9 +44,9 @@ import { EstimatesService } from './estimates.service';
     StatusBadgeComponent,
   ],
   template: `
-    <section class="space-y-6">
+    <section class="estimates-workspace">
       <app-page-header
-        title="Base inicial de consulta de estimativas"
+        title="Estimativas"
         eyebrow="Estimativas"
         subtitle="Integração com GET /estimates para leitura da fila atual sem implementar criação, edição ou finalização nesta etapa."
       >
@@ -54,21 +54,24 @@ import { EstimatesService } from './estimates.service';
           <a
             page-header-actions
             routerLink="/estimates/new"
-            class="inline-flex rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
+            class="btn btn-gold"
           >
             Nova estimativa
           </a>
         }
-        <form page-header-actions [formGroup]="filtersForm" class="grid w-full gap-4 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_auto]">
+      </app-page-header>
+
+      <section class="card">
+        <form [formGroup]="filtersForm" class="filters estimates-filters">
           <input
             type="search"
             formControlName="search"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+            class="input"
             placeholder="Buscar por projeto, OM, ata ou observações"
           />
           <select
             formControlName="status"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+            class="select"
           >
             <option value="">Todos os status</option>
             @for (status of statusOptions; track status) {
@@ -79,25 +82,25 @@ import { EstimatesService } from './estimates.service';
             type="number"
             min="1"
             formControlName="projectCode"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+            class="input"
             placeholder="Código do projeto"
           />
           <input
             type="number"
             min="1"
             formControlName="omCode"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+            class="input"
             placeholder="Código da OM"
           />
           <button
             type="button"
             (click)="clearFilters()"
-            class="rounded-[14px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
+            class="btn btn-ghost"
           >
             Limpar filtros
           </button>
         </form>
-      </app-page-header>
+      </section>
 
       @if (loading()) {
         <app-loading-state variant="list" [count]="3" />
@@ -123,17 +126,17 @@ import { EstimatesService } from './estimates.service';
           [action]="clearFilters.bind(this)"
         />
       } @else {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)]">
-          <div class="mb-5 flex flex-col gap-3 rounded-[18px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] px-5 py-4 text-sm text-[var(--sagep-muted)] lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ metaLabel() }}</span>
+        <section class="card">
+          <div class="estimates-table-head">
+            <div>
+              <strong>{{ metaLabel() }}</strong>
               @if (activeFilterSummary()) {
-                <span class="rounded-full border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sagep-muted)]">
+                <span class="badge b-neutral">
                   {{ activeFilterSummary() }}
                 </span>
               }
             </div>
-            <div class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted-soft)]">Fonte: GET /estimates</div>
+            <span>Fonte: GET /estimates</span>
           </div>
 
           <app-responsive-table
@@ -167,47 +170,47 @@ import { EstimatesService } from './estimates.service';
             <ng-template appResponsiveTableActions let-estimate>
               <a
                 [routerLink]="['/estimates', estimateIdentifier(estimate)]"
-                class="inline-flex rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
+                class="btn btn-sm btn-ghost"
               >
                 Ver detalhe
               </a>
             </ng-template>
           </app-responsive-table>
 
-          <div class="mt-5 flex flex-col gap-4 border-t border-[var(--sagep-line)] pt-5 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex items-center gap-3 text-sm text-[var(--sagep-muted)]">
+          <div class="estimates-pagination">
+            <div class="pagination-size">
               <span>Itens por página</span>
               <select
                 [value]="pageSize()"
                 (change)="changePageSize($any($event.target).value)"
-                class="rounded-[12px] border border-[var(--sagep-line)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--sagep-brand-mid)]"
+                class="select"
               >
                 @for (option of pageSizeOptions; track option) {
                   <option [value]="option">{{ option }}</option>
                 }
               </select>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="pagination-actions">
               <button
                 type="button"
                 [disabled]="!canGoPrevious()"
                 (click)="changePage(currentPage() - 1)"
-                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                class="btn btn-ghost"
               >
                 Anterior
               </button>
-              <span class="px-3 text-sm text-[var(--sagep-muted)]">Página {{ currentPage() }} de {{ totalPages() }}</span>
+              <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
               <button
                 type="button"
                 [disabled]="!canGoNext()"
                 (click)="changePage(currentPage() + 1)"
-                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                class="btn btn-ghost"
               >
                 Próxima
               </button>
             </div>
           </div>
-        </div>
+        </section>
       }
     </section>
   `,
