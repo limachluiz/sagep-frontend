@@ -47,7 +47,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else if (errorMessage()) {
         <app-error-state
-          title="Nao foi possivel carregar o dashboard"
+          title="Não foi possível carregar o dashboard"
           [message]="errorMessage()"
           retryLabel="Tentar novamente"
           (retry)="loadDashboard()"
@@ -86,7 +86,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   <span class="text-sm font-semibold text-slate-950">{{ item.value }}</span>
                 </div>
               } @empty {
-                <p class="text-sm text-slate-500">O backend nao retornou resumo de inventario.</p>
+                <p class="text-sm text-slate-500">O backend não retornou resumo de inventário.</p>
               }
             </div>
           </app-section-card>
@@ -106,7 +106,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             </div>
           </app-section-card>
 
-          <app-section-card title="Proximas acoes mais frequentes">
+          <app-section-card title="Próximas ações mais frequentes">
             <div class="mt-5 space-y-3">
               @for (item of dashboard()?.frequentNextActions ?? []; track $index) {
                 <div class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
@@ -114,7 +114,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   <span class="text-sm font-semibold text-slate-950">{{ getFirstString(item, ['count', 'value']) }}</span>
                 </div>
               } @empty {
-                <p class="text-sm text-slate-500">Sem agregados de proxima acao no momento.</p>
+                <p class="text-sm text-slate-500">Sem agregados de próxima ação no momento.</p>
               }
             </div>
           </app-section-card>
@@ -191,7 +191,7 @@ export class DashboardPageComponent implements OnInit {
 
   getFirstString(source: Record<string, unknown>, keys: string[]): string {
     const key = keys.find((item) => source[item] !== undefined && source[item] !== null);
-    return key ? String(source[key]) : 'Sem descricao';
+    return key ? String(source[key]) : 'Sem descrição';
   }
 
   stringifyItem(item: Record<string, unknown>): string {

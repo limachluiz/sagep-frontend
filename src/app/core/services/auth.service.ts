@@ -32,7 +32,7 @@ export class AuthService {
     const refreshToken = this.getRefreshToken();
     const request$ = refreshToken
       ? this.http.post<{ message: string }>(`${this.apiUrl}/auth/logout`, { refreshToken })
-      : of({ message: 'Sessao local encerrada.' });
+      : of({ message: 'Sessão local encerrada.' });
 
     return request$.pipe(
       map(() => void 0),
@@ -46,7 +46,7 @@ export class AuthService {
 
     if (!refreshToken) {
       this.debug('refresh sem refreshToken salvo');
-      return throwError(() => ({ message: 'Sessao expirada.' } satisfies ApiError));
+      return throwError(() => ({ message: 'Sessão expirada.' } satisfies ApiError));
     }
 
     this.debug('refresh iniciado', refreshToken);

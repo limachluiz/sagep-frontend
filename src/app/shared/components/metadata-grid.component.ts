@@ -43,6 +43,6 @@ export interface MetadataItem {
 })
 export class MetadataGridComponent {
   @Input() items: MetadataItem[] = [];
-  @Input() fallback = 'Nao informado';
+  @Input() fallback = 'Não informado';
   @Input() gridClass = 'md:grid-cols-2';
 }

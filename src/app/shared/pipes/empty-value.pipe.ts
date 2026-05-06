@@ -4,7 +4,7 @@ import { Pipe, PipeTransform } from '@angular/core';
   name: 'emptyValue',
 })
 export class EmptyValuePipe implements PipeTransform {
-  transform(value: unknown, fallback = 'Nao informado'): string {
+  transform(value: unknown, fallback = 'Não informado'): string {
     if (value === null || value === undefined || value === '') {
       return fallback;
     }

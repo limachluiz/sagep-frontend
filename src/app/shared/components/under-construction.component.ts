@@ -6,10 +6,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <section class="rounded-3xl border border-slate-200 bg-white p-8 shadow-[var(--sagep-shadow)]">
-      <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Modulo planejado</p>
+      <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Módulo planejado</p>
       <h1 class="mt-3 text-3xl font-semibold text-slate-900">{{ title() }}</h1>
       <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-        Esta area ja esta mapeada no backend e no menu principal, mas ainda nao entrou no escopo desta etapa.
+        Esta área já está mapeada no backend e no menu principal, mas ainda não entrou no escopo desta etapa.
       </p>
       <a
         routerLink="/dashboard"
@@ -22,5 +22,5 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 })
 export class UnderConstructionComponent {
   private readonly route = inject(ActivatedRoute);
-  readonly title = computed(() => (this.route.snapshot.data['title'] as string) ?? 'Em construcao');
+  readonly title = computed(() => (this.route.snapshot.data['title'] as string) ?? 'Em construção');
 }

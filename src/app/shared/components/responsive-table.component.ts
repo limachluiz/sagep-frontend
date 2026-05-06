@@ -135,7 +135,7 @@ export class ResponsiveTableComponent<T = unknown> {
   @Input() data: T[] = [];
   @Input() emptyTitle = 'Nenhum registro encontrado';
   @Input() emptyDescription = '';
-  @Input() fallback = 'Nao informado';
+  @Input() fallback = 'Não informado';
   @Input() trackBy?: (row: T, index: number) => unknown;
 
   @ContentChildren(ResponsiveTableCellDirective) private readonly cellTemplates?: QueryList<ResponsiveTableCellDirective<T>>;

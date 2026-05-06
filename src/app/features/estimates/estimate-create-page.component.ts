@@ -84,7 +84,7 @@ interface SelectedItemSummary {
       } @else {
         @if (errorMessage()) {
           <app-error-state
-            title="Nao foi possivel preparar a nova estimativa"
+            title="Não foi possível preparar a nova estimativa"
             [message]="errorMessage()"
             retryLabel="Tentar novamente"
             (retry)="loadInitialData()"
@@ -108,7 +108,7 @@ interface SelectedItemSummary {
 
         @if (saveError()) {
           <app-error-state
-            title="Nao foi possivel salvar a estimativa"
+            title="Não foi possível salvar a estimativa"
             [message]="saveError()"
             retryLabel=""
           />
@@ -139,7 +139,7 @@ interface SelectedItemSummary {
                         <p class="font-semibold text-slate-950">
                           {{ projectFriendlyCode(project) }} - {{ project.title }}
                         </p>
-                        <p class="mt-1 text-sm text-slate-600">{{ project.description || 'Sem descricao cadastrada.' }}</p>
+                        <p class="mt-1 text-sm text-slate-600">{{ project.description || 'Sem descrição cadastrada.' }}</p>
                       </div>
                       <div class="flex flex-wrap gap-2">
                         <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
@@ -179,7 +179,7 @@ interface SelectedItemSummary {
                       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
                           <p class="font-semibold text-slate-950">{{ ataLabel(ata) }}</p>
-                          <p class="mt-1 text-sm text-slate-600">{{ ata.vendorName || 'Fornecedor nao informado' }}</p>
+                          <p class="mt-1 text-sm text-slate-600">{{ ata.vendorName || 'Fornecedor não informado' }}</p>
                         </div>
                         <span class="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-600">
                           {{ ata.isActive === false ? 'Inativa' : formatLabel(ata.status || 'Ativa') }}
@@ -253,8 +253,8 @@ interface SelectedItemSummary {
                   <div class="flex-1">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <p class="font-semibold text-slate-950">{{ item.referenceCode || 'Item sem referencia' }} - {{ item.description || 'Sem descricao' }}</p>
-                        <p class="mt-1 text-sm text-slate-600">Unidade: {{ item.unit || 'Nao informado' }}</p>
+                        <p class="font-semibold text-slate-950">{{ item.referenceCode || 'Item sem referência' }} - {{ item.description || 'Sem descrição' }}</p>
+                        <p class="mt-1 text-sm text-slate-600">Unidade: {{ item.unit || 'Não informado' }}</p>
                       </div>
                       <p class="text-sm font-semibold text-slate-950">{{ formatCurrency(item.unitPrice) }}</p>
                     </div>
@@ -277,7 +277,7 @@ interface SelectedItemSummary {
                 <div class="rounded-[1.5rem] border border-slate-200 p-4">
                   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p class="font-semibold text-slate-950">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descricao' }}</p>
+                      <p class="font-semibold text-slate-950">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descrição' }}</p>
                       <p class="mt-1 text-sm text-slate-600">Valor unitário: {{ formatCurrency(entry.item.unitPrice) }}</p>
                     </div>
                     <label class="w-full max-w-48 text-sm font-medium text-slate-700">
@@ -730,7 +730,7 @@ export class EstimateCreatePageComponent implements OnInit {
 
   coverageGroupLabelById(id: string): string {
     const group = this.coverageGroups().find((candidate) => candidate.id === id);
-    return group ? this.coverageGroupLabel(group) : 'Nao informado';
+    return group ? this.coverageGroupLabel(group) : 'Não informado';
   }
 
   omLabel(om: MilitaryOrganization): string {
@@ -741,7 +741,7 @@ export class EstimateCreatePageComponent implements OnInit {
 
   omLabelById(id: string): string {
     const om = this.oms().find((candidate) => candidate.id === id);
-    return om ? this.omLabel(om) : 'Nao informado';
+    return om ? this.omLabel(om) : 'Não informado';
   }
 
   private estimateIdentifier(estimate: Estimate): string {
@@ -790,15 +790,15 @@ export class EstimateCreatePageComponent implements OnInit {
   private locationFromRecord(source: unknown): string {
     const city = this.recordValue(source, ['cityName', 'destinationCityName', 'om.cityName']);
     const state = this.recordValue(source, ['stateUf', 'destinationStateUf', 'om.stateUf']);
-    return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
+    return [city, state].filter(Boolean).join(' / ') || 'Não informado';
   }
 
   private dateRange(start: string | null | undefined, end: string | null | undefined): string {
     const formattedStart = formatDate(start);
     const formattedEnd = formatDate(end);
 
-    if (formattedStart === 'Nao informado' && formattedEnd === 'Nao informado') {
-      return 'Nao informado';
+    if (formattedStart === 'Não informado' && formattedEnd === 'Não informado') {
+      return 'Não informado';
     }
 
     return `${formattedStart} a ${formattedEnd}`;

@@ -24,7 +24,8 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.1), transparent 30%),
     linear-gradient(180deg, #f8fafc 0%, #eef4f5 100%);
   color: var(--sagep-ink);
 }

@@ -11,7 +11,7 @@ import { RouterOutlet } from '@angular/router';
           <div>
             <p class="text-sm uppercase tracking-[0.35em] text-teal-100">SAGEP</p>
             <h1 class="mt-6 max-w-md text-4xl font-semibold leading-tight">
-              Gestao documental e operacional de projetos em um unico fluxo.
+              Gestão documental e operacional de projetos em um único fluxo.
             </h1>
           </div>
           <div class="space-y-4 text-sm leading-6 text-teal-50/90">

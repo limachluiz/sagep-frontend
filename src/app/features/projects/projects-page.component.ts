@@ -91,7 +91,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else if (errorMessage()) {
         <app-error-state
-          title="Nao foi possivel consultar os projetos"
+          title="Não foi possível consultar os projetos"
           [message]="errorMessage()"
           retryLabel="Tentar novamente"
           (retry)="loadProjects()"
@@ -128,7 +128,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           >
             <ng-template appResponsiveTableCell="project" let-project>
               <p class="font-semibold text-slate-900">#{{ project.projectCode }} - {{ project.title }}</p>
-              <p class="mt-1 text-sm text-slate-500">{{ project.description || 'Sem descricao cadastrada.' }}</p>
+              <p class="mt-1 text-sm text-slate-500">{{ project.description || 'Sem descrição cadastrada.' }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="status" let-project>
               <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
@@ -137,7 +137,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               <app-status-badge [label]="formatLabel(project.stage)" [status]="project.stage" />
             </ng-template>
             <ng-template appResponsiveTableCell="owner" let-project>
-              {{ project.ownerName || project.owner?.name || 'Nao informado' }}
+              {{ project.ownerName || project.owner?.name || 'Não informado' }}
             </ng-template>
             <ng-template appResponsiveTableCell="createdAt" let-project>
               {{ formatDate(project.createdAt) }}

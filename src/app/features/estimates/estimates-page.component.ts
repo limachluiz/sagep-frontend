@@ -110,7 +110,7 @@ import { EstimatesService } from './estimates.service';
         />
       } @else if (errorMessage()) {
         <app-error-state
-          title="Nao foi possivel carregar as estimativas"
+          title="Não foi possível carregar as estimativas"
           [message]="errorMessage()"
           retryLabel="Tentar novamente"
           (retry)="loadEstimates()"
@@ -155,7 +155,7 @@ import { EstimatesService } from './estimates.service';
               <p class="mt-1 text-slate-500">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="om" let-estimate>
-              <p class="font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Nao informado' }}</p>
+              <p class="font-medium text-slate-900">{{ estimate.om?.sigla || estimate.omName || 'Não informado' }}</p>
               <p class="mt-1 text-slate-500">{{ locationLabel(estimate) }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="totalAmount" let-estimate>
@@ -336,7 +336,7 @@ export class EstimatesPageComponent implements OnInit {
   locationLabel(estimate: Estimate): string {
     const city = estimate.om?.cityName || estimate.destinationCityName;
     const state = estimate.om?.stateUf || estimate.destinationStateUf;
-    return [city, state].filter(Boolean).join(' / ') || 'Nao informado';
+    return [city, state].filter(Boolean).join(' / ') || 'Não informado';
   }
 
   estimateIdentifier(estimate: Estimate): string {

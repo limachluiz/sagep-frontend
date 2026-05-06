@@ -19,7 +19,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   `,
 })
 export class ErrorStateComponent {
-  @Input() title = 'Nao foi possivel carregar os dados';
+  @Input() title = 'Não foi possível carregar os dados';
   @Input() message = 'Ocorreu um erro inesperado.';
   @Input() retryLabel = 'Tentar novamente';
   @Output() retry = new EventEmitter<void>();

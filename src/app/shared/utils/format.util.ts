@@ -1,6 +1,6 @@
 export function formatLabel(value: string | null | undefined): string {
   if (!value) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return value
@@ -41,7 +41,7 @@ export function formatCurrency(value: unknown): string {
         : Number.NaN;
 
   if (Number.isNaN(numericValue)) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return new Intl.NumberFormat('pt-BR', {
@@ -52,13 +52,13 @@ export function formatCurrency(value: unknown): string {
 
 export function formatDate(value: unknown): string {
   if (!value || typeof value !== 'string') {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return 'Nao informado';
+    return 'Não informado';
   }
 
   return new Intl.DateTimeFormat('pt-BR', {

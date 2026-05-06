@@ -28,7 +28,7 @@ import { getErrorMessage } from '../../../shared/utils/http-error.util';
             placeholder="admin@sagep.com"
           />
           @if (form.controls.email.invalid && form.controls.email.touched) {
-            <span class="text-xs text-red-600">Informe um e-mail valido.</span>
+            <span class="text-xs text-red-600">Informe um e-mail válido.</span>
           }
         </label>
 
@@ -70,7 +70,7 @@ export class LoginComponent {
 
   readonly loading = signal(false);
   readonly errorMessage = signal(this.route.snapshot.queryParamMap.get('reason') === 'expired'
-    ? 'Sessao expirada. Faca login novamente.'
+    ? 'Sessão expirada. Faça login novamente.'
     : '');
   readonly form = this.fb.nonNullable.group({
     email: ['admin@sagep.com', [Validators.required, Validators.email]],
@@ -91,7 +91,7 @@ export class LoginComponent {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => void this.router.navigate(['/dashboard']),
-        error: (error) => this.errorMessage.set(getErrorMessage(error, 'Nao foi possivel autenticar.')),
+        error: (error) => this.errorMessage.set(getErrorMessage(error, 'Não foi possível autenticar.')),
       });
   }
 }
