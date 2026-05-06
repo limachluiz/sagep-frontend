@@ -1053,6 +1053,198 @@ textarea:focus-visible {
   gap: 16px;
 }
 
+.estimate-wizard-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.estimate-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.estimate-step {
+  min-height: 78px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 13px 14px;
+  text-align: left;
+  color: var(--muted);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.estimate-step:hover:not(:disabled) {
+  border-color: var(--eb-gold);
+  transform: translateY(-1px);
+}
+
+.estimate-step:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.estimate-step span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.estimate-step b {
+  display: block;
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.estimate-step.active {
+  border-color: var(--eb-gold);
+  background: linear-gradient(180deg, #fffdf7, var(--warning-soft));
+  box-shadow: 0 0 0 4px rgba(200, 166, 75, 0.16), var(--shadow-sm);
+}
+
+.estimate-search {
+  margin-bottom: 16px;
+}
+
+.estimate-wizard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 16px;
+}
+
+.estimate-choice-card,
+.estimate-item-card,
+.estimate-quantity-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 16px;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.estimate-choice-card:hover,
+.estimate-item-card:hover {
+  border-color: var(--eb-gold);
+  background: #fffaf0;
+  transform: translateY(-1px);
+}
+
+.estimate-choice-card.active {
+  border-color: var(--eb-gold);
+  background: var(--warning-soft);
+}
+
+.estimate-side-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.estimate-side-panel .field {
+  margin-bottom: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.estimate-item-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.estimate-item-card input[type='checkbox'] {
+  width: 19px;
+  height: 19px;
+  margin-top: 2px;
+  accent-color: var(--eb-olive);
+}
+
+.estimate-item-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.estimate-empty-note {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  padding: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.estimate-review-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+}
+
+.estimate-review-summary {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.estimate-total-card {
+  border: 1px solid rgba(61, 76, 32, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--eb-dark), var(--eb-night));
+  padding: 20px;
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.estimate-total-card p {
+  color: var(--eb-gold-2);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.estimate-total-card b {
+  display: block;
+  margin-top: 10px;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.estimate-wizard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.estimate-wizard-actions .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
 .projects-filters {
   display: grid;
   grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 0.75fr) minmax(180px, 0.75fr) auto;
@@ -1564,6 +1756,15 @@ textarea:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .estimate-stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .estimate-wizard-grid,
+  .estimate-review-grid {
+    grid-template-columns: 1fr;
+  }
+
   .grid-4,
   .grid-5,
   .hero-panel,
@@ -1677,9 +1878,20 @@ textarea:focus-visible {
   .inventory-grid,
   .projects-filters,
   .estimates-filters,
+  .estimate-stepper,
   .project-workflow,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .estimate-item-card,
+  .estimate-wizard-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .estimate-total-card b {
+    font-size: 24px;
   }
 
   .project-hero-card .card-body,
