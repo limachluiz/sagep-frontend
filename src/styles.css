@@ -1036,6 +1036,103 @@ textarea:focus-visible {
   background: var(--surface-2);
 }
 
+.projects-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.projects-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 0.75fr) minmax(180px, 0.75fr) auto;
+}
+
+.projects-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.projects-table-head > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.projects-table-head strong {
+  color: var(--eb-night);
+  font-size: 14px;
+}
+
+.projects-table-head > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.project-title-cell {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+}
+
+.project-title-cell b {
+  color: var(--eb-night);
+  font-size: 14px;
+}
+
+.project-title-cell span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.projects-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.pagination-size,
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pagination-size .select {
+  width: auto;
+  min-width: 84px;
+  padding: 8px 10px;
+}
+
+.pagination-actions span {
+  white-space: nowrap;
+}
+
+.pagination-actions .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.responsive-table-card__actions {
+  padding: 0 18px 18px;
+}
+
 .table-wrap {
   overflow: auto;
 }
@@ -1163,6 +1260,10 @@ textarea:focus-visible {
     --sidebar: 260px;
   }
 
+  .projects-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .grid-4,
   .grid-5,
   .hero-panel {
@@ -1273,7 +1374,23 @@ textarea:focus-visible {
   .hero-panel,
   .command-tiles,
   .inventory-grid,
+  .projects-filters,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .projects-table-head,
+  .projects-pagination,
+  .pagination-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .projects-table-head > span {
+    white-space: normal;
+  }
+
+  .pagination-actions {
+    width: 100%;
   }
 }

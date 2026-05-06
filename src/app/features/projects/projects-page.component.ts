@@ -38,85 +38,81 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
     StatusBadgeComponent,
   ],
   template: `
-    <section class="space-y-6">
-      <app-page-header
-        title="Lista de projetos integrados ao backend"
-        eyebrow="Projetos"
-        subtitle="Consulta em /projects com acesso governado pelo backend e navegação para o detalhe ampliado."
-      >
-        <form page-header-actions [formGroup]="filtersForm" class="grid w-full gap-4 xl:grid-cols-[1.3fr_0.8fr_0.8fr_auto]">
+    <app-page-header
+      title="Projetos"
+      eyebrow="Operação"
+      subtitle="Consulta integrada ao backend com busca, filtros, paginação e acesso ao detalhe do projeto."
+      badge="Fonte: GET /projects"
+    />
+
+    <div class="workspace projects-workspace">
+      <section class="card">
+        <form [formGroup]="filtersForm" class="filters projects-filters">
           <input
             type="search"
             formControlName="search"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-            placeholder="Buscar por titulo ou campos relacionados"
+            class="input"
+            placeholder="Buscar por título ou campos relacionados"
+            aria-label="Buscar projetos"
           />
-          <select
-            formControlName="status"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-          >
+          <select formControlName="status" class="select" aria-label="Filtrar por status">
             <option value="">Todos os status</option>
             @for (status of statusOptions; track status) {
               <option [value]="status">{{ formatLabel(status) }}</option>
             }
           </select>
-          <select
-            formControlName="stage"
-            class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-          >
+          <select formControlName="stage" class="select" aria-label="Filtrar por fase">
             <option value="">Todas as fases</option>
             @for (stage of stageOptions; track stage) {
               <option [value]="stage">{{ formatLabel(stage) }}</option>
             }
           </select>
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="rounded-[14px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
-          >
+          <button type="button" (click)="clearFilters()" class="btn btn-ghost">
             Limpar filtros
           </button>
         </form>
-      </app-page-header>
 
-      @if (loading()) {
-        <app-loading-state variant="list" [count]="3" />
-      } @else if (forbidden()) {
-        <app-access-denied-state
-          title="Seu acesso atual não permite consultar a lista de projetos."
-          description="A API retornou acesso negado para esta operação. Você pode continuar navegando pelo sistema sem sair da sessão."
-          primaryLink="/dashboard"
-          secondaryLink="/projects"
-          secondaryLabel="Permanecer aqui"
-        />
-      } @else if (errorMessage()) {
-        <app-error-state
-          title="Não foi possível consultar os projetos"
-          [message]="errorMessage()"
-          retryLabel="Tentar novamente"
-          (retry)="loadProjects()"
-        />
-      } @else if (!projects().length) {
-        <app-empty-state
-          title="Nenhum projeto encontrado com os filtros atuais"
-          description="Tente remover parte da busca ou ajustar status e fase para ampliar o resultado."
-          actionLabel="Limpar filtros"
-          [action]="clearFilters.bind(this)"
-        />
-      } @else {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)]">
-          <div class="mb-5 flex flex-col gap-3 rounded-[18px] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] px-5 py-4 text-sm text-[var(--sagep-muted)] lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ metaLabel() }}</span>
+        @if (loading()) {
+          <div class="card-body">
+            <app-loading-state variant="list" [count]="3" />
+          </div>
+        } @else if (forbidden()) {
+          <div class="card-body">
+            <app-access-denied-state
+              title="Seu acesso atual não permite consultar a lista de projetos."
+              description="A API retornou acesso negado para esta operação. Você pode continuar navegando pelo sistema sem sair da sessão."
+              primaryLink="/dashboard"
+              secondaryLink="/projects"
+              secondaryLabel="Permanecer aqui"
+            />
+          </div>
+        } @else if (errorMessage()) {
+          <div class="card-body">
+            <app-error-state
+              title="Não foi possível consultar os projetos"
+              [message]="errorMessage()"
+              retryLabel="Tentar novamente"
+              (retry)="loadProjects()"
+            />
+          </div>
+        } @else if (!projects().length) {
+          <div class="card-body">
+            <app-empty-state
+              title="Nenhum projeto encontrado com os filtros atuais"
+              description="Tente remover parte da busca ou ajustar status e fase para ampliar o resultado."
+              actionLabel="Limpar filtros"
+              [action]="clearFilters.bind(this)"
+            />
+          </div>
+        } @else {
+          <div class="projects-table-head">
+            <div>
+              <strong>{{ metaLabel() }}</strong>
               @if (activeFilterSummary()) {
-                <span class="rounded-full border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sagep-muted)]">
-                  {{ activeFilterSummary() }}
-                </span>
+                <span class="badge b-neutral">{{ activeFilterSummary() }}</span>
               }
             </div>
-            <div class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted-soft)]">
-              Fonte: GET /projects
-            </div>
+            <span>Listagem operacional</span>
           </div>
 
           <app-responsive-table
@@ -127,8 +123,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             emptyDescription="Ajuste os filtros ou tente novamente."
           >
             <ng-template appResponsiveTableCell="project" let-project>
-              <p class="font-semibold text-[var(--sagep-brand-deep)]">#{{ project.projectCode }} - {{ project.title }}</p>
-              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ project.description || 'Sem descrição cadastrada.' }}</p>
+              <div class="project-title-cell">
+                <b>#{{ project.projectCode }} - {{ project.title }}</b>
+                <span>{{ project.description || 'Sem descrição cadastrada.' }}</span>
+              </div>
             </ng-template>
             <ng-template appResponsiveTableCell="status" let-project>
               <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
@@ -143,22 +141,20 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               {{ formatDate(project.createdAt) }}
             </ng-template>
             <ng-template appResponsiveTableActions let-project>
-              <a
-                [routerLink]="['/projects', projectIdentifier(project)]"
-                class="inline-flex rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)]"
-              >
+              <a [routerLink]="['/projects', projectIdentifier(project)]" class="btn btn-sm btn-ghost">
                 Ver detalhe
               </a>
             </ng-template>
           </app-responsive-table>
 
-          <div class="mt-5 flex flex-col gap-4 border-t border-[var(--sagep-line)] pt-5 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex items-center gap-3 text-sm text-[var(--sagep-muted)]">
+          <div class="projects-pagination">
+            <div class="pagination-size">
               <span>Itens por página</span>
               <select
                 [value]="pageSize()"
                 (change)="changePageSize($any($event.target).value)"
-                class="rounded-[12px] border border-[var(--sagep-line)] bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--sagep-brand-mid)]"
+                class="select"
+                aria-label="Itens por página"
               >
                 @for (option of pageSizeOptions; track option) {
                   <option [value]="option">{{ option }}</option>
@@ -166,29 +162,19 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               </select>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                [disabled]="!canGoPrevious()"
-                (click)="changePage(currentPage() - 1)"
-                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
+            <div class="pagination-actions">
+              <button type="button" [disabled]="!canGoPrevious()" (click)="changePage(currentPage() - 1)" class="btn btn-ghost">
                 Anterior
               </button>
-              <span class="px-3 text-sm text-[var(--sagep-muted)]">Página {{ currentPage() }} de {{ totalPages() }}</span>
-              <button
-                type="button"
-                [disabled]="!canGoNext()"
-                (click)="changePage(currentPage() + 1)"
-                class="rounded-[12px] border border-[var(--sagep-line)] px-4 py-2 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
+              <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+              <button type="button" [disabled]="!canGoNext()" (click)="changePage(currentPage() + 1)" class="btn btn-ghost">
                 Próxima
               </button>
             </div>
           </div>
-        </div>
-      }
-    </section>
+        }
+      </section>
+    </div>
   `,
 })
 export class ProjectsPageComponent implements OnInit {
@@ -224,7 +210,7 @@ export class ProjectsPageComponent implements OnInit {
     { key: 'project', label: 'Projeto' },
     { key: 'status', label: 'Status' },
     { key: 'stage', label: 'Fase' },
-    { key: 'owner', label: 'Responsavel' },
+    { key: 'owner', label: 'Responsável' },
     { key: 'createdAt', label: 'Criado em' },
   ];
 
