@@ -1905,6 +1905,12 @@ textarea:focus-visible {
   border-color: rgba(45, 122, 65, 0.22);
 }
 
+.rejection-panel {
+  margin-top: 14px;
+  background: linear-gradient(180deg, #fffaf2, var(--warning-soft));
+  border-color: rgba(184, 116, 31, 0.24);
+}
+
 .service-order-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

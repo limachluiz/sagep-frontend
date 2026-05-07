@@ -99,6 +99,18 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <div class="form-alert success">Recebimento do As-Built registrado com sucesso. O detalhe do projeto foi atualizado.</div>
         }
 
+        @if (asBuiltReviewSuccess()) {
+          <div class="form-alert success">Validação do As-Built registrada com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
+        @if (invoiceAttestSuccess()) {
+          <div class="form-alert success">Atesto da NF registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
+        @if (serviceCompletionSuccess()) {
+          <div class="form-alert success">Conclusão do serviço registrada com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
         @if (commitmentNoteForbidden()) {
           <app-access-denied-state
             title="Seu acesso atual não permite informar a Nota de Empenho."
@@ -151,6 +163,45 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <app-error-state title="Não foi possível receber o As-Built" [message]="asBuiltError()" retryLabel="" />
         }
 
+        @if (asBuiltReviewForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite validar o As-Built."
+            description="A API recusou a revisão do As-Built para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (asBuiltReviewError()) {
+          <app-error-state title="Não foi possível validar o As-Built" [message]="asBuiltReviewError()" retryLabel="" />
+        }
+
+        @if (invoiceAttestForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite atestar a NF."
+            description="A API recusou a atualização da fase do projeto para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (invoiceAttestError()) {
+          <app-error-state title="Não foi possível atestar a NF" [message]="invoiceAttestError()" retryLabel="" />
+        }
+
+        @if (serviceCompletionForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite concluir o serviço."
+            description="A API recusou a atualização final do fluxo do projeto para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (serviceCompletionError()) {
+          <app-error-state title="Não foi possível concluir o serviço" [message]="serviceCompletionError()" retryLabel="" />
+        }
+
         <section class="card command-card project-hero-card">
           <div class="card-body">
             <div>
@@ -193,6 +244,12 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               <p>{{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}</p>
             </div>
             <app-metadata-grid class="metadata-stack" [items]="workflowFacts()" gridClass="grid-cols-1" />
+            @if (lastAsBuiltRejectionReason()) {
+              <div class="flow-action-panel rejection-panel">
+                <span class="badge b-warn">Última reprovação do As-Built</span>
+                <p>{{ lastAsBuiltRejectionReason() }}</p>
+              </div>
+            }
           </app-section-card>
         </div>
 
@@ -396,6 +453,124 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                       </div>
                     </form>
                   }
+                } @else if (showAsBuiltReviewPrompt()) {
+                  @if (!showAsBuiltReviewPanel()) {
+                    <div class="flow-action-panel">
+                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <app-metadata-grid
+                        [items]="asBuiltReviewFacts()"
+                        gridClass="grid-cols-1"
+                      />
+                      <button type="button" (click)="toggleAsBuiltReviewPanel()" class="btn btn-primary">Validar As-Built</button>
+                    </div>
+                  } @else {
+                    <form [formGroup]="asBuiltReviewForm" class="flow-form">
+                      <div class="field">
+                        <label for="asBuiltReviewedAt">Data da análise</label>
+                        <input id="asBuiltReviewedAt" type="date" formControlName="reviewedAt" />
+                      </div>
+                      <div class="field">
+                        <label for="asBuiltReviewResult">Resultado</label>
+                        <select id="asBuiltReviewResult" formControlName="approved">
+                          <option [ngValue]="true">Aprovado</option>
+                          <option [ngValue]="false">Reprovado</option>
+                        </select>
+                      </div>
+                      @if (!asBuiltReviewForm.controls.approved.value) {
+                        <div class="field">
+                          <label for="asBuiltRejectionReason">Motivo da reprovação</label>
+                          <textarea
+                            id="asBuiltRejectionReason"
+                            rows="3"
+                            formControlName="rejectionReason"
+                            placeholder="Descreva o motivo da reprovação"
+                          ></textarea>
+                        </div>
+                      }
+                      <div class="flow-form-actions">
+                        <button type="button" (click)="toggleAsBuiltReviewPanel()" [disabled]="savingAsBuiltReview()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="saveAsBuiltReview()"
+                          [disabled]="asBuiltReviewForm.invalid || savingAsBuiltReview()"
+                          class="btn btn-primary"
+                        >
+                          {{ savingAsBuiltReview() ? 'Salvando...' : 'Confirmar validação do As-Built' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+                } @else if (showInvoiceAttestPrompt()) {
+                  @if (!showInvoiceAttestPanel()) {
+                    <div class="flow-action-panel">
+                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <app-metadata-grid
+                        [items]="[
+                          {
+                            label: 'Descrição',
+                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
+                          }
+                        ]"
+                        gridClass="grid-cols-1"
+                      />
+                      <button type="button" (click)="toggleInvoiceAttestPanel()" class="btn btn-primary">Atestar NF</button>
+                    </div>
+                  } @else {
+                    <form [formGroup]="invoiceAttestForm" class="flow-form">
+                      <div class="field">
+                        <label for="invoiceAttestedAt">Data de atesto da NF</label>
+                        <input id="invoiceAttestedAt" type="date" formControlName="invoiceAttestedAt" />
+                      </div>
+                      <div class="flow-form-actions">
+                        <button type="button" (click)="toggleInvoiceAttestPanel()" [disabled]="savingInvoiceAttest()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="saveInvoiceAttest()"
+                          [disabled]="invoiceAttestForm.invalid || savingInvoiceAttest()"
+                          class="btn btn-primary"
+                        >
+                          {{ savingInvoiceAttest() ? 'Salvando...' : 'Confirmar atesto da NF' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+                } @else if (showServiceCompletionPrompt()) {
+                  @if (!showServiceCompletionPanel()) {
+                    <div class="flow-action-panel">
+                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <app-metadata-grid
+                        [items]="[
+                          {
+                            label: 'Descrição',
+                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
+                          }
+                        ]"
+                        gridClass="grid-cols-1"
+                      />
+                      <button type="button" (click)="toggleServiceCompletionPanel()" class="btn btn-primary">Concluir serviço</button>
+                    </div>
+                  } @else {
+                    <form [formGroup]="serviceCompletionForm" class="flow-form">
+                      <div class="field">
+                        <label for="serviceCompletedAt">Data de conclusão do serviço</label>
+                        <input id="serviceCompletedAt" type="date" formControlName="serviceCompletedAt" />
+                      </div>
+                      <div class="flow-form-actions">
+                        <button type="button" (click)="toggleServiceCompletionPanel()" [disabled]="savingServiceCompletion()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="saveServiceCompletion()"
+                          [disabled]="serviceCompletionForm.invalid || savingServiceCompletion()"
+                          class="btn btn-primary"
+                        >
+                          {{ savingServiceCompletion() ? 'Salvando...' : 'Confirmar conclusão do serviço' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
                 } @else if (hasNextAction()) {
                   <div class="flow-action-panel">
                     <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
@@ -474,6 +649,17 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly asBuiltForm = this.fb.nonNullable.group({
     asBuiltReceivedAt: ['', Validators.required],
   });
+  readonly asBuiltReviewForm = this.fb.nonNullable.group({
+    reviewedAt: ['', Validators.required],
+    approved: [true],
+    rejectionReason: [''],
+  });
+  readonly invoiceAttestForm = this.fb.nonNullable.group({
+    invoiceAttestedAt: ['', Validators.required],
+  });
+  readonly serviceCompletionForm = this.fb.nonNullable.group({
+    serviceCompletedAt: ['', Validators.required],
+  });
   readonly serviceOrderForm = this.fb.nonNullable.group({
     issuedAt: ['', Validators.required],
     contractorCnpj: ['', [Validators.required, Validators.minLength(14)]],
@@ -505,6 +691,21 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly asBuiltError = signal('');
   readonly asBuiltForbidden = signal(false);
   readonly asBuiltSuccess = signal(false);
+  readonly showAsBuiltReviewPanel = signal(false);
+  readonly savingAsBuiltReview = signal(false);
+  readonly asBuiltReviewError = signal('');
+  readonly asBuiltReviewForbidden = signal(false);
+  readonly asBuiltReviewSuccess = signal(false);
+  readonly showInvoiceAttestPanel = signal(false);
+  readonly savingInvoiceAttest = signal(false);
+  readonly invoiceAttestError = signal('');
+  readonly invoiceAttestForbidden = signal(false);
+  readonly invoiceAttestSuccess = signal(false);
+  readonly showServiceCompletionPanel = signal(false);
+  readonly savingServiceCompletion = signal(false);
+  readonly serviceCompletionError = signal('');
+  readonly serviceCompletionForbidden = signal(false);
+  readonly serviceCompletionSuccess = signal(false);
   readonly showServiceOrderPanel = signal(false);
   readonly creatingServiceOrder = signal(false);
   readonly serviceOrderError = signal('');
@@ -569,8 +770,32 @@ export class ProjectDetailPageComponent implements OnInit {
       role === 'GESTOR' ||
       role === 'PROJETISTA';
   });
+  readonly canAttestInvoice = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly canReviewAsBuilt = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly canCompleteService = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
   readonly shouldStartExecution = computed(() => this.details()?.workflow?.nextAction?.code === 'INICIAR_EXECUCAO');
   readonly shouldReceiveAsBuilt = computed(() => this.details()?.workflow?.nextAction?.code === 'ANEXAR_AS_BUILT');
+  readonly shouldReviewAsBuilt = computed(() => this.details()?.workflow?.nextAction?.code === 'VALIDAR_AS_BUILT');
+  readonly shouldAttestInvoice = computed(() => this.details()?.workflow?.nextAction?.code === 'ATESTAR_NF');
+  readonly shouldCompleteService = computed(() => this.details()?.workflow?.nextAction?.code === 'CONCLUIR_SERVICO');
   readonly showCommitmentNotePrompt = computed(() =>
     this.hasDiexIssued() &&
     !this.hasCommitmentNote() &&
@@ -586,6 +811,21 @@ export class ProjectDetailPageComponent implements OnInit {
     this.hasServiceOrder() &&
     this.shouldReceiveAsBuilt() &&
     this.canReceiveAsBuilt(),
+  );
+  readonly showAsBuiltReviewPrompt = computed(() =>
+    this.hasServiceOrder() &&
+    this.shouldReviewAsBuilt() &&
+    this.canReviewAsBuilt(),
+  );
+  readonly showInvoiceAttestPrompt = computed(() =>
+    this.hasServiceOrder() &&
+    this.shouldAttestInvoice() &&
+    this.canAttestInvoice(),
+  );
+  readonly showServiceCompletionPrompt = computed(() =>
+    this.hasServiceOrder() &&
+    this.shouldCompleteService() &&
+    this.canCompleteService(),
   );
   readonly showServiceOrderPrompt = computed(() =>
     this.details()?.workflow?.stage === 'OS_LIBERADA' &&
@@ -617,6 +857,17 @@ export class ProjectDetailPageComponent implements OnInit {
         label: 'Código interno',
         value: this.pickValue(serviceOrder, ['serviceOrderCode']),
       },
+    ];
+  });
+  readonly lastAsBuiltRejectionReason = computed(() =>
+    this.pickValueOrEmpty(this.milestones(), ['asBuiltRejectionReason']),
+  );
+  readonly asBuiltReviewFacts = computed<MetadataItem[]>(() => {
+    const nextAction = this.details()?.workflow?.nextAction;
+
+    return [
+      { label: 'Descrição', value: nextAction?.description || 'O backend não forneceu descrição adicional.' },
+      { label: 'Última reprovação', value: this.lastAsBuiltRejectionReason() || 'Nenhuma reprovação registrada' },
     ];
   });
 
@@ -680,15 +931,27 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly workflowFacts = computed<MetadataItem[]>(() => {
     const workflow = this.details()?.workflow;
     const milestones = workflow?.milestones ?? {};
-
-    return [
+    const facts: MetadataItem[] = [
       { label: 'Próxima ação', value: this.pickValue(workflow?.nextAction, ['label', 'description', 'code']) },
       { label: 'Nota de Crédito', value: this.pickValue(milestones, ['creditNoteNumber', 'creditNoteReceivedAt']) },
       { label: 'DIEx', value: this.pickValue(milestones, ['diexNumber', 'diexIssuedAt']) },
       { label: 'Nota de Empenho', value: this.pickValue(milestones, ['commitmentNoteNumber', 'commitmentNoteReceivedAt']) },
       { label: 'Ordem de Serviço', value: this.pickValue(milestones, ['serviceOrderNumber', 'serviceOrderIssuedAt']) },
     ];
+
+    if (this.lastAsBuiltRejectionReason()) {
+      facts.push({
+        label: 'Última reprovação do As-Built',
+        value: this.lastAsBuiltRejectionReason(),
+      });
+    }
+
+    return facts;
   });
+
+  constructor() {
+    this.syncAsBuiltReviewReasonValidator();
+  }
 
   readonly documentGroups = computed(() => {
     const documents = this.details()?.documents ?? {};
@@ -785,6 +1048,21 @@ export class ProjectDetailPageComponent implements OnInit {
   toggleAsBuiltPanel(): void {
     this.showAsBuiltPanel.update((visible) => !visible);
     this.clearAsBuiltFeedback();
+  }
+
+  toggleAsBuiltReviewPanel(): void {
+    this.showAsBuiltReviewPanel.update((visible) => !visible);
+    this.clearAsBuiltReviewFeedback();
+  }
+
+  toggleInvoiceAttestPanel(): void {
+    this.showInvoiceAttestPanel.update((visible) => !visible);
+    this.clearInvoiceAttestFeedback();
+  }
+
+  toggleServiceCompletionPanel(): void {
+    this.showServiceCompletionPanel.update((visible) => !visible);
+    this.clearServiceCompletionFeedback();
   }
 
   toggleServiceOrderPanel(): void {
@@ -981,6 +1259,131 @@ export class ProjectDetailPageComponent implements OnInit {
       });
   }
 
+  saveAsBuiltReview(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId || !this.showAsBuiltReviewPrompt()) {
+      return;
+    }
+
+    if (this.asBuiltReviewForm.invalid) {
+      this.asBuiltReviewForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.asBuiltReviewForm.getRawValue();
+    const reviewedAt = new Date(`${formValue.reviewedAt}T00:00:00`).toISOString();
+    const rejectionReason = formValue.rejectionReason.trim();
+
+    if (!formValue.approved && rejectionReason.length < 3) {
+      this.asBuiltReviewForm.controls.rejectionReason.setErrors({ minlength: true });
+      this.asBuiltReviewForm.controls.rejectionReason.markAsTouched();
+      return;
+    }
+
+    this.savingAsBuiltReview.set(true);
+    this.clearAsBuiltReviewFeedback();
+
+    this.projectsService
+      .reviewAsBuilt(
+        projectId,
+        formValue.approved
+          ? {
+              approved: true,
+              reviewedAt,
+            }
+          : {
+              approved: false,
+              reviewedAt,
+              rejectionReason,
+            },
+      )
+      .pipe(finalize(() => this.savingAsBuiltReview.set(false)))
+      .subscribe({
+        next: () => {
+          this.asBuiltReviewSuccess.set(true);
+          this.showAsBuiltReviewPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.asBuiltReviewForbidden.set(isForbiddenError(error));
+          this.asBuiltReviewError.set(getErrorMessage(error, 'Falha ao validar o As-Built.'));
+        },
+      });
+  }
+
+  saveInvoiceAttest(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId || !this.showInvoiceAttestPrompt()) {
+      return;
+    }
+
+    if (this.invoiceAttestForm.invalid) {
+      this.invoiceAttestForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.invoiceAttestForm.getRawValue();
+
+    this.savingInvoiceAttest.set(true);
+    this.clearInvoiceAttestFeedback();
+
+    this.projectsService
+      .updateFlow(projectId, {
+        stage: 'ATESTAR_NF',
+        invoiceAttestedAt: new Date(`${formValue.invoiceAttestedAt}T00:00:00`).toISOString(),
+      })
+      .pipe(finalize(() => this.savingInvoiceAttest.set(false)))
+      .subscribe({
+        next: () => {
+          this.invoiceAttestSuccess.set(true);
+          this.showInvoiceAttestPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.invoiceAttestForbidden.set(isForbiddenError(error));
+          this.invoiceAttestError.set(getErrorMessage(error, 'Falha ao registrar o atesto da NF.'));
+        },
+      });
+  }
+
+  saveServiceCompletion(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId || !this.showServiceCompletionPrompt()) {
+      return;
+    }
+
+    if (this.serviceCompletionForm.invalid) {
+      this.serviceCompletionForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.serviceCompletionForm.getRawValue();
+
+    this.savingServiceCompletion.set(true);
+    this.clearServiceCompletionFeedback();
+
+    this.projectsService
+      .updateFlow(projectId, {
+        stage: 'SERVICO_CONCLUIDO',
+        serviceCompletedAt: new Date(`${formValue.serviceCompletedAt}T00:00:00`).toISOString(),
+      })
+      .pipe(finalize(() => this.savingServiceCompletion.set(false)))
+      .subscribe({
+        next: () => {
+          this.serviceCompletionSuccess.set(true);
+          this.showServiceCompletionPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.serviceCompletionForbidden.set(isForbiddenError(error));
+          this.serviceCompletionError.set(getErrorMessage(error, 'Falha ao registrar a conclusão do serviço.'));
+        },
+      });
+  }
+
   timelineTone(action: string): string {
     const normalized = action.toUpperCase();
 
@@ -1035,6 +1438,39 @@ export class ProjectDetailPageComponent implements OnInit {
     this.asBuiltError.set('');
     this.asBuiltForbidden.set(false);
     this.asBuiltSuccess.set(false);
+  }
+
+  private clearAsBuiltReviewFeedback(): void {
+    this.asBuiltReviewError.set('');
+    this.asBuiltReviewForbidden.set(false);
+    this.asBuiltReviewSuccess.set(false);
+  }
+
+  private clearInvoiceAttestFeedback(): void {
+    this.invoiceAttestError.set('');
+    this.invoiceAttestForbidden.set(false);
+    this.invoiceAttestSuccess.set(false);
+  }
+
+  private syncAsBuiltReviewReasonValidator(): void {
+    const rejectionReasonControl = this.asBuiltReviewForm.controls.rejectionReason;
+
+    this.asBuiltReviewForm.controls.approved.valueChanges.subscribe((approved) => {
+      if (approved) {
+        rejectionReasonControl.clearValidators();
+        rejectionReasonControl.setValue('', { emitEvent: false });
+      } else {
+        rejectionReasonControl.setValidators([Validators.required, Validators.minLength(3)]);
+      }
+
+      rejectionReasonControl.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
+  private clearServiceCompletionFeedback(): void {
+    this.serviceCompletionError.set('');
+    this.serviceCompletionForbidden.set(false);
+    this.serviceCompletionSuccess.set(false);
   }
 
   private clearServiceOrderFeedback(): void {
