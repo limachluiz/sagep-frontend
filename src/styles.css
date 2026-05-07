@@ -1900,6 +1900,57 @@ textarea:focus-visible {
   gap: 14px;
 }
 
+.success-panel {
+  background: linear-gradient(180deg, #f7fcf8, var(--success-soft));
+  border-color: rgba(45, 122, 65, 0.22);
+}
+
+.service-order-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.service-order-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+  color: var(--ink);
+  resize: vertical;
+  min-height: 96px;
+}
+
+.service-order-form textarea:focus {
+  border-color: var(--eb-olive-2);
+  box-shadow: 0 0 0 4px rgba(82, 102, 43, 0.12);
+}
+
+.service-order-form__full {
+  grid-column: 1 / -1;
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.field-checkbox span {
+  color: var(--ink);
+}
+
+.field-checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
 .flow-form-actions {
   border-top: 1px solid var(--line);
   justify-content: flex-end;
@@ -2189,7 +2240,8 @@ textarea:focus-visible {
   }
 
   .estimate-form-grid--two,
-  .estimate-form-grid--wide {
+  .estimate-form-grid--wide,
+  .service-order-form {
     grid-template-columns: 1fr;
   }
 

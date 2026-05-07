@@ -7,6 +7,7 @@ import { catchError, finalize, switchMap, throwError } from 'rxjs';
 import { ProjectDetails } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectsService } from '../../core/services/projects.service';
+import { ServiceOrdersService } from '../../core/services/service-orders.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -86,6 +87,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <div class="form-alert success">Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.</div>
         }
 
+        @if (serviceOrderSuccess()) {
+          <div class="form-alert success">Ordem de Serviço emitida com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
         @if (commitmentNoteForbidden()) {
           <app-access-denied-state
             title="Seu acesso atual não permite informar a Nota de Empenho."
@@ -97,6 +102,19 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           />
         } @else if (commitmentNoteError()) {
           <app-error-state title="Não foi possível informar a Nota de Empenho" [message]="commitmentNoteError()" retryLabel="" />
+        }
+
+        @if (serviceOrderForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite emitir a Ordem de Serviço."
+            description="A API recusou a emissão da OS para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (serviceOrderError()) {
+          <app-error-state title="Não foi possível emitir a Ordem de Serviço" [message]="serviceOrderError()" retryLabel="" />
         }
 
         <section class="card command-card project-hero-card">
@@ -201,6 +219,78 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   </div>
                 </form>
               }
+            } @else if (showServiceOrderPrompt()) {
+              @if (!showServiceOrderPanel()) {
+                <div class="flow-action-panel">
+                  <span class="badge b-info">Ordem de Serviço liberada</span>
+                  <p>A etapa atual do projeto permite emitir a Ordem de Serviço usando o contrato real do backend.</p>
+                  <button type="button" (click)="toggleServiceOrderPanel()" class="btn btn-primary">Emitir Ordem de Serviço</button>
+                </div>
+              } @else {
+                <form [formGroup]="serviceOrderForm" class="flow-form service-order-form">
+                  <div class="field">
+                    <label for="serviceOrderIssuedAt">Data de emissão</label>
+                    <input id="serviceOrderIssuedAt" type="date" formControlName="issuedAt" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderContractorCnpj">CNPJ da contratada</label>
+                    <input id="serviceOrderContractorCnpj" type="text" formControlName="contractorCnpj" placeholder="Somente números" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderRequesterName">Requisitante</label>
+                    <input id="serviceOrderRequesterName" type="text" formControlName="requesterName" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderRequesterRank">Posto/graduação</label>
+                    <input id="serviceOrderRequesterRank" type="text" formControlName="requesterRank" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderRequesterCpf">CPF do requisitante</label>
+                    <input id="serviceOrderRequesterCpf" type="text" formControlName="requesterCpf" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderRequesterRole">Função do requisitante</label>
+                    <input id="serviceOrderRequesterRole" type="text" formControlName="requesterRole" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderIssuingOrganization">Organização emissora</label>
+                    <input id="serviceOrderIssuingOrganization" type="text" formControlName="issuingOrganization" placeholder="Opcional" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderPlannedStartDate">Início planejado</label>
+                    <input id="serviceOrderPlannedStartDate" type="date" formControlName="plannedStartDate" />
+                  </div>
+                  <div class="field">
+                    <label for="serviceOrderPlannedEndDate">Fim planejado</label>
+                    <input id="serviceOrderPlannedEndDate" type="date" formControlName="plannedEndDate" />
+                  </div>
+                  <label class="field field-checkbox">
+                    <span>Atendimento emergencial</span>
+                    <input type="checkbox" formControlName="isEmergency" />
+                  </label>
+                  <div class="field service-order-form__full">
+                    <label for="serviceOrderNotes">Observações</label>
+                    <textarea id="serviceOrderNotes" formControlName="notes" rows="3" placeholder="Opcional"></textarea>
+                  </div>
+                  <div class="flow-form-actions service-order-form__full">
+                    <button type="button" (click)="toggleServiceOrderPanel()" [disabled]="creatingServiceOrder()" class="btn btn-ghost">Cancelar</button>
+                    <button
+                      type="button"
+                      (click)="emitServiceOrder()"
+                      [disabled]="serviceOrderForm.invalid || creatingServiceOrder()"
+                      class="btn btn-primary"
+                    >
+                      {{ creatingServiceOrder() ? 'Emitindo...' : 'Confirmar emissão' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            } @else if (hasServiceOrder()) {
+              <div class="flow-action-panel success-panel">
+                <span class="badge b-ok">Ordem de Serviço emitida</span>
+                <p>O projeto já possui OS registrada no backend, então uma nova emissão permanece bloqueada.</p>
+                <app-metadata-grid [items]="serviceOrderFacts()" gridClass="grid-cols-1" />
+              </div>
             } @else if (hasCommitmentNote()) {
               <app-metadata-grid [items]="commitmentNoteFacts()" gridClass="grid-cols-1" />
             } @else {
@@ -251,10 +341,24 @@ export class ProjectDetailPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly projectsService = inject(ProjectsService);
+  private readonly serviceOrdersService = inject(ServiceOrdersService);
 
   readonly commitmentNoteForm = this.fb.nonNullable.group({
     commitmentNoteNumber: ['', Validators.required],
     commitmentNoteReceivedAt: [''],
+  });
+  readonly serviceOrderForm = this.fb.nonNullable.group({
+    issuedAt: ['', Validators.required],
+    contractorCnpj: ['', [Validators.required, Validators.minLength(14)]],
+    requesterName: [''],
+    requesterRank: [''],
+    requesterCpf: [''],
+    requesterRole: [''],
+    issuingOrganization: [''],
+    plannedStartDate: [''],
+    plannedEndDate: [''],
+    notes: [''],
+    isEmergency: [false],
   });
   readonly loading = signal(true);
   readonly forbidden = signal(false);
@@ -264,6 +368,11 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly commitmentNoteError = signal('');
   readonly commitmentNoteForbidden = signal(false);
   readonly commitmentNoteSuccess = signal(false);
+  readonly showServiceOrderPanel = signal(false);
+  readonly creatingServiceOrder = signal(false);
+  readonly serviceOrderError = signal('');
+  readonly serviceOrderForbidden = signal(false);
+  readonly serviceOrderSuccess = signal(false);
   readonly details = signal<ProjectDetails | null>(null);
   private projectIdentifier: string | null = null;
 
@@ -278,9 +387,28 @@ export class ProjectDetailPageComponent implements OnInit {
   });
   readonly hasDiexIssued = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['diexNumber', 'diexIssuedAt'])));
   readonly hasCommitmentNote = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['commitmentNoteNumber', 'commitmentNoteReceivedAt'])));
+  readonly serviceOrderRecord = computed(() => {
+    const serviceOrders = this.asRecordArray(this.details()?.documents?.serviceOrders);
+    return serviceOrders[0] ?? null;
+  });
+  readonly hasServiceOrder = computed(() =>
+    Boolean(
+      this.pickValueOrEmpty(this.milestones(), ['serviceOrderNumber', 'serviceOrderIssuedAt']) ||
+      this.serviceOrderRecord()?.['serviceOrderNumber'] ||
+      this.serviceOrderRecord()?.['issuedAt'] ||
+      this.serviceOrderRecord()?.['id'],
+    ),
+  );
   readonly canInformCommitmentNote = computed(() => {
     const role = this.authService.getUserRole();
     return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly canIssueServiceOrder = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['service_orders.issue']) ||
       role === 'ADMIN' ||
       role === 'GESTOR' ||
       role === 'PROJETISTA';
@@ -295,10 +423,38 @@ export class ProjectDetailPageComponent implements OnInit {
     this.shouldInformCommitmentNote() &&
     this.canInformCommitmentNote(),
   );
+  readonly showServiceOrderPrompt = computed(() =>
+    this.details()?.workflow?.stage === 'OS_LIBERADA' &&
+    this.hasCommitmentNote() &&
+    !this.hasServiceOrder() &&
+    this.canIssueServiceOrder(),
+  );
   readonly commitmentNoteFacts = computed<MetadataItem[]>(() => [
     { label: 'Número da Nota de Empenho', value: this.pickValue(this.milestones(), ['commitmentNoteNumber']), highlight: true },
     { label: 'Recebida em', value: this.pickValue(this.milestones(), ['commitmentNoteReceivedAt']) },
   ]);
+  readonly serviceOrderFacts = computed<MetadataItem[]>(() => {
+    const serviceOrder = this.serviceOrderRecord();
+    return [
+      {
+        label: 'Número da Ordem de Serviço',
+        value: this.pickValue(serviceOrder ?? this.milestones(), ['serviceOrderNumber']),
+        highlight: true,
+      },
+      {
+        label: 'Emitida em',
+        value: this.pickValue(serviceOrder ?? this.milestones(), ['issuedAt', 'serviceOrderIssuedAt']),
+      },
+      {
+        label: 'CNPJ da contratada',
+        value: this.pickValue(serviceOrder, ['contractorCnpj']),
+      },
+      {
+        label: 'Código interno',
+        value: this.pickValue(serviceOrder, ['serviceOrderCode']),
+      },
+    ];
+  });
 
   readonly highlightFacts = computed(() => {
     const details = this.details();
@@ -457,6 +613,11 @@ export class ProjectDetailPageComponent implements OnInit {
     this.clearCommitmentNoteFeedback();
   }
 
+  toggleServiceOrderPanel(): void {
+    this.showServiceOrderPanel.update((visible) => !visible);
+    this.clearServiceOrderFeedback();
+  }
+
   saveCommitmentNote(): void {
     const projectId = this.details()?.project?.id;
 
@@ -498,6 +659,78 @@ export class ProjectDetailPageComponent implements OnInit {
         error: (error) => {
           this.commitmentNoteForbidden.set(isForbiddenError(error));
           this.commitmentNoteError.set(getErrorMessage(error, 'Falha ao informar a Nota de Empenho.'));
+        },
+      });
+  }
+
+  emitServiceOrder(): void {
+    const project = this.details()?.project;
+
+    if (!project || !this.showServiceOrderPrompt()) {
+      return;
+    }
+
+    if (this.serviceOrderForm.invalid) {
+      this.serviceOrderForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.serviceOrderForm.getRawValue();
+    const contractorCnpj = this.onlyDigits(formValue.contractorCnpj);
+    const requesterCpf = this.onlyDigits(formValue.requesterCpf);
+
+    if (contractorCnpj.length < 14) {
+      this.serviceOrderError.set('Informe o CNPJ da contratada com ao menos 14 dígitos.');
+      return;
+    }
+
+    if (requesterCpf && requesterCpf.length < 11) {
+      this.serviceOrderError.set('Se informado, o CPF do requisitante deve possuir 11 dígitos.');
+      return;
+    }
+
+    this.creatingServiceOrder.set(true);
+    this.clearServiceOrderFeedback();
+
+    const relatedEstimate = this.relatedEstimate();
+    const relatedDiex = this.relatedDiex();
+    const payload = {
+      issuedAt: new Date(`${formValue.issuedAt}T00:00:00`).toISOString(),
+      contractorCnpj,
+      requesterName: formValue.requesterName.trim() || undefined,
+      requesterRank: formValue.requesterRank.trim() || undefined,
+      requesterCpf: requesterCpf || undefined,
+      requesterRole: formValue.requesterRole.trim() || undefined,
+      issuingOrganization: formValue.issuingOrganization.trim() || undefined,
+      isEmergency: formValue.isEmergency || undefined,
+      plannedStartDate: formValue.plannedStartDate ? new Date(`${formValue.plannedStartDate}T00:00:00`).toISOString() : undefined,
+      plannedEndDate: formValue.plannedEndDate ? new Date(`${formValue.plannedEndDate}T00:00:00`).toISOString() : undefined,
+      notes: formValue.notes.trim() || undefined,
+      ...(project.id ? { projectId: project.id } : project.projectCode ? { projectCode: project.projectCode } : {}),
+      ...(relatedEstimate?.['id']
+        ? { estimateId: String(relatedEstimate['id']) }
+        : this.asNumber(relatedEstimate?.['estimateCode'])
+          ? { estimateCode: this.asNumber(relatedEstimate?.['estimateCode']) }
+          : {}),
+      ...(relatedDiex?.['id']
+        ? { diexId: String(relatedDiex['id']) }
+        : this.asNumber(relatedDiex?.['diexCode'] ?? relatedDiex?.['code'])
+          ? { diexCode: this.asNumber(relatedDiex?.['diexCode'] ?? relatedDiex?.['code']) }
+          : {}),
+    };
+
+    this.serviceOrdersService
+      .createServiceOrder(payload)
+      .pipe(finalize(() => this.creatingServiceOrder.set(false)))
+      .subscribe({
+        next: () => {
+          this.serviceOrderSuccess.set(true);
+          this.showServiceOrderPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.serviceOrderForbidden.set(isForbiddenError(error));
+          this.serviceOrderError.set(getErrorMessage(error, 'Falha ao emitir a Ordem de Serviço.'));
         },
       });
   }
@@ -546,6 +779,12 @@ export class ProjectDetailPageComponent implements OnInit {
     this.commitmentNoteSuccess.set(false);
   }
 
+  private clearServiceOrderFeedback(): void {
+    this.serviceOrderError.set('');
+    this.serviceOrderForbidden.set(false);
+    this.serviceOrderSuccess.set(false);
+  }
+
   private buildLocation(source: Record<string, unknown>): string {
     const city = source['destinationCityName'];
     const state = source['destinationStateUf'];
@@ -577,6 +816,39 @@ export class ProjectDetailPageComponent implements OnInit {
           .join(' • '),
       };
     });
+  }
+
+  private asRecordArray(value: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object');
+  }
+
+  private relatedEstimate(): Record<string, unknown> | null {
+    return this.asRecordArray(this.details()?.documents?.estimates)[0] ?? null;
+  }
+
+  private relatedDiex(): Record<string, unknown> | null {
+    return this.asRecordArray(this.details()?.documents?.diexRequests)[0] ?? null;
+  }
+
+  private asNumber(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    return undefined;
+  }
+
+  private onlyDigits(value: string): string {
+    return value.replace(/\D/g, '');
   }
 
   protected readonly formatDate = formatDate;
