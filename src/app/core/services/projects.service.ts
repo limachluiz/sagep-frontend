@@ -26,6 +26,7 @@ export interface ProjectFlowUpdatePayload {
   creditNoteReceivedAt?: string | null;
   commitmentNoteNumber?: string | null;
   commitmentNoteReceivedAt?: string | null;
+  executionStartedAt?: string | null;
 }
 
 export interface InformCommitmentNotePayload {

@@ -91,6 +91,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <div class="form-alert success">Ordem de Serviço emitida com sucesso. O detalhe do projeto foi atualizado.</div>
         }
 
+        @if (executionStartSuccess()) {
+          <div class="form-alert success">Início da execução registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
         @if (commitmentNoteForbidden()) {
           <app-access-denied-state
             title="Seu acesso atual não permite informar a Nota de Empenho."
@@ -115,6 +119,19 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           />
         } @else if (serviceOrderError()) {
           <app-error-state title="Não foi possível emitir a Ordem de Serviço" [message]="serviceOrderError()" retryLabel="" />
+        }
+
+        @if (executionStartForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite iniciar a execução."
+            description="A API recusou a atualização da fase do projeto para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (executionStartError()) {
+          <app-error-state title="Não foi possível iniciar a execução" [message]="executionStartError()" retryLabel="" />
         }
 
         <section class="card command-card project-hero-card">
@@ -286,10 +303,62 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 </form>
               }
             } @else if (hasServiceOrder()) {
-              <div class="flow-action-panel success-panel">
-                <span class="badge b-ok">Ordem de Serviço emitida</span>
-                <p>O projeto já possui OS registrada no backend, então uma nova emissão permanece bloqueada.</p>
-                <app-metadata-grid [items]="serviceOrderFacts()" gridClass="grid-cols-1" />
+              <div class="flow-form">
+                <div class="flow-action-panel success-panel">
+                  <span class="badge b-ok">Ordem de Serviço emitida</span>
+                  <p>O projeto já possui OS registrada no backend, então uma nova emissão permanece bloqueada.</p>
+                  <app-metadata-grid [items]="serviceOrderFacts()" gridClass="grid-cols-1" />
+                </div>
+                @if (showExecutionStartPrompt()) {
+                  @if (!showExecutionStartPanel()) {
+                    <div class="flow-action-panel">
+                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <app-metadata-grid
+                        [items]="[
+                          {
+                            label: 'Descrição',
+                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
+                          }
+                        ]"
+                        gridClass="grid-cols-1"
+                      />
+                      <button type="button" (click)="toggleExecutionStartPanel()" class="btn btn-primary">Iniciar execução</button>
+                    </div>
+                  } @else {
+                    <form [formGroup]="executionStartForm" class="flow-form">
+                      <div class="field">
+                        <label for="executionStartedAt">Data de início da execução</label>
+                        <input id="executionStartedAt" type="date" formControlName="executionStartedAt" />
+                      </div>
+                      <div class="flow-form-actions">
+                        <button type="button" (click)="toggleExecutionStartPanel()" [disabled]="savingExecutionStart()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="saveExecutionStart()"
+                          [disabled]="executionStartForm.invalid || savingExecutionStart()"
+                          class="btn btn-primary"
+                        >
+                          {{ savingExecutionStart() ? 'Salvando...' : 'Confirmar início da execução' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+                } @else if (hasNextAction()) {
+                  <div class="flow-action-panel">
+                    <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                    <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                    <app-metadata-grid
+                      [items]="[
+                        {
+                          label: 'Descrição',
+                          value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
+                        }
+                      ]"
+                      gridClass="grid-cols-1"
+                    />
+                  </div>
+                }
               </div>
             } @else if (hasCommitmentNote()) {
               <app-metadata-grid [items]="commitmentNoteFacts()" gridClass="grid-cols-1" />
@@ -347,6 +416,9 @@ export class ProjectDetailPageComponent implements OnInit {
     commitmentNoteNumber: ['', Validators.required],
     commitmentNoteReceivedAt: [''],
   });
+  readonly executionStartForm = this.fb.nonNullable.group({
+    executionStartedAt: ['', Validators.required],
+  });
   readonly serviceOrderForm = this.fb.nonNullable.group({
     issuedAt: ['', Validators.required],
     contractorCnpj: ['', [Validators.required, Validators.minLength(14)]],
@@ -368,6 +440,11 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly commitmentNoteError = signal('');
   readonly commitmentNoteForbidden = signal(false);
   readonly commitmentNoteSuccess = signal(false);
+  readonly showExecutionStartPanel = signal(false);
+  readonly savingExecutionStart = signal(false);
+  readonly executionStartError = signal('');
+  readonly executionStartForbidden = signal(false);
+  readonly executionStartSuccess = signal(false);
   readonly showServiceOrderPanel = signal(false);
   readonly creatingServiceOrder = signal(false);
   readonly serviceOrderError = signal('');
@@ -385,6 +462,7 @@ export class ProjectDetailPageComponent implements OnInit {
     const nextAction = this.details()?.workflow?.nextAction;
     return [nextAction?.code, nextAction?.label, nextAction?.description].filter(Boolean).join(' ').toUpperCase();
   });
+  readonly hasNextAction = computed(() => Boolean(this.nextActionText().trim()));
   readonly hasDiexIssued = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['diexNumber', 'diexIssuedAt'])));
   readonly hasCommitmentNote = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['commitmentNoteNumber', 'commitmentNoteReceivedAt'])));
   readonly serviceOrderRecord = computed(() => {
@@ -417,11 +495,24 @@ export class ProjectDetailPageComponent implements OnInit {
     const nextAction = this.nextActionText();
     return nextAction.includes('EMPENHO') || nextAction.includes('COMMITMENT');
   });
+  readonly canStartExecution = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
+  readonly shouldStartExecution = computed(() => this.details()?.workflow?.nextAction?.code === 'INICIAR_EXECUCAO');
   readonly showCommitmentNotePrompt = computed(() =>
     this.hasDiexIssued() &&
     !this.hasCommitmentNote() &&
     this.shouldInformCommitmentNote() &&
     this.canInformCommitmentNote(),
+  );
+  readonly showExecutionStartPrompt = computed(() =>
+    this.hasServiceOrder() &&
+    this.shouldStartExecution() &&
+    this.canStartExecution(),
   );
   readonly showServiceOrderPrompt = computed(() =>
     this.details()?.workflow?.stage === 'OS_LIBERADA' &&
@@ -613,6 +704,11 @@ export class ProjectDetailPageComponent implements OnInit {
     this.clearCommitmentNoteFeedback();
   }
 
+  toggleExecutionStartPanel(): void {
+    this.showExecutionStartPanel.update((visible) => !visible);
+    this.clearExecutionStartFeedback();
+  }
+
   toggleServiceOrderPanel(): void {
     this.showServiceOrderPanel.update((visible) => !visible);
     this.clearServiceOrderFeedback();
@@ -735,6 +831,42 @@ export class ProjectDetailPageComponent implements OnInit {
       });
   }
 
+  saveExecutionStart(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId || !this.showExecutionStartPrompt()) {
+      return;
+    }
+
+    if (this.executionStartForm.invalid) {
+      this.executionStartForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.executionStartForm.getRawValue();
+
+    this.savingExecutionStart.set(true);
+    this.clearExecutionStartFeedback();
+
+    this.projectsService
+      .updateFlow(projectId, {
+        stage: 'SERVICO_EM_EXECUCAO',
+        executionStartedAt: new Date(`${formValue.executionStartedAt}T00:00:00`).toISOString(),
+      })
+      .pipe(finalize(() => this.savingExecutionStart.set(false)))
+      .subscribe({
+        next: () => {
+          this.executionStartSuccess.set(true);
+          this.showExecutionStartPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.executionStartForbidden.set(isForbiddenError(error));
+          this.executionStartError.set(getErrorMessage(error, 'Falha ao registrar o início da execução.'));
+        },
+      });
+  }
+
   timelineTone(action: string): string {
     const normalized = action.toUpperCase();
 
@@ -777,6 +909,12 @@ export class ProjectDetailPageComponent implements OnInit {
     this.commitmentNoteError.set('');
     this.commitmentNoteForbidden.set(false);
     this.commitmentNoteSuccess.set(false);
+  }
+
+  private clearExecutionStartFeedback(): void {
+    this.executionStartError.set('');
+    this.executionStartForbidden.set(false);
+    this.executionStartSuccess.set(false);
   }
 
   private clearServiceOrderFeedback(): void {
