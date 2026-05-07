@@ -80,7 +80,7 @@ export class SidebarComponent {
     {
       title: 'Documentos',
       items: [
-        { label: 'DIEx', path: '/diex', icon: '◇', disabled: true, hint: 'Será integrado a partir de estimativas finalizadas.' },
+        { label: 'DIEx Requisitório', path: '/diex', icon: '◇' },
         {
           label: 'Ordens de Serviço',
           path: '/ordens-servico',

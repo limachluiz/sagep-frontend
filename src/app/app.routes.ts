@@ -74,8 +74,18 @@ export const routes: Routes = [
       },
       {
         path: 'diex',
-        component: UnderConstructionComponent,
-        data: { title: 'DIEx' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/diex/diex-page.component').then((m) => m.DiexPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/diex/diex-detail-page.component').then((m) => m.DiexDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'ordens-servico',
