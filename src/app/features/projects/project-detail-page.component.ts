@@ -95,6 +95,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           <div class="form-alert success">Início da execução registrado com sucesso. O detalhe do projeto foi atualizado.</div>
         }
 
+        @if (asBuiltSuccess()) {
+          <div class="form-alert success">Recebimento do As-Built registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+        }
+
         @if (commitmentNoteForbidden()) {
           <app-access-denied-state
             title="Seu acesso atual não permite informar a Nota de Empenho."
@@ -132,6 +136,19 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           />
         } @else if (executionStartError()) {
           <app-error-state title="Não foi possível iniciar a execução" [message]="executionStartError()" retryLabel="" />
+        }
+
+        @if (asBuiltForbidden()) {
+          <app-access-denied-state
+            title="Seu acesso atual não permite registrar o As-Built."
+            description="A API recusou a atualização da fase do projeto para o perfil ou permissões atuais."
+            primaryLink="/projects"
+            primaryLabel="Voltar à listagem"
+            secondaryLink="/dashboard"
+            secondaryLabel="Ir para o dashboard"
+          />
+        } @else if (asBuiltError()) {
+          <app-error-state title="Não foi possível receber o As-Built" [message]="asBuiltError()" retryLabel="" />
         }
 
         <section class="card command-card project-hero-card">
@@ -344,6 +361,41 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                       </div>
                     </form>
                   }
+                } @else if (showAsBuiltPrompt()) {
+                  @if (!showAsBuiltPanel()) {
+                    <div class="flow-action-panel">
+                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
+                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <app-metadata-grid
+                        [items]="[
+                          {
+                            label: 'Descrição',
+                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
+                          }
+                        ]"
+                        gridClass="grid-cols-1"
+                      />
+                      <button type="button" (click)="toggleAsBuiltPanel()" class="btn btn-primary">Receber As-Built</button>
+                    </div>
+                  } @else {
+                    <form [formGroup]="asBuiltForm" class="flow-form">
+                      <div class="field">
+                        <label for="asBuiltReceivedAt">Data de recebimento do As-Built</label>
+                        <input id="asBuiltReceivedAt" type="date" formControlName="asBuiltReceivedAt" />
+                      </div>
+                      <div class="flow-form-actions">
+                        <button type="button" (click)="toggleAsBuiltPanel()" [disabled]="savingAsBuilt()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="saveAsBuilt()"
+                          [disabled]="asBuiltForm.invalid || savingAsBuilt()"
+                          class="btn btn-primary"
+                        >
+                          {{ savingAsBuilt() ? 'Salvando...' : 'Confirmar recebimento do As-Built' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
                 } @else if (hasNextAction()) {
                   <div class="flow-action-panel">
                     <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
@@ -419,6 +471,9 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly executionStartForm = this.fb.nonNullable.group({
     executionStartedAt: ['', Validators.required],
   });
+  readonly asBuiltForm = this.fb.nonNullable.group({
+    asBuiltReceivedAt: ['', Validators.required],
+  });
   readonly serviceOrderForm = this.fb.nonNullable.group({
     issuedAt: ['', Validators.required],
     contractorCnpj: ['', [Validators.required, Validators.minLength(14)]],
@@ -445,6 +500,11 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly executionStartError = signal('');
   readonly executionStartForbidden = signal(false);
   readonly executionStartSuccess = signal(false);
+  readonly showAsBuiltPanel = signal(false);
+  readonly savingAsBuilt = signal(false);
+  readonly asBuiltError = signal('');
+  readonly asBuiltForbidden = signal(false);
+  readonly asBuiltSuccess = signal(false);
   readonly showServiceOrderPanel = signal(false);
   readonly creatingServiceOrder = signal(false);
   readonly serviceOrderError = signal('');
@@ -502,7 +562,15 @@ export class ProjectDetailPageComponent implements OnInit {
       role === 'GESTOR' ||
       role === 'PROJETISTA';
   });
+  readonly canReceiveAsBuilt = computed(() => {
+    const role = this.authService.getUserRole();
+    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
+      role === 'ADMIN' ||
+      role === 'GESTOR' ||
+      role === 'PROJETISTA';
+  });
   readonly shouldStartExecution = computed(() => this.details()?.workflow?.nextAction?.code === 'INICIAR_EXECUCAO');
+  readonly shouldReceiveAsBuilt = computed(() => this.details()?.workflow?.nextAction?.code === 'ANEXAR_AS_BUILT');
   readonly showCommitmentNotePrompt = computed(() =>
     this.hasDiexIssued() &&
     !this.hasCommitmentNote() &&
@@ -513,6 +581,11 @@ export class ProjectDetailPageComponent implements OnInit {
     this.hasServiceOrder() &&
     this.shouldStartExecution() &&
     this.canStartExecution(),
+  );
+  readonly showAsBuiltPrompt = computed(() =>
+    this.hasServiceOrder() &&
+    this.shouldReceiveAsBuilt() &&
+    this.canReceiveAsBuilt(),
   );
   readonly showServiceOrderPrompt = computed(() =>
     this.details()?.workflow?.stage === 'OS_LIBERADA' &&
@@ -709,6 +782,11 @@ export class ProjectDetailPageComponent implements OnInit {
     this.clearExecutionStartFeedback();
   }
 
+  toggleAsBuiltPanel(): void {
+    this.showAsBuiltPanel.update((visible) => !visible);
+    this.clearAsBuiltFeedback();
+  }
+
   toggleServiceOrderPanel(): void {
     this.showServiceOrderPanel.update((visible) => !visible);
     this.clearServiceOrderFeedback();
@@ -867,6 +945,42 @@ export class ProjectDetailPageComponent implements OnInit {
       });
   }
 
+  saveAsBuilt(): void {
+    const projectId = this.details()?.project?.id;
+
+    if (!projectId || !this.showAsBuiltPrompt()) {
+      return;
+    }
+
+    if (this.asBuiltForm.invalid) {
+      this.asBuiltForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.asBuiltForm.getRawValue();
+
+    this.savingAsBuilt.set(true);
+    this.clearAsBuiltFeedback();
+
+    this.projectsService
+      .updateFlow(projectId, {
+        stage: 'ANALISANDO_AS_BUILT',
+        asBuiltReceivedAt: new Date(`${formValue.asBuiltReceivedAt}T00:00:00`).toISOString(),
+      })
+      .pipe(finalize(() => this.savingAsBuilt.set(false)))
+      .subscribe({
+        next: () => {
+          this.asBuiltSuccess.set(true);
+          this.showAsBuiltPanel.set(false);
+          this.reload();
+        },
+        error: (error) => {
+          this.asBuiltForbidden.set(isForbiddenError(error));
+          this.asBuiltError.set(getErrorMessage(error, 'Falha ao registrar o recebimento do As-Built.'));
+        },
+      });
+  }
+
   timelineTone(action: string): string {
     const normalized = action.toUpperCase();
 
@@ -915,6 +1029,12 @@ export class ProjectDetailPageComponent implements OnInit {
     this.executionStartError.set('');
     this.executionStartForbidden.set(false);
     this.executionStartSuccess.set(false);
+  }
+
+  private clearAsBuiltFeedback(): void {
+    this.asBuiltError.set('');
+    this.asBuiltForbidden.set(false);
+    this.asBuiltSuccess.set(false);
   }
 
   private clearServiceOrderFeedback(): void {
