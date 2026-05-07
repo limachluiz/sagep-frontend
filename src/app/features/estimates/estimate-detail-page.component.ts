@@ -47,11 +47,11 @@ import { EstimatesService } from './estimates.service';
     SummaryCardComponent,
   ],
   template: `
-    <section class="space-y-6">
+    <section class="workspace estimate-detail-workspace space-y-6">
       <app-page-header
         [title]="estimate()?.project?.title || 'Detalhe da estimativa'"
         [eyebrow]="estimateDisplayCode()"
-        subtitle="Detalhe da estimativa com vínculo ao projeto, resumo geral e itens retornados pela API."
+        subtitle="Detalhe da estimativa com contexto do projeto, resumo executivo, itens e andamento documental."
         badge="Fonte: GET /estimates/:identifier"
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
@@ -168,57 +168,285 @@ import { EstimatesService } from './estimates.service';
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
-        @if (hasDiexIssued()) {
-          <app-section-card title="DIEx requisitório já emitido">
-            <app-metadata-grid [items]="diexIssuedFacts()" gridClass="md:grid-cols-2" />
-          </app-section-card>
-        }
+        <section class="card estimate-hero-card">
+          <div class="card-body estimate-hero-body">
+            <div class="estimate-hero-main">
+              <p class="estimate-hero-kicker">Estimativa de preço</p>
+              <div class="estimate-hero-title-row">
+                <h2>{{ estimateDisplayCode() }}</h2>
+                <app-status-badge [label]="formatLabel(estimate()?.status || '')" [status]="estimate()?.status" />
+              </div>
+              <p class="estimate-hero-copy">
+                {{ estimate()?.project?.title || 'Projeto não informado' }} ·
+                {{ estimate()?.om?.sigla || estimate()?.omName || 'OM não informada' }} ·
+                {{ locationLabel(estimate()) }}
+              </p>
+              <div class="estimate-hero-tags">
+                <span class="badge b-neutral">Projeto #{{ estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I' }}</span>
+                <span class="badge b-info">{{ (estimate()?.items ?? []).length }} item(ns)</span>
+                @if (hasCreditNote()) {
+                  <span class="badge b-ok">NC informada</span>
+                } @else {
+                  <span class="badge b-warn">NC pendente</span>
+                }
+                @if (hasDiexIssued()) {
+                  <span class="badge b-ok">DIEx emitido</span>
+                } @else if (canGenerateDiex()) {
+                  <span class="badge b-info">DIEx liberado</span>
+                } @else {
+                  <span class="badge b-neutral">DIEx indisponível</span>
+                }
+              </div>
+            </div>
 
-        @if (showCreditNotePrompt()) {
+            <app-metadata-grid
+              [items]="heroFacts()"
+              gridClass="sm:grid-cols-2"
+              itemClass="estimate-hero-detail"
+            />
+          </div>
+        </section>
+
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          @for (item of summaryCards(); track item.title) {
+            <app-summary-card
+              [title]="item.title"
+              [value]="item.value"
+              [description]="item.description"
+              [icon]="item.icon"
+              [tone]="item.tone"
+            />
+          }
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[1fr_1fr]">
           <app-section-card
-            title="Nota de Crédito pendente"
-            subtitle="Antes de gerar o DIEx requisitório, informe a Nota de Crédito do projeto."
+            title="Projeto vinculado"
+            subtitle="Contexto carregado do projeto relacionado e situação atual do fluxo."
+            bodyClass="estimate-section-stack"
           >
-            @if (!showCreditNotePanel()) {
-              <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-warn-soft)] bg-[var(--sagep-warn-soft)] p-5 text-[var(--sagep-warn)]">
-                <p class="text-sm leading-6">
-                  A estimativa já está finalizada, mas o projeto ainda não possui Nota de Crédito informada.
-                  Essa etapa é obrigatória antes da emissão do DIEx requisitório.
+            <app-status-badge
+              section-card-actions
+              [label]="formatLabel(projectStage())"
+              variantClass="b-info"
+            />
+            <div class="estimate-project-callout">
+              <p class="estimate-project-code">Projeto #{{ estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I' }}</p>
+              <h3>{{ estimate()?.project?.title || 'Projeto não informado' }}</h3>
+              <p>
+                Fluxo atual: {{ formatLabel(projectStage()) }} · Nota de Crédito:
+                {{ creditNoteLabel() }}
+              </p>
+            </div>
+            <app-metadata-grid [items]="projectFacts()" gridClass="md:grid-cols-2" />
+          </app-section-card>
+
+          <app-section-card
+            title="Dados gerais"
+            subtitle="Resumo da estimativa, vínculo com ATA, cobertura, OM e observações."
+            bodyClass="estimate-section-stack"
+          >
+            <app-status-badge
+              section-card-actions
+              [label]="formatLabel(estimate()?.status || '')"
+              [status]="estimate()?.status"
+            />
+            <app-metadata-grid [items]="generalFacts()" gridClass="md:grid-cols-2" />
+            <div class="estimate-note-block">
+              <p class="estimate-note-label">Observações</p>
+              <p>{{ estimate()?.notes | emptyValue:'Sem observações registradas nesta estimativa.' }}</p>
+            </div>
+          </app-section-card>
+        </div>
+
+        <app-section-card
+          title="Itens da estimativa"
+          subtitle="Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações."
+          bodyClass="estimate-section-stack"
+        >
+          <span section-card-actions class="text-sm text-[var(--sagep-muted)]">
+            {{ (estimate()?.items ?? []).length }} item(ns)
+          </span>
+
+          @if ((estimate()?.items ?? []).length) {
+            <div class="table-wrap hidden lg:block">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qtd.</th>
+                    <th>Unidade</th>
+                    <th>Valor unit.</th>
+                    <th>Valor total</th>
+                    <th>Observações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of estimate()?.items ?? []; track item.id) {
+                    <tr>
+                      <td>
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                          ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
+                        </p>
+                      </td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ item.unit }}</td>
+                      <td>{{ formatCurrency(item.unitPrice) }}</td>
+                      <td class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</td>
+                      <td>{{ item.notes | emptyValue:'Sem observações' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid gap-4 lg:hidden">
+              @for (item of estimate()?.items ?? []; track item.id) {
+                <article class="estimate-item-card">
+                  <div>
+                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
+                    <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                      ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
+                    </p>
+                  </div>
+                  <app-metadata-grid
+                    class="mt-4 block"
+                    [items]="itemFacts(item)"
+                    gridClass="sm:grid-cols-2"
+                  />
+                  <p class="text-sm text-[var(--sagep-muted)]">
+                    {{ item.notes | emptyValue:'Sem observações para esta linha.' }}
+                  </p>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="estimate-inline-state">
+              A API não retornou itens para esta estimativa.
+            </div>
+          }
+        </app-section-card>
+
+        <app-section-card
+          title="Ações documentais"
+          subtitle="Acompanhamento da finalização, da Nota de Crédito e da emissão do DIEx requisitório."
+          bodyClass="estimate-section-stack"
+        >
+          <div class="document-action-list">
+            <article class="document-action-card">
+              <div>
+                <p class="document-action-label">Finalização da estimativa</p>
+                <h3>{{ isFinalized() ? 'Estimativa finalizada' : 'Estimativa em elaboração' }}</h3>
+                <p>
+                  {{ isFinalized()
+                    ? 'A finalização já ocorreu e a estimativa segue pronta para o fluxo documental.'
+                    : 'A estimativa ainda pode ser finalizada para avançar no fluxo.' }}
                 </p>
+              </div>
+              @if (canFinalizeEstimate()) {
+                <button
+                  type="button"
+                  (click)="confirmFinalizeEstimate()"
+                  [disabled]="finalizing()"
+                  class="estimate-action-button estimate-action-button--primary"
+                >
+                  {{ finalizing() ? 'Finalizando...' : 'Finalizar estimativa' }}
+                </button>
+              } @else {
+                <app-status-badge
+                  [label]="isFinalized() ? 'Concluída' : 'Sem ação disponível'"
+                  [status]="isFinalized() ? 'FINALIZADA' : 'RASCUNHO'"
+                  [variantClass]="isFinalized() ? 'b-ok' : 'b-neutral'"
+                />
+              }
+            </article>
+
+            <article class="document-action-card">
+              <div>
+                <p class="document-action-label">Nota de Crédito</p>
+                <h3>{{ hasCreditNote() ? 'Nota de Crédito registrada' : 'Nota de Crédito pendente' }}</h3>
+                <p>
+                  {{ hasCreditNote()
+                    ? 'O contexto do projeto já informa a Nota de Crédito exigida antes da emissão do DIEx.'
+                    : 'Sem Nota de Crédito, a geração do DIEx permanece bloqueada.' }}
+                </p>
+              </div>
+              @if (showCreditNotePrompt() && !showCreditNotePanel()) {
                 <button
                   type="button"
                   (click)="toggleCreditNotePanel()"
-                  class="mt-5 rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5"
+                  class="estimate-action-button estimate-action-button--primary"
                 >
                   Informar Nota de Crédito
                 </button>
+              } @else {
+                <span class="badge" [class]="hasCreditNote() ? 'b-ok' : 'b-warn'">
+                  {{ hasCreditNote() ? creditNoteLabel() : 'Aguardando informação' }}
+                </span>
+              }
+            </article>
+
+            <article class="document-action-card">
+              <div>
+                <p class="document-action-label">DIEx requisitório</p>
+                <h3>
+                  {{ hasDiexIssued()
+                    ? 'DIEx já emitido'
+                    : canGenerateDiex()
+                      ? 'DIEx liberado para emissão'
+                      : 'DIEx ainda indisponível' }}
+                </h3>
+                <p>
+                  {{ hasDiexIssued()
+                    ? 'A emissão já foi registrada no contexto do projeto e novas gerações permanecem bloqueadas.'
+                    : canGenerateDiex()
+                      ? 'Os requisitos atuais permitem emitir o DIEx requisitório.'
+                      : 'A liberação depende da finalização da estimativa, da Nota de Crédito e da etapa correta do projeto.' }}
+                </p>
               </div>
-            } @else {
-              <form [formGroup]="creditNoteForm" class="grid gap-4 md:grid-cols-2">
-                <label class="text-sm font-medium text-slate-700">
+              @if (canGenerateDiex() && !showDiexPanel()) {
+                <button
+                  type="button"
+                  (click)="toggleDiexPanel()"
+                  class="estimate-action-button estimate-action-button--secondary"
+                >
+                  Gerar DIEx requisitório
+                </button>
+              } @else {
+                <app-status-badge
+                  [label]="hasDiexIssued() ? (diexNumber() || 'Emitido') : 'Sem emissão disponível'"
+                  [variantClass]="hasDiexIssued() ? 'b-ok' : 'b-neutral'"
+                />
+              }
+            </article>
+          </div>
+
+          @if (showCreditNotePrompt() && showCreditNotePanel()) {
+            <section class="estimate-form-panel estimate-form-panel--warning">
+              <div class="estimate-form-head">
+                <div>
+                  <p class="estimate-form-kicker">Etapa obrigatória</p>
+                  <h3>Informar Nota de Crédito</h3>
+                  <p>Antes de gerar o DIEx requisitório, registre os dados mínimos exigidos no fluxo do projeto.</p>
+                </div>
+              </div>
+              <form [formGroup]="creditNoteForm" class="estimate-form-grid estimate-form-grid--two">
+                <label class="estimate-field">
                   Número da Nota de Crédito
-                  <input
-                    type="text"
-                    formControlName="creditNoteNumber"
-                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                    placeholder="Ex.: NC-2026-001"
-                  />
+                  <input type="text" formControlName="creditNoteNumber" placeholder="Ex.: NC-2026-001" />
                 </label>
-                <label class="text-sm font-medium text-slate-700">
+                <label class="estimate-field">
                   Data de recebimento
-                  <input
-                    type="date"
-                    formControlName="creditNoteReceivedAt"
-                    class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  />
+                  <input type="date" formControlName="creditNoteReceivedAt" />
                 </label>
               </form>
-              <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
+              <div class="estimate-form-actions">
                 <button
                   type="button"
                   (click)="toggleCreditNotePanel()"
                   [disabled]="savingCreditNote()"
-                  class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                  class="estimate-action-button estimate-action-button--ghost"
                 >
                   Cancelar
                 </button>
@@ -226,203 +454,84 @@ import { EstimatesService } from './estimates.service';
                   type="button"
                   (click)="saveCreditNote()"
                   [disabled]="creditNoteForm.invalid || savingCreditNote()"
-                  class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
+                  class="estimate-action-button estimate-action-button--primary"
                 >
                   {{ savingCreditNote() ? 'Salvando...' : 'Salvar Nota de Crédito' }}
                 </button>
               </div>
-            }
-          </app-section-card>
-        }
-
-        @if (showDiexPanel()) {
-          <app-section-card
-            title="Gerar DIEx requisitório"
-            subtitle="Informe os dados documentais mínimos exigidos pela API para emitir o DIEx a partir desta estimativa finalizada."
-          >
-            <form [formGroup]="diexForm" class="grid gap-4 lg:grid-cols-[1fr_1fr]">
-              <label class="text-sm font-medium text-slate-700">
-                CNPJ do fornecedor
-                <input
-                  type="text"
-                  formControlName="supplierCnpj"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Somente números"
-                />
-              </label>
-              <label class="text-sm font-medium text-slate-700">
-                Número do DIEx
-                <input
-                  type="text"
-                  formControlName="diexNumber"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Opcional"
-                />
-              </label>
-              <label class="text-sm font-medium text-slate-700">
-                Requisitante
-                <input
-                  type="text"
-                  formControlName="requesterName"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Opcional"
-                />
-              </label>
-              <label class="text-sm font-medium text-slate-700">
-                Posto/graduação
-                <input
-                  type="text"
-                  formControlName="requesterRank"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Opcional"
-                />
-              </label>
-              <label class="text-sm font-medium text-slate-700">
-                CPF do requisitante
-                <input
-                  type="text"
-                  formControlName="requesterCpf"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Opcional"
-                />
-              </label>
-              <label class="text-sm font-medium text-slate-700 lg:col-span-2">
-                Observações
-                <textarea
-                  formControlName="notes"
-                  rows="3"
-                  class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
-                  placeholder="Opcional"
-                ></textarea>
-              </label>
-            </form>
-            <div class="mt-5 flex flex-col gap-3 border-t border-[var(--sagep-line)] pt-5 md:flex-row md:items-center md:justify-end">
-              <button
-                type="button"
-                (click)="toggleDiexPanel()"
-                [disabled]="generatingDiex()"
-                class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                (click)="confirmGenerateDiex()"
-                [disabled]="diexForm.invalid || generatingDiex()"
-                class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
-              >
-                {{ generatingDiex() ? 'Gerando DIEx...' : 'Confirmar geração' }}
-              </button>
-            </div>
-          </app-section-card>
-        }
-
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          @for (item of highlightFacts(); track item.label) {
-            <app-summary-card [title]="item.label" [value]="item.value" tone="soft" />
+            </section>
           }
-        </div>
 
-        <div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <app-section-card title="Dados gerais" subtitle="Resumo do vínculo com projeto, ata, grupo de cobertura e OM.">
-            <app-status-badge
-              section-card-actions
-              [label]="formatLabel(estimate()?.status || '')"
-              [status]="estimate()?.status"
-            />
-            <app-metadata-grid class="mt-5 block" [items]="generalFacts()" />
-          </app-section-card>
-
-          <app-section-card title="Projeto vinculado e observações">
-            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Projeto vinculado</p>
-              <p class="mt-3 text-lg font-semibold text-[var(--sagep-brand-deep)]">
-                #{{ estimate()?.project?.projectCode || estimate()?.projectCode }} - {{ estimate()?.project?.title || 'Projeto não informado' }}
-              </p>
-              <p class="mt-2 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
-                Fase do projeto: {{ formatLabel(projectStage()) }}
-              </p>
-              <p class="mt-1 text-sm leading-6 text-[var(--sagep-brand-dark)]/80">
-                Nota de Crédito: {{ creditNoteLabel() }}
-              </p>
-            </div>
-            <div class="mt-5 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5">
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Observações</p>
-              <p class="mt-3 text-sm leading-6 text-[var(--sagep-ink)]">
-                {{ estimate()?.notes | emptyValue:'Sem observações registradas nesta estimativa.' }}
-              </p>
-            </div>
-          </app-section-card>
-        </div>
-
-        <app-section-card title="Itens da estimativa" subtitle="Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações.">
-          <span section-card-actions class="text-sm text-[var(--sagep-muted)]">{{ (estimate()?.items ?? []).length }} item(ns)</span>
-
-          @if ((estimate()?.items ?? []).length) {
-            <div class="mt-6 hidden overflow-x-auto lg:block">
-              <table class="min-w-full divide-y divide-[var(--sagep-line)]">
-                <thead class="bg-[var(--sagep-surface-subtle)]">
-                  <tr class="text-left text-xs font-black uppercase tracking-[0.2em] text-[var(--sagep-muted)]">
-                    <th class="px-4 py-3">Item</th>
-                    <th class="px-4 py-3">Qtd.</th>
-                    <th class="px-4 py-3">Unidade</th>
-                    <th class="px-4 py-3">Valor unit.</th>
-                    <th class="px-4 py-3">Valor total</th>
-                    <th class="px-4 py-3">Observações</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--sagep-line)]">
-                  @for (item of estimate()?.items ?? []; track item.id) {
-                    <tr class="align-top">
-                      <td class="px-4 py-4">
-                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
-                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">
-                          ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
-                        </p>
-                      </td>
-                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.quantity }}</td>
-                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.unit }}</td>
-                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ formatCurrency(item.unitPrice) }}</td>
-                      <td class="px-4 py-4 text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</td>
-                      <td class="px-4 py-4 text-sm text-[var(--sagep-ink)]">{{ item.notes | emptyValue:'Sem observações' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <div class="mt-6 grid gap-4 lg:hidden">
-              @for (item of estimate()?.items ?? []; track item.id) {
-                <article class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
-                  <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
-                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Quantidade</p>
-                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.quantity }}</p>
-                    </div>
-                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
-                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Unidade</p>
-                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ item.unit }}</p>
-                    </div>
-                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
-                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Valor unitário</p>
-                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.unitPrice) }}</p>
-                    </div>
-                    <div class="rounded-[14px] bg-[var(--sagep-surface-subtle)] p-3">
-                      <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">Subtotal</p>
-                      <p class="mt-2 text-sm font-medium text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</p>
-                    </div>
-                  </div>
-                  <p class="mt-4 text-sm text-[var(--sagep-muted)]">{{ item.notes | emptyValue:'Sem observações para esta linha.' }}</p>
-                </article>
-              }
-            </div>
-          } @else {
-            <div class="mt-6 rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
-              A API não retornou itens para esta estimativa.
-            </div>
+          @if (showDiexPanel()) {
+            <section class="estimate-form-panel">
+              <div class="estimate-form-head">
+                <div>
+                  <p class="estimate-form-kicker">Emissão documental</p>
+                  <h3>Gerar DIEx requisitório</h3>
+                  <p>Informe os dados documentais mínimos exigidos pela API para emitir o DIEx a partir desta estimativa finalizada.</p>
+                </div>
+              </div>
+              <form [formGroup]="diexForm" class="estimate-form-grid estimate-form-grid--wide">
+                <label class="estimate-field">
+                  CNPJ do fornecedor
+                  <input type="text" formControlName="supplierCnpj" placeholder="Somente números" />
+                </label>
+                <label class="estimate-field">
+                  Número do DIEx
+                  <input type="text" formControlName="diexNumber" placeholder="Opcional" />
+                </label>
+                <label class="estimate-field">
+                  Requisitante
+                  <input type="text" formControlName="requesterName" placeholder="Opcional" />
+                </label>
+                <label class="estimate-field">
+                  Posto/graduação
+                  <input type="text" formControlName="requesterRank" placeholder="Opcional" />
+                </label>
+                <label class="estimate-field">
+                  CPF do requisitante
+                  <input type="text" formControlName="requesterCpf" placeholder="Opcional" />
+                </label>
+                <label class="estimate-field estimate-field--full">
+                  Observações
+                  <textarea formControlName="notes" rows="3" placeholder="Opcional"></textarea>
+                </label>
+              </form>
+              <div class="estimate-form-actions">
+                <button
+                  type="button"
+                  (click)="toggleDiexPanel()"
+                  [disabled]="generatingDiex()"
+                  class="estimate-action-button estimate-action-button--ghost"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  (click)="confirmGenerateDiex()"
+                  [disabled]="diexForm.invalid || generatingDiex()"
+                  class="estimate-action-button estimate-action-button--primary"
+                >
+                  {{ generatingDiex() ? 'Gerando DIEx...' : 'Confirmar geração' }}
+                </button>
+              </div>
+            </section>
           }
         </app-section-card>
+
+        @if (hasDiexIssued()) {
+          <app-section-card
+            title="Status do DIEx"
+            subtitle="Dados do DIEx requisitório emitido e bloqueio de geração duplicada preservado."
+            bodyClass="estimate-section-stack"
+          >
+            <app-status-badge section-card-actions [label]="diexNumber() || 'Emitido'" variantClass="b-ok" />
+            <app-metadata-grid [items]="diexIssuedFacts()" gridClass="md:grid-cols-2" />
+            <div class="estimate-inline-state estimate-inline-state--success">
+              O detalhe reconhece o DIEx já emitido no contexto do projeto e mantém bloqueada uma nova geração.
+            </div>
+          </app-section-card>
+        }
       }
     </section>
   `,
@@ -585,6 +694,54 @@ export class EstimateDetailPageComponent implements OnInit {
     if (!diex) return '';
     return diex.diexNumber || diex.number || (diex.diexCode ? `DIEx #${diex.diexCode}` : diex.id);
   });
+  readonly heroFacts = computed<MetadataItem[]>(() => {
+    const estimate = this.estimate();
+    return [
+      { label: 'Valor total', value: formatCurrency(estimate?.totalAmount), highlight: true },
+      { label: 'Criada em', value: formatDate(estimate?.createdAt) },
+      { label: 'Atualizada em', value: formatDate(estimate?.updatedAt || estimate?.createdAt) },
+      { label: 'Ata vinculada', value: estimate?.ata ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}` : 'Não informado' },
+    ];
+  });
+  readonly summaryCards = computed(() => {
+    const estimate = this.estimate();
+    const itemsCount = estimate?.items?.length ?? 0;
+
+    return [
+      {
+        title: 'Valor total',
+        value: formatCurrency(estimate?.totalAmount),
+        description: 'Consolidado financeiro da estimativa',
+        icon: 'R$',
+        tone: 'accent' as const,
+      },
+      {
+        title: 'Itens',
+        value: String(itemsCount),
+        description: 'Linhas retornadas pela API',
+        icon: 'IT',
+        tone: 'soft' as const,
+      },
+      {
+        title: 'Nota de Crédito',
+        value: this.hasCreditNote() ? 'Informada' : 'Pendente',
+        description: this.hasCreditNote() ? this.creditNoteLabel() : 'Obrigatória antes da emissão do DIEx',
+        icon: 'NC',
+        tone: this.hasCreditNote() ? ('success' as const) : ('warning' as const),
+      },
+      {
+        title: 'DIEx',
+        value: this.hasDiexIssued() ? (this.diexNumber() || 'Emitido') : this.canGenerateDiex() ? 'Liberado' : 'Pendente',
+        description: this.hasDiexIssued()
+          ? 'Emissão já registrada'
+          : this.canGenerateDiex()
+            ? 'Pronto para gerar'
+            : 'Aguardando requisitos do fluxo',
+        icon: 'DX',
+        tone: this.hasDiexIssued() ? ('success' as const) : this.canGenerateDiex() ? ('soft' as const) : ('warning' as const),
+      },
+    ];
+  });
   readonly highlightFacts = computed(() => {
     const estimate = this.estimate();
     return [
@@ -593,6 +750,19 @@ export class EstimateDetailPageComponent implements OnInit {
       { label: 'OM', value: estimate?.om?.sigla || estimate?.omName || 'Não informado' },
       { label: 'Cidade / UF', value: this.locationLabel(estimate) },
       { label: 'Valor total', value: formatCurrency(estimate?.totalAmount) },
+    ];
+  });
+  readonly projectFacts = computed<MetadataItem[]>(() => {
+    const details = this.projectDetails();
+    const project = details?.project;
+    const nextAction = details?.workflow?.nextAction;
+    const owner = project?.owner?.name || project?.ownerName;
+
+    return [
+      { label: 'Status do projeto', value: formatLabel(project?.status || details?.workflow?.status || '') || 'Não informado' },
+      { label: 'Próxima ação', value: nextAction?.label || 'Não informada', description: nextAction?.description ? String(nextAction.description) : undefined },
+      { label: 'Responsável', value: owner || 'Não informado' },
+      { label: 'Pendências abertas', value: String(details?.pendingActions?.length ?? 0) },
     ];
   });
   readonly generalFacts = computed<MetadataItem[]>(() => {
@@ -659,6 +829,15 @@ export class EstimateDetailPageComponent implements OnInit {
     const city = estimate?.om?.cityName || estimate?.destinationCityName;
     const state = estimate?.om?.stateUf || estimate?.destinationStateUf;
     return [city, state].filter(Boolean).join(' / ') || 'Não informado';
+  }
+
+  itemFacts(item: NonNullable<Estimate['items']>[number]): MetadataItem[] {
+    return [
+      { label: 'Quantidade', value: item.quantity },
+      { label: 'Unidade', value: item.unit },
+      { label: 'Valor unitário', value: formatCurrency(item.unitPrice) },
+      { label: 'Subtotal', value: formatCurrency(item.subtotal), highlight: true },
+    ];
   }
 
   confirmFinalizeEstimate(): void {

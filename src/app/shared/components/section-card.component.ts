@@ -3,8 +3,8 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-section-card',
   template: `
-    <section class="card section-card">
-      <div class="card-head">
+    <section class="card section-card" [class]="cardClass">
+      <div class="card-head" [class]="headClass">
         <div>
           <div class="card-title">{{ title }}</div>
           @if (subtitle) {
@@ -13,7 +13,7 @@ import { Component, Input } from '@angular/core';
         </div>
         <ng-content select="[section-card-actions]"></ng-content>
       </div>
-      <div class="card-body">
+      <div class="card-body" [class]="bodyClass">
         <ng-content></ng-content>
       </div>
     </section>
@@ -22,4 +22,7 @@ import { Component, Input } from '@angular/core';
 export class SectionCardComponent {
   @Input({ required: true }) title = '';
   @Input() subtitle = '';
+  @Input() cardClass = '';
+  @Input() headClass = '';
+  @Input() bodyClass = '';
 }

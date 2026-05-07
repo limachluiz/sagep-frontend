@@ -15,9 +15,9 @@ export interface MetadataItem {
   template: `
     <div class="detail-grid metadata-grid" [ngClass]="gridClass">
       @for (item of items; track item.label) {
-        <div class="detail-item" [class.highlight]="item.highlight">
+        <div class="detail-item" [ngClass]="itemClass" [class.highlight]="item.highlight">
           <label>{{ item.label }}</label>
-          <b>{{ item.value || fallback }}</b>
+          <b>{{ item.value ?? fallback }}</b>
           @if (item.description) {
             <p>{{ item.description }}</p>
           }
@@ -30,4 +30,5 @@ export class MetadataGridComponent {
   @Input() items: MetadataItem[] = [];
   @Input() fallback = 'Não informado';
   @Input() gridClass = 'md:grid-cols-2';
+  @Input() itemClass = '';
 }
