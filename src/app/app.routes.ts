@@ -88,9 +88,19 @@ export const routes: Routes = [
         ],
       },
       {
-        path: 'ordens-servico',
-        component: UnderConstructionComponent,
-        data: { title: 'Ordens de Serviço' },
+        path: 'service-orders',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/service-orders/service-orders-page.component').then((m) => m.ServiceOrdersPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/service-orders/service-order-detail-page.component').then((m) => m.ServiceOrderDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'atas',

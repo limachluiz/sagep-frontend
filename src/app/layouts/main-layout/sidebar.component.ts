@@ -83,10 +83,8 @@ export class SidebarComponent {
         { label: 'DIEx Requisitório', path: '/diex', icon: '◇' },
         {
           label: 'Ordens de Serviço',
-          path: '/ordens-servico',
+          path: '/service-orders',
           icon: '▤',
-          disabled: true,
-          hint: 'Módulo planejado após DIEx e Nota de Empenho.',
         },
       ],
     },
