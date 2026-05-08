@@ -32,9 +32,25 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         canActivate: [permissionGuard],
-        data: { permissions: ['dashboard.view_operational', 'dashboard.view_executive', 'dashboard.financial_view'] },
+        data: {
+          roles: ['ADMIN', 'GESTOR', 'PROJETISTA', 'CONSULTA'],
+          permissions: [
+            'dashboard.view_operational',
+            'dashboard.view_executive',
+            'dashboard.financial_view',
+          ],
+        },
         loadComponent: () =>
-          import('./features/dashboard/dashboard-page.component').then((m) => m.DashboardPageComponent),
+          import('./features/dashboard/dashboard-page.component').then(
+            (m) => m.DashboardPageComponent,
+          ),
+      },
+      {
+        path: 'access-denied',
+        loadComponent: () =>
+          import('./shared/components/access-denied-state.component').then(
+            (m) => m.AccessDeniedStateComponent,
+          ),
       },
       {
         path: 'projects',
@@ -42,12 +58,16 @@ export const routes: Routes = [
           {
             path: '',
             loadComponent: () =>
-              import('./features/projects/projects-page.component').then((m) => m.ProjectsPageComponent),
+              import('./features/projects/projects-page.component').then(
+                (m) => m.ProjectsPageComponent,
+              ),
           },
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/projects/project-detail-page.component').then((m) => m.ProjectDetailPageComponent),
+              import('./features/projects/project-detail-page.component').then(
+                (m) => m.ProjectDetailPageComponent,
+              ),
           },
         ],
       },
@@ -56,18 +76,30 @@ export const routes: Routes = [
         children: [
           {
             path: 'new',
+            canActivate: [permissionGuard],
+            data: {
+              roles: ['ADMIN', 'GESTOR', 'PROJETISTA'],
+              permissions: ['estimates.create'],
+              deniedRoles: ['CONSULTA'],
+            },
             loadComponent: () =>
-              import('./features/estimates/estimate-create-page.component').then((m) => m.EstimateCreatePageComponent),
+              import('./features/estimates/estimate-create-page.component').then(
+                (m) => m.EstimateCreatePageComponent,
+              ),
           },
           {
             path: '',
             loadComponent: () =>
-              import('./features/estimates/estimates-page.component').then((m) => m.EstimatesPageComponent),
+              import('./features/estimates/estimates-page.component').then(
+                (m) => m.EstimatesPageComponent,
+              ),
           },
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/estimates/estimate-detail-page.component').then((m) => m.EstimateDetailPageComponent),
+              import('./features/estimates/estimate-detail-page.component').then(
+                (m) => m.EstimateDetailPageComponent,
+              ),
           },
         ],
       },
@@ -82,7 +114,9 @@ export const routes: Routes = [
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/diex/diex-detail-page.component').then((m) => m.DiexDetailPageComponent),
+              import('./features/diex/diex-detail-page.component').then(
+                (m) => m.DiexDetailPageComponent,
+              ),
           },
         ],
       },
@@ -92,12 +126,16 @@ export const routes: Routes = [
           {
             path: '',
             loadComponent: () =>
-              import('./features/service-orders/service-orders-page.component').then((m) => m.ServiceOrdersPageComponent),
+              import('./features/service-orders/service-orders-page.component').then(
+                (m) => m.ServiceOrdersPageComponent,
+              ),
           },
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/service-orders/service-order-detail-page.component').then((m) => m.ServiceOrderDetailPageComponent),
+              import('./features/service-orders/service-order-detail-page.component').then(
+                (m) => m.ServiceOrderDetailPageComponent,
+              ),
           },
         ],
       },
@@ -112,32 +150,52 @@ export const routes: Routes = [
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/atas/ata-detail-page.component').then((m) => m.AtaDetailPageComponent),
+              import('./features/atas/ata-detail-page.component').then(
+                (m) => m.AtaDetailPageComponent,
+              ),
           },
         ],
       },
       {
         path: 'itens-ata',
         loadComponent: () =>
-          import('./features/ata-items/ata-items-page.component').then((m) => m.AtaItemsPageComponent),
+          import('./features/ata-items/ata-items-page.component').then(
+            (m) => m.AtaItemsPageComponent,
+          ),
       },
       {
         path: 'saldo-ata',
         loadComponent: () =>
-          import('./features/ata-balance/ata-balance-page.component').then((m) => m.AtaBalancePageComponent),
+          import('./features/ata-balance/ata-balance-page.component').then(
+            (m) => m.AtaBalancePageComponent,
+          ),
       },
       {
         path: 'relatorios',
+        canActivate: [permissionGuard],
+        data: {
+          roles: ['ADMIN', 'GESTOR', 'PROJETISTA'],
+          permissions: ['reports.view', 'reports.export', 'exports.projects'],
+          permissionRoles: ['CONSULTA'],
+        },
         loadComponent: () =>
           import('./features/reports/reports-page.component').then((m) => m.ReportsPageComponent),
       },
       {
         path: 'auditoria',
+        canActivate: [permissionGuard],
+        data: {
+          roles: ['ADMIN', 'GESTOR'],
+          permissions: ['audit.view', 'audit.view_all'],
+          deniedRoles: ['CONSULTA'],
+        },
         loadComponent: () =>
           import('./features/audit/audit-page.component').then((m) => m.AuditPageComponent),
       },
       {
         path: 'users',
+        canActivate: [permissionGuard],
+        data: { roles: ['ADMIN'] },
         children: [
           {
             path: '',
@@ -147,7 +205,9 @@ export const routes: Routes = [
           {
             path: ':id',
             loadComponent: () =>
-              import('./features/users/user-detail-page.component').then((m) => m.UserDetailPageComponent),
+              import('./features/users/user-detail-page.component').then(
+                (m) => m.UserDetailPageComponent,
+              ),
           },
         ],
       },
