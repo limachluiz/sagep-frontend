@@ -1700,6 +1700,60 @@ textarea:focus-visible {
   color: var(--eb-night);
 }
 
+.ata-movement-panel {
+  display: grid;
+  gap: 16px;
+  margin: 16px 18px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(200, 166, 75, 0.16), transparent 26%),
+    linear-gradient(180deg, #fffdf8, var(--surface));
+  box-shadow: var(--shadow-sm);
+}
+
+.ata-movement-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ata-movement-panel__head h3 {
+  margin: 0 0 6px;
+  color: var(--eb-night);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.ata-movement-panel__head p:not(.document-action-label) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ata-movement-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ata-movement-grid span {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ata-movement-grid strong {
+  color: var(--eb-night);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .estimate-action-button {
   display: inline-flex;
   align-items: center;
@@ -2291,7 +2345,8 @@ textarea:focus-visible {
 
   .estimate-form-grid--two,
   .estimate-form-grid--wide,
-  .service-order-form {
+  .service-order-form,
+  .ata-movement-grid {
     grid-template-columns: 1fr;
   }
 

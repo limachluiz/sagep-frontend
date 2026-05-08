@@ -92,8 +92,8 @@ export class SidebarComponent {
       title: 'Catálogo',
       items: [
         { label: 'ATAs', path: '/atas', icon: '◫' },
-        { label: 'Itens da ATA', path: '/itens-ata', icon: '▦', disabled: true, hint: 'Ligado ao controle de estoque e saldo da ATA.' },
-        { label: 'Saldo da ATA', path: '/saldo-ata', icon: '▥', disabled: true, hint: 'Painel reservado para movimentações e disponibilidade.' },
+        { label: 'Itens da ATA', path: '/itens-ata', icon: '▦' },
+        { label: 'Saldo da ATA', path: '/saldo-ata', icon: '▥' },
       ],
     },
     {
@@ -102,7 +102,7 @@ export class SidebarComponent {
         { label: 'Relatórios', path: '/relatorios', icon: '▧', disabled: true, hint: 'Exportações e relatórios serão integrados em etapa futura.' },
         { label: 'Auditoria', path: '/auditoria', icon: '◎', disabled: true, hint: 'Consulta de eventos e rastreabilidade ainda pendente.' },
         { label: 'Usuários', path: '/usuarios', icon: '◉', disabled: true, roles: ['ADMIN'], hint: 'Módulo administrativo reservado ao perfil ADMIN.' },
-        { label: 'OMs', path: '/oms', icon: '◆', disabled: true, roles: ['ADMIN'], hint: 'Cadastro institucional previsto para módulo administrativo.' },
+        { label: 'OMs', path: '/oms', icon: '◆', roles: ['ADMIN'] },
       ],
     },
   ];

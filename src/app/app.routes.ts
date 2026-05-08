@@ -119,13 +119,13 @@ export const routes: Routes = [
       },
       {
         path: 'itens-ata',
-        component: UnderConstructionComponent,
-        data: { title: 'Itens da ATA' },
+        loadComponent: () =>
+          import('./features/ata-items/ata-items-page.component').then((m) => m.AtaItemsPageComponent),
       },
       {
         path: 'saldo-ata',
-        component: UnderConstructionComponent,
-        data: { title: 'Saldo da ATA' },
+        loadComponent: () =>
+          import('./features/ata-balance/ata-balance-page.component').then((m) => m.AtaBalancePageComponent),
       },
       {
         path: 'relatorios',
@@ -144,8 +144,22 @@ export const routes: Routes = [
       },
       {
         path: 'oms',
-        component: UnderConstructionComponent,
-        data: { title: 'OMs' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/military-organizations/military-organizations-page.component').then(
+                (m) => m.MilitaryOrganizationsPageComponent,
+              ),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/military-organizations/military-organization-detail-page.component').then(
+                (m) => m.MilitaryOrganizationDetailPageComponent,
+              ),
+          },
+        ],
       },
     ],
   },
