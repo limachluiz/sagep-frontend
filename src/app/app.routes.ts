@@ -144,8 +144,22 @@ export const routes: Routes = [
       },
       {
         path: 'oms',
-        component: UnderConstructionComponent,
-        data: { title: 'OMs' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/military-organizations/military-organizations-page.component').then(
+                (m) => m.MilitaryOrganizationsPageComponent,
+              ),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/military-organizations/military-organization-detail-page.component').then(
+                (m) => m.MilitaryOrganizationDetailPageComponent,
+              ),
+          },
+        ],
       },
     ],
   },

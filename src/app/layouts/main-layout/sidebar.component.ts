@@ -102,7 +102,7 @@ export class SidebarComponent {
         { label: 'Relatórios', path: '/relatorios', icon: '▧', disabled: true, hint: 'Exportações e relatórios serão integrados em etapa futura.' },
         { label: 'Auditoria', path: '/auditoria', icon: '◎', disabled: true, hint: 'Consulta de eventos e rastreabilidade ainda pendente.' },
         { label: 'Usuários', path: '/usuarios', icon: '◉', disabled: true, roles: ['ADMIN'], hint: 'Módulo administrativo reservado ao perfil ADMIN.' },
-        { label: 'OMs', path: '/oms', icon: '◆', disabled: true, roles: ['ADMIN'], hint: 'Cadastro institucional previsto para módulo administrativo.' },
+        { label: 'OMs', path: '/oms', icon: '◆', roles: ['ADMIN'] },
       ],
     },
   ];
