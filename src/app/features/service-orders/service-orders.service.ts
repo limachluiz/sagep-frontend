@@ -41,8 +41,12 @@ export class ServiceOrdersService {
     return this.http.get<ServiceOrder>(`${this.apiUrl}/service-orders/${encodeURIComponent(id)}`);
   }
 
-  getByCode(code: string) {
-    return this.http.get<ServiceOrder>(`${this.apiUrl}/service-orders/code/${encodeURIComponent(code)}`);
+  getByCode(code: string | number) {
+    return this.http.get<ServiceOrder>(`${this.apiUrl}/service-orders/code/${encodeURIComponent(String(code))}`);
+  }
+
+  getByNumber(serviceOrderNumber: string) {
+    return this.http.get<ServiceOrder>(`${this.apiUrl}/service-orders/number/${encodeURIComponent(serviceOrderNumber)}`);
   }
 
   getDocumentHtml(id: string) {

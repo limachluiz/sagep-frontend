@@ -287,7 +287,7 @@ export class ServiceOrdersPageComponent implements OnInit {
   }
 
   serviceOrderIdentifier(item: ServiceOrder): string {
-    return item.serviceOrderNumber || item.id;
+    return item.serviceOrderNumber || (item.serviceOrderCode ? String(item.serviceOrderCode) : item.id);
   }
 
   trackServiceOrder = (item: ServiceOrder) => item.id;

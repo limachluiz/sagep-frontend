@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -43,7 +43,7 @@ import { ServiceOrdersService } from './service-orders.service';
       [title]="serviceOrder()?.serviceOrderNumber || 'Detalhe da ordem de serviço'"
       [eyebrow]="serviceOrderDisplayCode()"
       subtitle="Detalhe da OS com contexto do projeto, estimativa, DIEx, dados documentais, itens, cronograma e documentos entregues."
-      badge="Fonte: GET /service-orders/:identifier"
+      [badge]="sourceBadge()"
       backLabel="Voltar para Ordens de Serviço"
       backLink="/service-orders"
     >
@@ -267,6 +267,7 @@ export class ServiceOrderDetailPageComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly documentError = signal('');
   readonly serviceOrder = signal<ServiceOrder | null>(null);
+  readonly sourceBadge = signal('Fonte: GET /service-orders/:identifier');
   private serviceOrderIdentifierRoute: string | null = null;
 
   readonly serviceOrderDisplayCode = computed(() => this.serviceOrder()?.serviceOrderNumber || 'Ordem de Serviço');
@@ -357,20 +358,7 @@ export class ServiceOrderDetailPageComponent implements OnInit {
     this.errorMessage.set('');
 
     const routeIdentifier = this.serviceOrderIdentifierRoute;
-    const codeCandidate = this.extractServiceOrderCode(routeIdentifier);
-    const shouldTryCodeLookup = routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
-
-    const request$ = shouldTryCodeLookup
-      ? this.serviceOrdersService.getByCode(codeCandidate).pipe(
-          catchError(() => this.serviceOrdersService.getById(routeIdentifier)),
-        )
-      : this.serviceOrdersService.getById(routeIdentifier).pipe(
-          catchError((originalError) =>
-            this.serviceOrdersService.getByCode(codeCandidate).pipe(
-              catchError(() => throwError(() => originalError)),
-            ),
-          ),
-        );
+    const request$ = this.resolveServiceOrder(routeIdentifier);
 
     request$.subscribe({
       next: (response) => {
@@ -517,10 +505,30 @@ export class ServiceOrderDetailPageComponent implements OnInit {
   readonly formatCurrency = formatCurrency;
   readonly formatLabel = formatLabel;
 
-  private extractServiceOrderCode(identifier: string): string {
+  private resolveServiceOrder(identifier: string) {
     const trimmed = identifier.trim();
-    const match = trimmed.match(/(\d+)$/);
-    return match ? String(Number(match[1])) : trimmed;
+
+    if (this.isServiceOrderNumber(trimmed)) {
+      this.sourceBadge.set('Fonte: GET /service-orders/number/:serviceOrderNumber');
+      return this.serviceOrdersService.getByNumber(trimmed).pipe(
+        catchError(() => {
+          this.sourceBadge.set('Fonte: GET /service-orders/:id');
+          return this.serviceOrdersService.getById(identifier);
+        }),
+      );
+    }
+
+    if (/^\d+$/.test(trimmed)) {
+      this.sourceBadge.set('Fonte: GET /service-orders/code/:code');
+      return this.serviceOrdersService.getByCode(Number(trimmed));
+    }
+
+    this.sourceBadge.set('Fonte: GET /service-orders/:id');
+    return this.serviceOrdersService.getById(identifier);
+  }
+
+  private isServiceOrderNumber(identifier: string): boolean {
+    return /^OS-\d{4}-[A-Za-z0-9-]+$/i.test(identifier);
   }
 
   private yearFromDate(value: unknown): number | null {
