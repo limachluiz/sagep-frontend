@@ -51,11 +51,7 @@ import { EstimatesService } from './estimates.service';
         subtitle="Fila atual de estimativas com filtros, paginação e acesso ao detalhe."
       >
         @if (canCreateEstimate()) {
-          <a
-            page-header-actions
-            routerLink="/estimates/new"
-            class="btn btn-gold"
-          >
+          <a page-header-actions routerLink="/estimates/new" class="btn btn-gold">
             Nova estimativa
           </a>
         }
@@ -69,10 +65,7 @@ import { EstimatesService } from './estimates.service';
             class="input"
             placeholder="Buscar por projeto, OM, ata ou observações"
           />
-          <select
-            formControlName="status"
-            class="select"
-          >
+          <select formControlName="status" class="select">
             <option value="">Todos os status</option>
             @for (status of statusOptions; track status) {
               <option [value]="status">{{ formatLabel(status) }}</option>
@@ -92,11 +85,7 @@ import { EstimatesService } from './estimates.service';
             class="input"
             placeholder="Código da OM"
           />
-          <button
-            type="button"
-            (click)="clearFilters()"
-            class="btn btn-ghost"
-          >
+          <button type="button" (click)="clearFilters()" class="btn btn-ghost">
             Limpar filtros
           </button>
         </form>
@@ -147,22 +136,34 @@ import { EstimatesService } from './estimates.service';
             emptyDescription="Ajuste a busca ou limpe os filtros para ampliar a consulta."
           >
             <ng-template appResponsiveTableCell="estimate" let-estimate>
-              <p class="font-semibold text-[var(--sagep-brand-deep)]">EST-{{ estimate.estimateCode }}</p>
-              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ estimate.notes || 'Sem observações cadastradas.' }}</p>
+              <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                EST-{{ estimate.estimateCode }}
+              </p>
+              <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                {{ estimate.notes || 'Sem observações cadastradas.' }}
+              </p>
             </ng-template>
             <ng-template appResponsiveTableCell="status" let-estimate>
               <app-status-badge [label]="formatLabel(estimate.status)" [status]="estimate.status" />
             </ng-template>
             <ng-template appResponsiveTableCell="project" let-estimate>
-              <p class="font-medium text-[var(--sagep-brand-deep)]">#{{ estimate.project?.projectCode || estimate.projectCode }}</p>
-              <p class="mt-1 text-[var(--sagep-muted)]">{{ estimate.project?.title || 'Projeto vinculado' }}</p>
+              <p class="font-medium text-[var(--sagep-brand-deep)]">
+                #{{ estimate.project?.projectCode || estimate.projectCode }}
+              </p>
+              <p class="mt-1 text-[var(--sagep-muted)]">
+                {{ estimate.project?.title || 'Projeto vinculado' }}
+              </p>
             </ng-template>
             <ng-template appResponsiveTableCell="om" let-estimate>
-              <p class="font-medium text-[var(--sagep-brand-deep)]">{{ estimate.om?.sigla || estimate.omName || 'Não informado' }}</p>
+              <p class="font-medium text-[var(--sagep-brand-deep)]">
+                {{ estimate.om?.sigla || estimate.omName || 'Não informado' }}
+              </p>
               <p class="mt-1 text-[var(--sagep-muted)]">{{ locationLabel(estimate) }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="totalAmount" let-estimate>
-              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(estimate.totalAmount) }}</span>
+              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{
+                formatCurrency(estimate.totalAmount)
+              }}</span>
             </ng-template>
             <ng-template appResponsiveTableCell="updatedAt" let-estimate>
               {{ formatDate(estimate.updatedAt || estimate.createdAt) }}
@@ -246,13 +247,16 @@ export class EstimatesPageComponent implements OnInit {
 
   readonly estimates = computed<Estimate[]>(() => this.response()?.items ?? []);
   readonly canCreateEstimate = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['estimates.create']) || role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['estimates.create']);
   });
   readonly currentPage = computed(() => this.response()?.meta.page ?? 1);
   readonly totalPages = computed(() => this.response()?.meta.totalPages ?? 1);
-  readonly canGoPrevious = computed(() => (this.response()?.meta.hasPreviousPage ?? false) && this.currentPage() > 1);
-  readonly canGoNext = computed(() => (this.response()?.meta.hasNextPage ?? false) && this.currentPage() < this.totalPages());
+  readonly canGoPrevious = computed(
+    () => (this.response()?.meta.hasPreviousPage ?? false) && this.currentPage() > 1,
+  );
+  readonly canGoNext = computed(
+    () => (this.response()?.meta.hasNextPage ?? false) && this.currentPage() < this.totalPages(),
+  );
   readonly metaLabel = computed(() => {
     const meta = this.response()?.meta;
     if (!meta) return '';
@@ -272,16 +276,22 @@ export class EstimatesPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEstimates();
-    this.filtersForm.controls.search.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
-      this.loadEstimates(1);
-    });
+    this.filtersForm.controls.search.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.loadEstimates(1);
+      });
     this.filtersForm.controls.status.valueChanges.subscribe(() => this.loadEstimates(1));
-    this.filtersForm.controls.projectCode.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
-      this.loadEstimates(1);
-    });
-    this.filtersForm.controls.omCode.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
-      this.loadEstimates(1);
-    });
+    this.filtersForm.controls.projectCode.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.loadEstimates(1);
+      });
+    this.filtersForm.controls.omCode.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.loadEstimates(1);
+      });
   }
 
   loadEstimates(page = this.currentPage()): void {

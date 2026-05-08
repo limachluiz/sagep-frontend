@@ -199,6 +199,23 @@ export class AuthService {
     return requiredPermissions.some((permission) => permissions.has(permission));
   }
 
+  canPerformMutation(
+    requiredPermissions: string[] = [],
+    fallbackRoles: UserRole[] = ['ADMIN', 'GESTOR', 'PROJETISTA'],
+  ): boolean {
+    const role = this.getUserRole();
+
+    if (role === 'CONSULTA') {
+      return false;
+    }
+
+    if (requiredPermissions.length && this.hasAnyPermission(requiredPermissions)) {
+      return true;
+    }
+
+    return role ? fallbackRoles.includes(role) : false;
+  }
+
   clearSession(reason = 'limpeza explicita'): void {
     this.refreshInFlight$ = null;
     this.accessTokenSignal.set(null);

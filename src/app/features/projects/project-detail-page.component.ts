@@ -12,7 +12,10 @@ import { AccessDeniedStateComponent } from '../../shared/components/access-denie
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
-import { MetadataGridComponent, MetadataItem } from '../../shared/components/metadata-grid.component';
+import {
+  MetadataGridComponent,
+  MetadataItem,
+} from '../../shared/components/metadata-grid.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -84,31 +87,45 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         />
       } @else {
         @if (commitmentNoteSuccess()) {
-          <div class="form-alert success">Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Nota de Empenho informada com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (serviceOrderSuccess()) {
-          <div class="form-alert success">Ordem de Serviço emitida com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Ordem de Serviço emitida com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (executionStartSuccess()) {
-          <div class="form-alert success">Início da execução registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Início da execução registrado com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (asBuiltSuccess()) {
-          <div class="form-alert success">Recebimento do As-Built registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Recebimento do As-Built registrado com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (asBuiltReviewSuccess()) {
-          <div class="form-alert success">Validação do As-Built registrada com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Validação do As-Built registrada com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (invoiceAttestSuccess()) {
-          <div class="form-alert success">Atesto da NF registrado com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Atesto da NF registrado com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (serviceCompletionSuccess()) {
-          <div class="form-alert success">Conclusão do serviço registrada com sucesso. O detalhe do projeto foi atualizado.</div>
+          <div class="form-alert success">
+            Conclusão do serviço registrada com sucesso. O detalhe do projeto foi atualizado.
+          </div>
         }
 
         @if (commitmentNoteForbidden()) {
@@ -121,7 +138,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (commitmentNoteError()) {
-          <app-error-state title="Não foi possível informar a Nota de Empenho" [message]="commitmentNoteError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível informar a Nota de Empenho"
+            [message]="commitmentNoteError()"
+            retryLabel=""
+          />
         }
 
         @if (serviceOrderForbidden()) {
@@ -134,7 +155,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (serviceOrderError()) {
-          <app-error-state title="Não foi possível emitir a Ordem de Serviço" [message]="serviceOrderError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível emitir a Ordem de Serviço"
+            [message]="serviceOrderError()"
+            retryLabel=""
+          />
         }
 
         @if (executionStartForbidden()) {
@@ -147,7 +172,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (executionStartError()) {
-          <app-error-state title="Não foi possível iniciar a execução" [message]="executionStartError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível iniciar a execução"
+            [message]="executionStartError()"
+            retryLabel=""
+          />
         }
 
         @if (asBuiltForbidden()) {
@@ -160,7 +189,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (asBuiltError()) {
-          <app-error-state title="Não foi possível receber o As-Built" [message]="asBuiltError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível receber o As-Built"
+            [message]="asBuiltError()"
+            retryLabel=""
+          />
         }
 
         @if (asBuiltReviewForbidden()) {
@@ -173,7 +206,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (asBuiltReviewError()) {
-          <app-error-state title="Não foi possível validar o As-Built" [message]="asBuiltReviewError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível validar o As-Built"
+            [message]="asBuiltReviewError()"
+            retryLabel=""
+          />
         }
 
         @if (invoiceAttestForbidden()) {
@@ -186,7 +223,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (invoiceAttestError()) {
-          <app-error-state title="Não foi possível atestar a NF" [message]="invoiceAttestError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível atestar a NF"
+            [message]="invoiceAttestError()"
+            retryLabel=""
+          />
         }
 
         @if (serviceCompletionForbidden()) {
@@ -199,7 +240,11 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             secondaryLabel="Ir para o dashboard"
           />
         } @else if (serviceCompletionError()) {
-          <app-error-state title="Não foi possível concluir o serviço" [message]="serviceCompletionError()" retryLabel="" />
+          <app-error-state
+            title="Não foi possível concluir o serviço"
+            [message]="serviceCompletionError()"
+            retryLabel=""
+          />
         }
 
         <section class="card command-card project-hero-card">
@@ -207,11 +252,22 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             <div>
               <span class="badge b-neutral">{{ projectDisplayCode() }}</span>
               <h2>{{ details()?.project?.title }}</h2>
-              <p>{{ details()?.project?.description | emptyValue:'Sem descrição cadastrada para este projeto.' }}</p>
+              <p>
+                {{
+                  details()?.project?.description
+                    | emptyValue: 'Sem descrição cadastrada para este projeto.'
+                }}
+              </p>
             </div>
             <div class="project-hero-meta">
-              <app-status-badge [label]="formatLabel(details()?.workflow?.status || '')" [status]="details()?.workflow?.status" />
-              <app-status-badge [label]="formatLabel(details()?.workflow?.stage || '')" [status]="details()?.workflow?.stage" />
+              <app-status-badge
+                [label]="formatLabel(details()?.workflow?.status || '')"
+                [status]="details()?.workflow?.status"
+              />
+              <app-status-badge
+                [label]="formatLabel(details()?.workflow?.stage || '')"
+                [status]="details()?.workflow?.stage"
+              />
             </div>
           </div>
         </section>
@@ -222,10 +278,18 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           }
         </div>
 
-        <app-section-card title="Workflow documental" subtitle="Etapas principais do fluxo do projeto conforme dados retornados pelo backend.">
+        <app-section-card
+          title="Workflow documental"
+          subtitle="Etapas principais do fluxo do projeto conforme dados retornados pelo backend."
+        >
           <div class="workflow project-workflow">
             @for (step of workflowSteps(); track step.key) {
-              <div class="wf-step" [class.done]="step.done" [class.active]="step.active" [class.cancel]="step.cancel">
+              <div
+                class="wf-step"
+                [class.done]="step.done"
+                [class.active]="step.active"
+                [class.cancel]="step.cancel"
+              >
                 {{ step.label }}
               </div>
             }
@@ -233,17 +297,39 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         </app-section-card>
 
         <div class="grid grid-2 project-main-grid">
-          <app-section-card title="Dados gerais" subtitle="Resumo institucional do projeto, responsáveis e marcos básicos.">
+          <app-section-card
+            title="Dados gerais"
+            subtitle="Resumo institucional do projeto, responsáveis e marcos básicos."
+          >
             <app-metadata-grid [items]="generalFacts()" />
           </app-section-card>
 
-          <app-section-card title="Próxima ação" subtitle="Recomendação operacional para continuidade do fluxo.">
+          <app-section-card
+            title="Próxima ação"
+            subtitle="Recomendação operacional para continuidade do fluxo."
+          >
             <div class="next-action-card">
-              <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-              <h3>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</h3>
-              <p>{{ details()?.workflow?.nextAction?.description | emptyValue:'O backend não forneceu descrição adicional para esta recomendação.' }}</p>
+              <span class="badge b-info">{{
+                details()?.workflow?.nextAction?.code || 'Não informado'
+              }}</span>
+              <h3>
+                {{
+                  details()?.workflow?.nextAction?.label | emptyValue: 'Sem próxima ação calculada'
+                }}
+              </h3>
+              <p>
+                {{
+                  details()?.workflow?.nextAction?.description
+                    | emptyValue
+                      : 'O backend não forneceu descrição adicional para esta recomendação.'
+                }}
+              </p>
             </div>
-            <app-metadata-grid class="metadata-stack" [items]="workflowFacts()" gridClass="grid-cols-1" />
+            <app-metadata-grid
+              class="metadata-stack"
+              [items]="workflowFacts()"
+              gridClass="grid-cols-1"
+            />
             @if (lastAsBuiltRejectionReason()) {
               <div class="flow-action-panel rejection-panel">
                 <span class="badge b-warn">Última reprovação do As-Built</span>
@@ -254,7 +340,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         </div>
 
         <div class="grid grid-2 project-main-grid">
-          <app-section-card title="Documentos vinculados" subtitle="Documentos retornados no detalhe ampliado do projeto.">
+          <app-section-card
+            title="Documentos vinculados"
+            subtitle="Documentos retornados no detalhe ampliado do projeto."
+          >
             <div class="document-groups">
               @for (group of documentGroups(); track group.label) {
                 <div class="document-group">
@@ -279,26 +368,54 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             </div>
           </app-section-card>
 
-          <app-section-card title="Ações do fluxo" subtitle="Ações disponíveis para a etapa atual sem criar novos módulos.">
+          <app-section-card
+            title="Ações do fluxo"
+            subtitle="Ações disponíveis para a etapa atual sem criar novos módulos."
+          >
             @if (showCommitmentNotePrompt()) {
               @if (!showCommitmentNotePanel()) {
                 <div class="flow-action-panel">
                   <span class="badge b-warn">Nota de Empenho pendente</span>
-                  <p>A próxima ação indicada pelo backend é informar a Nota de Empenho para liberar a etapa seguinte.</p>
-                  <button type="button" (click)="toggleCommitmentNotePanel()" class="btn btn-primary">Informar Nota de Empenho</button>
+                  <p>
+                    A próxima ação indicada pelo backend é informar a Nota de Empenho para liberar a
+                    etapa seguinte.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="toggleCommitmentNotePanel()"
+                    class="btn btn-primary"
+                  >
+                    Informar Nota de Empenho
+                  </button>
                 </div>
               } @else {
                 <form [formGroup]="commitmentNoteForm" class="flow-form">
                   <div class="field">
                     <label for="commitmentNoteNumber">Número da Nota de Empenho</label>
-                    <input id="commitmentNoteNumber" type="text" formControlName="commitmentNoteNumber" placeholder="Ex.: NE-2026-001" />
+                    <input
+                      id="commitmentNoteNumber"
+                      type="text"
+                      formControlName="commitmentNoteNumber"
+                      placeholder="Ex.: NE-2026-001"
+                    />
                   </div>
                   <div class="field">
                     <label for="commitmentNoteReceivedAt">Data de recebimento</label>
-                    <input id="commitmentNoteReceivedAt" type="date" formControlName="commitmentNoteReceivedAt" />
+                    <input
+                      id="commitmentNoteReceivedAt"
+                      type="date"
+                      formControlName="commitmentNoteReceivedAt"
+                    />
                   </div>
                   <div class="flow-form-actions">
-                    <button type="button" (click)="toggleCommitmentNotePanel()" [disabled]="savingCommitmentNote()" class="btn btn-ghost">Cancelar</button>
+                    <button
+                      type="button"
+                      (click)="toggleCommitmentNotePanel()"
+                      [disabled]="savingCommitmentNote()"
+                      class="btn btn-ghost"
+                    >
+                      Cancelar
+                    </button>
                     <button
                       type="button"
                       (click)="saveCommitmentNote()"
@@ -314,8 +431,13 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               @if (!showServiceOrderPanel()) {
                 <div class="flow-action-panel">
                   <span class="badge b-info">Ordem de Serviço liberada</span>
-                  <p>A etapa atual do projeto permite emitir a Ordem de Serviço usando o contrato real do backend.</p>
-                  <button type="button" (click)="toggleServiceOrderPanel()" class="btn btn-primary">Emitir Ordem de Serviço</button>
+                  <p>
+                    A etapa atual do projeto permite emitir a Ordem de Serviço usando o contrato
+                    real do backend.
+                  </p>
+                  <button type="button" (click)="toggleServiceOrderPanel()" class="btn btn-primary">
+                    Emitir Ordem de Serviço
+                  </button>
                 </div>
               } @else {
                 <form [formGroup]="serviceOrderForm" class="flow-form service-order-form">
@@ -325,35 +447,73 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   </div>
                   <div class="field">
                     <label for="serviceOrderContractorCnpj">CNPJ da contratada</label>
-                    <input id="serviceOrderContractorCnpj" type="text" formControlName="contractorCnpj" placeholder="Somente números" />
+                    <input
+                      id="serviceOrderContractorCnpj"
+                      type="text"
+                      formControlName="contractorCnpj"
+                      placeholder="Somente números"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderRequesterName">Requisitante</label>
-                    <input id="serviceOrderRequesterName" type="text" formControlName="requesterName" placeholder="Opcional" />
+                    <input
+                      id="serviceOrderRequesterName"
+                      type="text"
+                      formControlName="requesterName"
+                      placeholder="Opcional"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderRequesterRank">Posto/graduação</label>
-                    <input id="serviceOrderRequesterRank" type="text" formControlName="requesterRank" placeholder="Opcional" />
+                    <input
+                      id="serviceOrderRequesterRank"
+                      type="text"
+                      formControlName="requesterRank"
+                      placeholder="Opcional"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderRequesterCpf">CPF do requisitante</label>
-                    <input id="serviceOrderRequesterCpf" type="text" formControlName="requesterCpf" placeholder="Opcional" />
+                    <input
+                      id="serviceOrderRequesterCpf"
+                      type="text"
+                      formControlName="requesterCpf"
+                      placeholder="Opcional"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderRequesterRole">Função do requisitante</label>
-                    <input id="serviceOrderRequesterRole" type="text" formControlName="requesterRole" placeholder="Opcional" />
+                    <input
+                      id="serviceOrderRequesterRole"
+                      type="text"
+                      formControlName="requesterRole"
+                      placeholder="Opcional"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderIssuingOrganization">Organização emissora</label>
-                    <input id="serviceOrderIssuingOrganization" type="text" formControlName="issuingOrganization" placeholder="Opcional" />
+                    <input
+                      id="serviceOrderIssuingOrganization"
+                      type="text"
+                      formControlName="issuingOrganization"
+                      placeholder="Opcional"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderPlannedStartDate">Início planejado</label>
-                    <input id="serviceOrderPlannedStartDate" type="date" formControlName="plannedStartDate" />
+                    <input
+                      id="serviceOrderPlannedStartDate"
+                      type="date"
+                      formControlName="plannedStartDate"
+                    />
                   </div>
                   <div class="field">
                     <label for="serviceOrderPlannedEndDate">Fim planejado</label>
-                    <input id="serviceOrderPlannedEndDate" type="date" formControlName="plannedEndDate" />
+                    <input
+                      id="serviceOrderPlannedEndDate"
+                      type="date"
+                      formControlName="plannedEndDate"
+                    />
                   </div>
                   <label class="field field-checkbox">
                     <span>Atendimento emergencial</span>
@@ -361,10 +521,22 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                   </label>
                   <div class="field service-order-form__full">
                     <label for="serviceOrderNotes">Observações</label>
-                    <textarea id="serviceOrderNotes" formControlName="notes" rows="3" placeholder="Opcional"></textarea>
+                    <textarea
+                      id="serviceOrderNotes"
+                      formControlName="notes"
+                      rows="3"
+                      placeholder="Opcional"
+                    ></textarea>
                   </div>
                   <div class="flow-form-actions service-order-form__full">
-                    <button type="button" (click)="toggleServiceOrderPanel()" [disabled]="creatingServiceOrder()" class="btn btn-ghost">Cancelar</button>
+                    <button
+                      type="button"
+                      (click)="toggleServiceOrderPanel()"
+                      [disabled]="creatingServiceOrder()"
+                      class="btn btn-ghost"
+                    >
+                      Cancelar
+                    </button>
                     <button
                       type="button"
                       (click)="emitServiceOrder()"
@@ -380,40 +552,71 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
               <div class="flow-form">
                 <div class="flow-action-panel success-panel">
                   <span class="badge b-ok">Ordem de Serviço emitida</span>
-                  <p>O projeto já possui OS registrada no backend, então uma nova emissão permanece bloqueada.</p>
+                  <p>
+                    O projeto já possui OS registrada no backend, então uma nova emissão permanece
+                    bloqueada.
+                  </p>
                   <app-metadata-grid [items]="serviceOrderFacts()" gridClass="grid-cols-1" />
                 </div>
                 @if (showExecutionStartPrompt()) {
                   @if (!showExecutionStartPanel()) {
                     <div class="flow-action-panel">
-                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <span class="badge b-info">{{
+                        details()?.workflow?.nextAction?.code || 'Não informado'
+                      }}</span>
+                      <p>
+                        {{
+                          details()?.workflow?.nextAction?.label
+                            | emptyValue: 'Sem próxima ação calculada'
+                        }}
+                      </p>
                       <app-metadata-grid
                         [items]="[
                           {
                             label: 'Descrição',
-                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
-                          }
+                            value:
+                              details()?.workflow?.nextAction?.description ||
+                              'O backend não forneceu descrição adicional.',
+                          },
                         ]"
                         gridClass="grid-cols-1"
                       />
-                      <button type="button" (click)="toggleExecutionStartPanel()" class="btn btn-primary">Iniciar execução</button>
+                      <button
+                        type="button"
+                        (click)="toggleExecutionStartPanel()"
+                        class="btn btn-primary"
+                      >
+                        Iniciar execução
+                      </button>
                     </div>
                   } @else {
                     <form [formGroup]="executionStartForm" class="flow-form">
                       <div class="field">
                         <label for="executionStartedAt">Data de início da execução</label>
-                        <input id="executionStartedAt" type="date" formControlName="executionStartedAt" />
+                        <input
+                          id="executionStartedAt"
+                          type="date"
+                          formControlName="executionStartedAt"
+                        />
                       </div>
                       <div class="flow-form-actions">
-                        <button type="button" (click)="toggleExecutionStartPanel()" [disabled]="savingExecutionStart()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="toggleExecutionStartPanel()"
+                          [disabled]="savingExecutionStart()"
+                          class="btn btn-ghost"
+                        >
+                          Cancelar
+                        </button>
                         <button
                           type="button"
                           (click)="saveExecutionStart()"
                           [disabled]="executionStartForm.invalid || savingExecutionStart()"
                           class="btn btn-primary"
                         >
-                          {{ savingExecutionStart() ? 'Salvando...' : 'Confirmar início da execução' }}
+                          {{
+                            savingExecutionStart() ? 'Salvando...' : 'Confirmar início da execução'
+                          }}
                         </button>
                       </div>
                     </form>
@@ -421,34 +624,58 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 } @else if (showAsBuiltPrompt()) {
                   @if (!showAsBuiltPanel()) {
                     <div class="flow-action-panel">
-                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <span class="badge b-info">{{
+                        details()?.workflow?.nextAction?.code || 'Não informado'
+                      }}</span>
+                      <p>
+                        {{
+                          details()?.workflow?.nextAction?.label
+                            | emptyValue: 'Sem próxima ação calculada'
+                        }}
+                      </p>
                       <app-metadata-grid
                         [items]="[
                           {
                             label: 'Descrição',
-                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
-                          }
+                            value:
+                              details()?.workflow?.nextAction?.description ||
+                              'O backend não forneceu descrição adicional.',
+                          },
                         ]"
                         gridClass="grid-cols-1"
                       />
-                      <button type="button" (click)="toggleAsBuiltPanel()" class="btn btn-primary">Receber As-Built</button>
+                      <button type="button" (click)="toggleAsBuiltPanel()" class="btn btn-primary">
+                        Receber As-Built
+                      </button>
                     </div>
                   } @else {
                     <form [formGroup]="asBuiltForm" class="flow-form">
                       <div class="field">
                         <label for="asBuiltReceivedAt">Data de recebimento do As-Built</label>
-                        <input id="asBuiltReceivedAt" type="date" formControlName="asBuiltReceivedAt" />
+                        <input
+                          id="asBuiltReceivedAt"
+                          type="date"
+                          formControlName="asBuiltReceivedAt"
+                        />
                       </div>
                       <div class="flow-form-actions">
-                        <button type="button" (click)="toggleAsBuiltPanel()" [disabled]="savingAsBuilt()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="toggleAsBuiltPanel()"
+                          [disabled]="savingAsBuilt()"
+                          class="btn btn-ghost"
+                        >
+                          Cancelar
+                        </button>
                         <button
                           type="button"
                           (click)="saveAsBuilt()"
                           [disabled]="asBuiltForm.invalid || savingAsBuilt()"
                           class="btn btn-primary"
                         >
-                          {{ savingAsBuilt() ? 'Salvando...' : 'Confirmar recebimento do As-Built' }}
+                          {{
+                            savingAsBuilt() ? 'Salvando...' : 'Confirmar recebimento do As-Built'
+                          }}
                         </button>
                       </div>
                     </form>
@@ -456,13 +683,23 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 } @else if (showAsBuiltReviewPrompt()) {
                   @if (!showAsBuiltReviewPanel()) {
                     <div class="flow-action-panel">
-                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
-                      <app-metadata-grid
-                        [items]="asBuiltReviewFacts()"
-                        gridClass="grid-cols-1"
-                      />
-                      <button type="button" (click)="toggleAsBuiltReviewPanel()" class="btn btn-primary">Validar As-Built</button>
+                      <span class="badge b-info">{{
+                        details()?.workflow?.nextAction?.code || 'Não informado'
+                      }}</span>
+                      <p>
+                        {{
+                          details()?.workflow?.nextAction?.label
+                            | emptyValue: 'Sem próxima ação calculada'
+                        }}
+                      </p>
+                      <app-metadata-grid [items]="asBuiltReviewFacts()" gridClass="grid-cols-1" />
+                      <button
+                        type="button"
+                        (click)="toggleAsBuiltReviewPanel()"
+                        class="btn btn-primary"
+                      >
+                        Validar As-Built
+                      </button>
                     </div>
                   } @else {
                     <form [formGroup]="asBuiltReviewForm" class="flow-form">
@@ -489,14 +726,25 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                         </div>
                       }
                       <div class="flow-form-actions">
-                        <button type="button" (click)="toggleAsBuiltReviewPanel()" [disabled]="savingAsBuiltReview()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="toggleAsBuiltReviewPanel()"
+                          [disabled]="savingAsBuiltReview()"
+                          class="btn btn-ghost"
+                        >
+                          Cancelar
+                        </button>
                         <button
                           type="button"
                           (click)="saveAsBuiltReview()"
                           [disabled]="asBuiltReviewForm.invalid || savingAsBuiltReview()"
                           class="btn btn-primary"
                         >
-                          {{ savingAsBuiltReview() ? 'Salvando...' : 'Confirmar validação do As-Built' }}
+                          {{
+                            savingAsBuiltReview()
+                              ? 'Salvando...'
+                              : 'Confirmar validação do As-Built'
+                          }}
                         </button>
                       </div>
                     </form>
@@ -504,27 +752,53 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 } @else if (showInvoiceAttestPrompt()) {
                   @if (!showInvoiceAttestPanel()) {
                     <div class="flow-action-panel">
-                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <span class="badge b-info">{{
+                        details()?.workflow?.nextAction?.code || 'Não informado'
+                      }}</span>
+                      <p>
+                        {{
+                          details()?.workflow?.nextAction?.label
+                            | emptyValue: 'Sem próxima ação calculada'
+                        }}
+                      </p>
                       <app-metadata-grid
                         [items]="[
                           {
                             label: 'Descrição',
-                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
-                          }
+                            value:
+                              details()?.workflow?.nextAction?.description ||
+                              'O backend não forneceu descrição adicional.',
+                          },
                         ]"
                         gridClass="grid-cols-1"
                       />
-                      <button type="button" (click)="toggleInvoiceAttestPanel()" class="btn btn-primary">Atestar NF</button>
+                      <button
+                        type="button"
+                        (click)="toggleInvoiceAttestPanel()"
+                        class="btn btn-primary"
+                      >
+                        Atestar NF
+                      </button>
                     </div>
                   } @else {
                     <form [formGroup]="invoiceAttestForm" class="flow-form">
                       <div class="field">
                         <label for="invoiceAttestedAt">Data de atesto da NF</label>
-                        <input id="invoiceAttestedAt" type="date" formControlName="invoiceAttestedAt" />
+                        <input
+                          id="invoiceAttestedAt"
+                          type="date"
+                          formControlName="invoiceAttestedAt"
+                        />
                       </div>
                       <div class="flow-form-actions">
-                        <button type="button" (click)="toggleInvoiceAttestPanel()" [disabled]="savingInvoiceAttest()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="toggleInvoiceAttestPanel()"
+                          [disabled]="savingInvoiceAttest()"
+                          class="btn btn-ghost"
+                        >
+                          Cancelar
+                        </button>
                         <button
                           type="button"
                           (click)="saveInvoiceAttest()"
@@ -539,48 +813,87 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
                 } @else if (showServiceCompletionPrompt()) {
                   @if (!showServiceCompletionPanel()) {
                     <div class="flow-action-panel">
-                      <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                      <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                      <span class="badge b-info">{{
+                        details()?.workflow?.nextAction?.code || 'Não informado'
+                      }}</span>
+                      <p>
+                        {{
+                          details()?.workflow?.nextAction?.label
+                            | emptyValue: 'Sem próxima ação calculada'
+                        }}
+                      </p>
                       <app-metadata-grid
                         [items]="[
                           {
                             label: 'Descrição',
-                            value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
-                          }
+                            value:
+                              details()?.workflow?.nextAction?.description ||
+                              'O backend não forneceu descrição adicional.',
+                          },
                         ]"
                         gridClass="grid-cols-1"
                       />
-                      <button type="button" (click)="toggleServiceCompletionPanel()" class="btn btn-primary">Concluir serviço</button>
+                      <button
+                        type="button"
+                        (click)="toggleServiceCompletionPanel()"
+                        class="btn btn-primary"
+                      >
+                        Concluir serviço
+                      </button>
                     </div>
                   } @else {
                     <form [formGroup]="serviceCompletionForm" class="flow-form">
                       <div class="field">
                         <label for="serviceCompletedAt">Data de conclusão do serviço</label>
-                        <input id="serviceCompletedAt" type="date" formControlName="serviceCompletedAt" />
+                        <input
+                          id="serviceCompletedAt"
+                          type="date"
+                          formControlName="serviceCompletedAt"
+                        />
                       </div>
                       <div class="flow-form-actions">
-                        <button type="button" (click)="toggleServiceCompletionPanel()" [disabled]="savingServiceCompletion()" class="btn btn-ghost">Cancelar</button>
+                        <button
+                          type="button"
+                          (click)="toggleServiceCompletionPanel()"
+                          [disabled]="savingServiceCompletion()"
+                          class="btn btn-ghost"
+                        >
+                          Cancelar
+                        </button>
                         <button
                           type="button"
                           (click)="saveServiceCompletion()"
                           [disabled]="serviceCompletionForm.invalid || savingServiceCompletion()"
                           class="btn btn-primary"
                         >
-                          {{ savingServiceCompletion() ? 'Salvando...' : 'Confirmar conclusão do serviço' }}
+                          {{
+                            savingServiceCompletion()
+                              ? 'Salvando...'
+                              : 'Confirmar conclusão do serviço'
+                          }}
                         </button>
                       </div>
                     </form>
                   }
                 } @else if (hasNextAction()) {
                   <div class="flow-action-panel">
-                    <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
-                    <p>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</p>
+                    <span class="badge b-info">{{
+                      details()?.workflow?.nextAction?.code || 'Não informado'
+                    }}</span>
+                    <p>
+                      {{
+                        details()?.workflow?.nextAction?.label
+                          | emptyValue: 'Sem próxima ação calculada'
+                      }}
+                    </p>
                     <app-metadata-grid
                       [items]="[
                         {
                           label: 'Descrição',
-                          value: details()?.workflow?.nextAction?.description || 'O backend não forneceu descrição adicional.'
-                        }
+                          value:
+                            details()?.workflow?.nextAction?.description ||
+                            'O backend não forneceu descrição adicional.',
+                        },
                       ]"
                       gridClass="grid-cols-1"
                     />
@@ -595,7 +908,10 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           </app-section-card>
         </div>
 
-        <app-section-card title="Resumo financeiro e operacional" subtitle="Indicadores agregados retornados pela API.">
+        <app-section-card
+          title="Resumo financeiro e operacional"
+          subtitle="Indicadores agregados retornados pela API."
+        >
           <div class="detail-grid">
             @for (item of summaryGroups(); track item.label) {
               <div class="detail-item">
@@ -606,18 +922,23 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
           </div>
         </app-section-card>
 
-        <app-section-card title="Timeline" subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto.">
-          <span section-card-actions class="badge b-neutral">{{ (details()?.timeline ?? []).length }} evento(s)</span>
+        <app-section-card
+          title="Timeline"
+          subtitle="Histórico consolidado de eventos e entidades relacionadas ao projeto."
+        >
+          <span section-card-actions class="badge b-neutral"
+            >{{ (details()?.timeline ?? []).length }} evento(s)</span
+          >
           <div class="timeline">
             @for (item of details()?.timeline ?? []; track item.id) {
               <article class="tl" [class]="timelineTone(item.action)">
                 <div class="tl-dot">•</div>
                 <div>
                   <h4>{{ item.label }}</h4>
-                  <p>{{ item.summary | emptyValue:'Sem resumo informado' }}</p>
+                  <p>{{ item.summary | emptyValue: 'Sem resumo informado' }}</p>
                   <div class="timeline-tags">
                     <span>{{ item.entityType }}</span>
-                    <span>{{ item.actorName | emptyValue:'Ator não informado' }}</span>
+                    <span>{{ item.actorName | emptyValue: 'Ator não informado' }}</span>
                     <span>{{ item.action }}</span>
                   </div>
                 </div>
@@ -716,16 +1037,30 @@ export class ProjectDetailPageComponent implements OnInit {
 
   readonly projectDisplayCode = computed(() => {
     const project = this.details()?.project;
-    return project ? buildProjectIdentifier(project.projectCode, project.id, project.createdAt) : 'Projeto';
+    return project
+      ? buildProjectIdentifier(project.projectCode, project.id, project.createdAt)
+      : 'Projeto';
   });
   readonly milestones = computed(() => this.details()?.workflow?.milestones ?? {});
   readonly nextActionText = computed(() => {
     const nextAction = this.details()?.workflow?.nextAction;
-    return [nextAction?.code, nextAction?.label, nextAction?.description].filter(Boolean).join(' ').toUpperCase();
+    return [nextAction?.code, nextAction?.label, nextAction?.description]
+      .filter(Boolean)
+      .join(' ')
+      .toUpperCase();
   });
   readonly hasNextAction = computed(() => Boolean(this.nextActionText().trim()));
-  readonly hasDiexIssued = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['diexNumber', 'diexIssuedAt'])));
-  readonly hasCommitmentNote = computed(() => Boolean(this.pickValueOrEmpty(this.milestones(), ['commitmentNoteNumber', 'commitmentNoteReceivedAt'])));
+  readonly hasDiexIssued = computed(() =>
+    Boolean(this.pickValueOrEmpty(this.milestones(), ['diexNumber', 'diexIssuedAt'])),
+  );
+  readonly hasCommitmentNote = computed(() =>
+    Boolean(
+      this.pickValueOrEmpty(this.milestones(), [
+        'commitmentNoteNumber',
+        'commitmentNoteReceivedAt',
+      ]),
+    ),
+  );
   readonly serviceOrderRecord = computed(() => {
     const serviceOrders = this.asRecordArray(this.details()?.documents?.serviceOrders);
     return serviceOrders[0] ?? null;
@@ -739,103 +1074,84 @@ export class ProjectDetailPageComponent implements OnInit {
     ),
   );
   readonly canInformCommitmentNote = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
   readonly canIssueServiceOrder = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['service_orders.issue']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['service_orders.issue']);
   });
   readonly shouldInformCommitmentNote = computed(() => {
     const nextAction = this.nextActionText();
     return nextAction.includes('EMPENHO') || nextAction.includes('COMMITMENT');
   });
   readonly canStartExecution = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
   readonly canReceiveAsBuilt = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
   readonly canAttestInvoice = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
   readonly canReviewAsBuilt = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
   readonly canCompleteService = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
-  readonly shouldStartExecution = computed(() => this.details()?.workflow?.nextAction?.code === 'INICIAR_EXECUCAO');
-  readonly shouldReceiveAsBuilt = computed(() => this.details()?.workflow?.nextAction?.code === 'ANEXAR_AS_BUILT');
-  readonly shouldReviewAsBuilt = computed(() => this.details()?.workflow?.nextAction?.code === 'VALIDAR_AS_BUILT');
-  readonly shouldAttestInvoice = computed(() => this.details()?.workflow?.nextAction?.code === 'ATESTAR_NF');
-  readonly shouldCompleteService = computed(() => this.details()?.workflow?.nextAction?.code === 'CONCLUIR_SERVICO');
-  readonly showCommitmentNotePrompt = computed(() =>
-    this.hasDiexIssued() &&
-    !this.hasCommitmentNote() &&
-    this.shouldInformCommitmentNote() &&
-    this.canInformCommitmentNote(),
+  readonly shouldStartExecution = computed(
+    () => this.details()?.workflow?.nextAction?.code === 'INICIAR_EXECUCAO',
   );
-  readonly showExecutionStartPrompt = computed(() =>
-    this.hasServiceOrder() &&
-    this.shouldStartExecution() &&
-    this.canStartExecution(),
+  readonly shouldReceiveAsBuilt = computed(
+    () => this.details()?.workflow?.nextAction?.code === 'ANEXAR_AS_BUILT',
   );
-  readonly showAsBuiltPrompt = computed(() =>
-    this.hasServiceOrder() &&
-    this.shouldReceiveAsBuilt() &&
-    this.canReceiveAsBuilt(),
+  readonly shouldReviewAsBuilt = computed(
+    () => this.details()?.workflow?.nextAction?.code === 'VALIDAR_AS_BUILT',
   );
-  readonly showAsBuiltReviewPrompt = computed(() =>
-    this.hasServiceOrder() &&
-    this.shouldReviewAsBuilt() &&
-    this.canReviewAsBuilt(),
+  readonly shouldAttestInvoice = computed(
+    () => this.details()?.workflow?.nextAction?.code === 'ATESTAR_NF',
   );
-  readonly showInvoiceAttestPrompt = computed(() =>
-    this.hasServiceOrder() &&
-    this.shouldAttestInvoice() &&
-    this.canAttestInvoice(),
+  readonly shouldCompleteService = computed(
+    () => this.details()?.workflow?.nextAction?.code === 'CONCLUIR_SERVICO',
   );
-  readonly showServiceCompletionPrompt = computed(() =>
-    this.hasServiceOrder() &&
-    this.shouldCompleteService() &&
-    this.canCompleteService(),
+  readonly showCommitmentNotePrompt = computed(
+    () =>
+      this.hasDiexIssued() &&
+      !this.hasCommitmentNote() &&
+      this.shouldInformCommitmentNote() &&
+      this.canInformCommitmentNote(),
   );
-  readonly showServiceOrderPrompt = computed(() =>
-    this.details()?.workflow?.stage === 'OS_LIBERADA' &&
-    this.hasCommitmentNote() &&
-    !this.hasServiceOrder() &&
-    this.canIssueServiceOrder(),
+  readonly showExecutionStartPrompt = computed(
+    () => this.hasServiceOrder() && this.shouldStartExecution() && this.canStartExecution(),
+  );
+  readonly showAsBuiltPrompt = computed(
+    () => this.hasServiceOrder() && this.shouldReceiveAsBuilt() && this.canReceiveAsBuilt(),
+  );
+  readonly showAsBuiltReviewPrompt = computed(
+    () => this.hasServiceOrder() && this.shouldReviewAsBuilt() && this.canReviewAsBuilt(),
+  );
+  readonly showInvoiceAttestPrompt = computed(
+    () => this.hasServiceOrder() && this.shouldAttestInvoice() && this.canAttestInvoice(),
+  );
+  readonly showServiceCompletionPrompt = computed(
+    () => this.hasServiceOrder() && this.shouldCompleteService() && this.canCompleteService(),
+  );
+  readonly showServiceOrderPrompt = computed(
+    () =>
+      this.details()?.workflow?.stage === 'OS_LIBERADA' &&
+      this.hasCommitmentNote() &&
+      !this.hasServiceOrder() &&
+      this.canIssueServiceOrder(),
   );
   readonly commitmentNoteFacts = computed<MetadataItem[]>(() => [
-    { label: 'Número da Nota de Empenho', value: this.pickValue(this.milestones(), ['commitmentNoteNumber']), highlight: true },
-    { label: 'Recebida em', value: this.pickValue(this.milestones(), ['commitmentNoteReceivedAt']) },
+    {
+      label: 'Número da Nota de Empenho',
+      value: this.pickValue(this.milestones(), ['commitmentNoteNumber']),
+      highlight: true,
+    },
+    {
+      label: 'Recebida em',
+      value: this.pickValue(this.milestones(), ['commitmentNoteReceivedAt']),
+    },
   ]);
   readonly serviceOrderFacts = computed<MetadataItem[]>(() => {
     const serviceOrder = this.serviceOrderRecord();
@@ -847,7 +1163,10 @@ export class ProjectDetailPageComponent implements OnInit {
       },
       {
         label: 'Emitida em',
-        value: this.pickValue(serviceOrder ?? this.milestones(), ['issuedAt', 'serviceOrderIssuedAt']),
+        value: this.pickValue(serviceOrder ?? this.milestones(), [
+          'issuedAt',
+          'serviceOrderIssuedAt',
+        ]),
       },
       {
         label: 'CNPJ da contratada',
@@ -866,23 +1185,39 @@ export class ProjectDetailPageComponent implements OnInit {
     const nextAction = this.details()?.workflow?.nextAction;
 
     return [
-      { label: 'Descrição', value: nextAction?.description || 'O backend não forneceu descrição adicional.' },
-      { label: 'Última reprovação', value: this.lastAsBuiltRejectionReason() || 'Nenhuma reprovação registrada' },
+      {
+        label: 'Descrição',
+        value: nextAction?.description || 'O backend não forneceu descrição adicional.',
+      },
+      {
+        label: 'Última reprovação',
+        value: this.lastAsBuiltRejectionReason() || 'Nenhuma reprovação registrada',
+      },
     ];
   });
 
   readonly highlightFacts = computed(() => {
     const details = this.details();
     const project = details?.project;
-    const estimates = (details?.documents?.estimates as Array<Record<string, unknown>> | undefined) ?? [];
+    const estimates =
+      (details?.documents?.estimates as Array<Record<string, unknown>> | undefined) ?? [];
     const firstEstimate = estimates[0] ?? {};
 
     return [
-      { label: 'OM', value: this.pickValue(project as unknown as Record<string, unknown>, ['omName', 'militaryOrganizationName']) },
+      {
+        label: 'OM',
+        value: this.pickValue(project as unknown as Record<string, unknown>, [
+          'omName',
+          'militaryOrganizationName',
+        ]),
+      },
       { label: 'Cidade / UF', value: this.buildLocation(firstEstimate) },
       { label: 'Status', value: formatLabel(details?.workflow?.status ?? '') },
       { label: 'Fase atual', value: formatLabel(details?.workflow?.stage ?? '') },
-      { label: 'Valor estimado', value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']) },
+      {
+        label: 'Valor estimado',
+        value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']),
+      },
     ];
   });
 
@@ -913,18 +1248,34 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly generalFacts = computed<MetadataItem[]>(() => {
     const details = this.details();
     const project = details?.project;
-    const estimates = (details?.documents?.estimates as Array<Record<string, unknown>> | undefined) ?? [];
+    const estimates =
+      (details?.documents?.estimates as Array<Record<string, unknown>> | undefined) ?? [];
     const firstEstimate = estimates[0] ?? {};
 
     return [
-      { label: 'Responsável', value: project?.owner?.name ?? project?.ownerName ?? 'Não informado' },
-      { label: 'Código interno', value: project?.projectCode ? `#${project.projectCode}` : 'Não informado' },
-      { label: 'OM', value: this.pickValue(project as unknown as Record<string, unknown>, ['omName', 'militaryOrganizationName']) },
+      {
+        label: 'Responsável',
+        value: project?.owner?.name ?? project?.ownerName ?? 'Não informado',
+      },
+      {
+        label: 'Código interno',
+        value: project?.projectCode ? `#${project.projectCode}` : 'Não informado',
+      },
+      {
+        label: 'OM',
+        value: this.pickValue(project as unknown as Record<string, unknown>, [
+          'omName',
+          'militaryOrganizationName',
+        ]),
+      },
       { label: 'Cidade / UF', value: this.buildLocation(firstEstimate) },
       { label: 'Início', value: formatDate(project?.startDate) },
       { label: 'Fim', value: formatDate(project?.endDate) },
       { label: 'Criado em', value: formatDate(project?.createdAt) },
-      { label: 'Valor estimado', value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']) },
+      {
+        label: 'Valor estimado',
+        value: formatCurrency((details?.financialSummary ?? {})['estimatedTotalAmount']),
+      },
     ];
   });
 
@@ -932,11 +1283,23 @@ export class ProjectDetailPageComponent implements OnInit {
     const workflow = this.details()?.workflow;
     const milestones = workflow?.milestones ?? {};
     const facts: MetadataItem[] = [
-      { label: 'Próxima ação', value: this.pickValue(workflow?.nextAction, ['label', 'description', 'code']) },
-      { label: 'Nota de Crédito', value: this.pickValue(milestones, ['creditNoteNumber', 'creditNoteReceivedAt']) },
+      {
+        label: 'Próxima ação',
+        value: this.pickValue(workflow?.nextAction, ['label', 'description', 'code']),
+      },
+      {
+        label: 'Nota de Crédito',
+        value: this.pickValue(milestones, ['creditNoteNumber', 'creditNoteReceivedAt']),
+      },
       { label: 'DIEx', value: this.pickValue(milestones, ['diexNumber', 'diexIssuedAt']) },
-      { label: 'Nota de Empenho', value: this.pickValue(milestones, ['commitmentNoteNumber', 'commitmentNoteReceivedAt']) },
-      { label: 'Ordem de Serviço', value: this.pickValue(milestones, ['serviceOrderNumber', 'serviceOrderIssuedAt']) },
+      {
+        label: 'Nota de Empenho',
+        value: this.pickValue(milestones, ['commitmentNoteNumber', 'commitmentNoteReceivedAt']),
+      },
+      {
+        label: 'Ordem de Serviço',
+        value: this.pickValue(milestones, ['serviceOrderNumber', 'serviceOrderIssuedAt']),
+      },
     ];
 
     if (this.lastAsBuiltRejectionReason()) {
@@ -957,9 +1320,15 @@ export class ProjectDetailPageComponent implements OnInit {
     const documents = this.details()?.documents ?? {};
 
     return [
-      { label: 'Estimativas', items: this.mapDocumentItems(documents['estimates'], 'estimateCode') },
+      {
+        label: 'Estimativas',
+        items: this.mapDocumentItems(documents['estimates'], 'estimateCode'),
+      },
       { label: 'DIEx', items: this.mapDocumentItems(documents['diexRequests'], 'diexCode') },
-      { label: 'Ordens de Serviço', items: this.mapDocumentItems(documents['serviceOrders'], 'serviceOrderCode') },
+      {
+        label: 'Ordens de Serviço',
+        items: this.mapDocumentItems(documents['serviceOrders'], 'serviceOrderCode'),
+      },
     ];
   });
 
@@ -968,14 +1337,23 @@ export class ProjectDetailPageComponent implements OnInit {
     const operationalSummary = this.details()?.operationalSummary ?? {};
 
     return [
-      { label: 'Estimativas cadastradas', value: this.pickValue(financialSummary, ['estimatesCount']) },
-      { label: 'Estimativas finalizadas', value: this.pickValue(financialSummary, ['finalizedEstimatesCount']) },
+      {
+        label: 'Estimativas cadastradas',
+        value: this.pickValue(financialSummary, ['estimatesCount']),
+      },
+      {
+        label: 'Estimativas finalizadas',
+        value: this.pickValue(financialSummary, ['finalizedEstimatesCount']),
+      },
       { label: 'Total estimado', value: formatCurrency(financialSummary['estimatedTotalAmount']) },
       { label: 'Total DIEx', value: formatCurrency(financialSummary['diexTotalAmount']) },
       { label: 'Total OS', value: formatCurrency(financialSummary['serviceOrderTotalAmount']) },
       { label: 'Membros', value: this.pickValue(operationalSummary, ['membersCount']) },
       { label: 'Tarefas abertas', value: this.pickValue(operationalSummary, ['openTasksCount']) },
-      { label: 'Ordens de Serviço', value: this.pickValue(operationalSummary, ['serviceOrdersCount']) },
+      {
+        label: 'Ordens de Serviço',
+        value: this.pickValue(operationalSummary, ['serviceOrdersCount']),
+      },
     ];
   });
 
@@ -1110,7 +1488,9 @@ export class ProjectDetailPageComponent implements OnInit {
         },
         error: (error) => {
           this.commitmentNoteForbidden.set(isForbiddenError(error));
-          this.commitmentNoteError.set(getErrorMessage(error, 'Falha ao informar a Nota de Empenho.'));
+          this.commitmentNoteError.set(
+            getErrorMessage(error, 'Falha ao informar a Nota de Empenho.'),
+          );
         },
       });
   }
@@ -1155,10 +1535,18 @@ export class ProjectDetailPageComponent implements OnInit {
       requesterRole: formValue.requesterRole.trim() || undefined,
       issuingOrganization: formValue.issuingOrganization.trim() || undefined,
       isEmergency: formValue.isEmergency || undefined,
-      plannedStartDate: formValue.plannedStartDate ? new Date(`${formValue.plannedStartDate}T00:00:00`).toISOString() : undefined,
-      plannedEndDate: formValue.plannedEndDate ? new Date(`${formValue.plannedEndDate}T00:00:00`).toISOString() : undefined,
+      plannedStartDate: formValue.plannedStartDate
+        ? new Date(`${formValue.plannedStartDate}T00:00:00`).toISOString()
+        : undefined,
+      plannedEndDate: formValue.plannedEndDate
+        ? new Date(`${formValue.plannedEndDate}T00:00:00`).toISOString()
+        : undefined,
       notes: formValue.notes.trim() || undefined,
-      ...(project.id ? { projectId: project.id } : project.projectCode ? { projectCode: project.projectCode } : {}),
+      ...(project.id
+        ? { projectId: project.id }
+        : project.projectCode
+          ? { projectCode: project.projectCode }
+          : {}),
       ...(relatedEstimate?.['id']
         ? { estimateId: String(relatedEstimate['id']) }
         : this.asNumber(relatedEstimate?.['estimateCode'])
@@ -1218,7 +1606,9 @@ export class ProjectDetailPageComponent implements OnInit {
         },
         error: (error) => {
           this.executionStartForbidden.set(isForbiddenError(error));
-          this.executionStartError.set(getErrorMessage(error, 'Falha ao registrar o início da execução.'));
+          this.executionStartError.set(
+            getErrorMessage(error, 'Falha ao registrar o início da execução.'),
+          );
         },
       });
   }
@@ -1254,7 +1644,9 @@ export class ProjectDetailPageComponent implements OnInit {
         },
         error: (error) => {
           this.asBuiltForbidden.set(isForbiddenError(error));
-          this.asBuiltError.set(getErrorMessage(error, 'Falha ao registrar o recebimento do As-Built.'));
+          this.asBuiltError.set(
+            getErrorMessage(error, 'Falha ao registrar o recebimento do As-Built.'),
+          );
         },
       });
   }
@@ -1379,7 +1771,9 @@ export class ProjectDetailPageComponent implements OnInit {
         },
         error: (error) => {
           this.serviceCompletionForbidden.set(isForbiddenError(error));
-          this.serviceCompletionError.set(getErrorMessage(error, 'Falha ao registrar a conclusão do serviço.'));
+          this.serviceCompletionError.set(
+            getErrorMessage(error, 'Falha ao registrar a conclusão do serviço.'),
+          );
         },
       });
   }
@@ -1417,7 +1811,10 @@ export class ProjectDetailPageComponent implements OnInit {
     return 'Não informado';
   }
 
-  private pickValueOrEmpty(source: Record<string, unknown> | null | undefined, keys: string[]): string {
+  private pickValueOrEmpty(
+    source: Record<string, unknown> | null | undefined,
+    keys: string[],
+  ): string {
     const value = this.pickValue(source, keys);
     return value === 'Não informado' ? '' : value;
   }
@@ -1490,7 +1887,10 @@ export class ProjectDetailPageComponent implements OnInit {
     return [city, state].filter(Boolean).join(' / ');
   }
 
-  private mapDocumentItems(value: unknown, codeKey: string): Array<{ title: string; meta: string }> {
+  private mapDocumentItems(
+    value: unknown,
+    codeKey: string,
+  ): Array<{ title: string; meta: string }> {
     if (!Array.isArray(value)) {
       return [];
     }
@@ -1499,13 +1899,21 @@ export class ProjectDetailPageComponent implements OnInit {
       const source = item as Record<string, unknown>;
       const code = source[codeKey];
       const number = source['diexNumber'] ?? source['serviceOrderNumber'] ?? source['estimateCode'];
-      const amount = source['totalAmount'] ? formatCurrency(source['totalAmount']) : 'Valor não informado';
+      const amount = source['totalAmount']
+        ? formatCurrency(source['totalAmount'])
+        : 'Valor não informado';
       const status = source['status'] ?? source['documentStatus'];
       const issuedAt = source['issuedAt'] ?? source['createdAt'];
 
       return {
-        title: [code ? `#${code}` : null, number ? String(number) : null].filter(Boolean).join(' • ') || 'Documento relacionado',
-        meta: [status ? formatLabel(String(status)) : null, amount, issuedAt ? formatDate(String(issuedAt)) : null]
+        title:
+          [code ? `#${code}` : null, number ? String(number) : null].filter(Boolean).join(' • ') ||
+          'Documento relacionado',
+        meta: [
+          status ? formatLabel(String(status)) : null,
+          amount,
+          issuedAt ? formatDate(String(issuedAt)) : null,
+        ]
           .filter(Boolean)
           .join(' • '),
       };
@@ -1517,7 +1925,9 @@ export class ProjectDetailPageComponent implements OnInit {
       return [];
     }
 
-    return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object');
+    return value.filter(
+      (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+    );
   }
 
   private relatedEstimate(): Record<string, unknown> | null {

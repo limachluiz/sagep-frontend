@@ -15,12 +15,16 @@ import { Ata, AtaCoverageGroup, AtaItem } from '../../core/models/ata.model';
 import { MilitaryOrganization } from '../../core/models/military-organization.model';
 import { Project } from '../../core/models/project.model';
 import { AtasService } from '../../core/services/atas.service';
+import { AuthService } from '../../core/services/auth.service';
 import { MilitaryOrganizationsService } from '../../core/services/military-organizations.service';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
-import { MetadataGridComponent, MetadataItem } from '../../shared/components/metadata-grid.component';
+import {
+  MetadataGridComponent,
+  MetadataItem,
+} from '../../shared/components/metadata-grid.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -72,6 +76,15 @@ interface SelectedItemSummary {
 
       @if (loading()) {
         <app-loading-state variant="detail" [count]="3" />
+      } @else if (!canCreateEstimate()) {
+        <app-access-denied-state
+          title="Seu acesso atual não permite criar estimativas."
+          description="Este perfil pode consultar dados permitidos, mas não pode iniciar uma nova estimativa."
+          primaryLink="/estimates"
+          primaryLabel="Voltar à listagem"
+          secondaryLink="/dashboard"
+          secondaryLabel="Ir para o dashboard"
+        />
       } @else if (forbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite criar estimativas."
@@ -115,7 +128,10 @@ interface SelectedItemSummary {
         }
 
         @if (currentStep() === 1) {
-          <app-section-card title="Selecionar projeto" subtitle="Busque por texto ou código e escolha o projeto que receberá a estimativa.">
+          <app-section-card
+            title="Selecionar projeto"
+            subtitle="Busque por texto ou código e escolha o projeto que receberá a estimativa."
+          >
             <input
               type="search"
               [formControl]="projectSearchControl"
@@ -139,14 +155,26 @@ interface SelectedItemSummary {
                         <p class="font-semibold text-[var(--sagep-brand-deep)]">
                           {{ projectFriendlyCode(project) }} - {{ project.title }}
                         </p>
-                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ project.description || 'Sem descrição cadastrada.' }}</p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                          {{ project.description || 'Sem descrição cadastrada.' }}
+                        </p>
                       </div>
                       <div class="flex flex-wrap gap-2">
-                        <app-status-badge [label]="formatLabel(project.status)" [status]="project.status" />
-                        <app-status-badge [label]="formatLabel(project.stage)" [status]="project.stage" />
+                        <app-status-badge
+                          [label]="formatLabel(project.status)"
+                          [status]="project.status"
+                        />
+                        <app-status-badge
+                          [label]="formatLabel(project.stage)"
+                          [status]="project.stage"
+                        />
                       </div>
                     </div>
-                    <app-metadata-grid class="mt-4 block" [items]="projectMetadata(project)" gridClass="md:grid-cols-3" />
+                    <app-metadata-grid
+                      class="mt-4 block"
+                      [items]="projectMetadata(project)"
+                      gridClass="md:grid-cols-3"
+                    />
                   </button>
                 } @empty {
                   <div class="estimate-empty-note">
@@ -159,7 +187,10 @@ interface SelectedItemSummary {
         }
 
         @if (currentStep() === 2) {
-          <app-section-card title="Selecionar ATA, cobertura e OM" subtitle="Escolha a ATA disponível e complete os vínculos exigidos para criação.">
+          <app-section-card
+            title="Selecionar ATA, cobertura e OM"
+            subtitle="Escolha a ATA disponível e complete os vínculos exigidos para criação."
+          >
             <div class="estimate-wizard-grid">
               <div>
                 <input
@@ -176,16 +207,30 @@ interface SelectedItemSummary {
                       class="estimate-choice-card"
                       [class.active]="selectedAta()?.id === ata.id"
                     >
-                      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div
+                        class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+                      >
                         <div>
-                          <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ ataLabel(ata) }}</p>
-                          <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ ata.vendorName || 'Fornecedor não informado' }}</p>
+                          <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                            {{ ataLabel(ata) }}
+                          </p>
+                          <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                            {{ ata.vendorName || 'Fornecedor não informado' }}
+                          </p>
                         </div>
-                        <span class="rounded-full border border-[var(--sagep-line)] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sagep-muted)]">
-                          {{ ata.isActive === false ? 'Inativa' : formatLabel(ata.status || 'Ativa') }}
+                        <span
+                          class="rounded-full border border-[var(--sagep-line)] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--sagep-muted)]"
+                        >
+                          {{
+                            ata.isActive === false ? 'Inativa' : formatLabel(ata.status || 'Ativa')
+                          }}
                         </span>
                       </div>
-                      <app-metadata-grid class="mt-4 block" [items]="ataMetadata(ata)" gridClass="md:grid-cols-3" />
+                      <app-metadata-grid
+                        class="mt-4 block"
+                        [items]="ataMetadata(ata)"
+                        gridClass="md:grid-cols-3"
+                      />
                     </button>
                   } @empty {
                     <div class="estimate-empty-note">
@@ -197,9 +242,7 @@ interface SelectedItemSummary {
 
               <div class="estimate-side-panel" [formGroup]="form">
                 <div class="field">
-                  <label for="coverageGroupId">
-                    Grupo de cobertura
-                  </label>
+                  <label for="coverageGroupId"> Grupo de cobertura </label>
                   <select
                     id="coverageGroupId"
                     formControlName="coverageGroupId"
@@ -212,7 +255,9 @@ interface SelectedItemSummary {
                     }
                   </select>
                   @if (selectedAta() && !coverageGroups().length) {
-                    <p class="mt-3 text-sm text-amber-700">A ATA selecionada ainda não retornou grupos de cobertura.</p>
+                    <p class="mt-3 text-sm text-amber-700">
+                      A ATA selecionada ainda não retornou grupos de cobertura.
+                    </p>
                   }
                 </div>
 
@@ -240,7 +285,10 @@ interface SelectedItemSummary {
         }
 
         @if (currentStep() === 3) {
-          <app-section-card title="Selecionar itens" subtitle="Marque os itens da ATA que farão parte da estimativa.">
+          <app-section-card
+            title="Selecionar itens"
+            subtitle="Marque os itens da ATA que farão parte da estimativa."
+          >
             <div class="grid gap-4">
               @for (item of ataItems(); track item.id) {
                 <label class="estimate-item-card">
@@ -253,12 +301,23 @@ interface SelectedItemSummary {
                   <div class="estimate-item-card-body">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode || 'Item sem referência' }} - {{ item.description || 'Sem descrição' }}</p>
-                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">Unidade: {{ item.unit || 'Não informado' }}</p>
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                          {{ item.referenceCode || 'Item sem referência' }} -
+                          {{ item.description || 'Sem descrição' }}
+                        </p>
+                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                          Unidade: {{ item.unit || 'Não informado' }}
+                        </p>
                       </div>
-                      <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.unitPrice) }}</p>
+                      <p class="text-sm font-semibold text-[var(--sagep-brand-deep)]">
+                        {{ formatCurrency(item.unitPrice) }}
+                      </p>
                     </div>
-                    <app-metadata-grid class="mt-4 block" [items]="itemMetadata(item)" gridClass="md:grid-cols-4" />
+                    <app-metadata-grid
+                      class="mt-4 block"
+                      [items]="itemMetadata(item)"
+                      gridClass="md:grid-cols-4"
+                    />
                   </div>
                 </label>
               } @empty {
@@ -271,14 +330,22 @@ interface SelectedItemSummary {
         }
 
         @if (currentStep() === 4) {
-          <app-section-card title="Informar quantidades" subtitle="Defina a quantidade desejada para cada item selecionado.">
+          <app-section-card
+            title="Informar quantidades"
+            subtitle="Defina a quantidade desejada para cada item selecionado."
+          >
             <div class="grid gap-4">
               @for (entry of selectedItemSummaries(); track entry.item.id) {
                 <div class="estimate-quantity-card">
                   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descrição' }}</p>
-                      <p class="mt-1 text-sm text-[var(--sagep-muted)]">Valor unitário: {{ formatCurrency(entry.item.unitPrice) }}</p>
+                      <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                        {{ entry.item.referenceCode || 'Item' }} -
+                        {{ entry.item.description || 'Sem descrição' }}
+                      </p>
+                      <p class="mt-1 text-sm text-[var(--sagep-muted)]">
+                        Valor unitário: {{ formatCurrency(entry.item.unitPrice) }}
+                      </p>
                     </div>
                     <label class="w-full max-w-48 text-sm font-semibold text-[var(--sagep-ink)]">
                       Quantidade
@@ -307,7 +374,10 @@ interface SelectedItemSummary {
         }
 
         @if (currentStep() === 5) {
-          <app-section-card title="Revisar e salvar" subtitle="Confira os vínculos e os totais calculados para prévia antes de enviar ao backend.">
+          <app-section-card
+            title="Revisar e salvar"
+            subtitle="Confira os vínculos e os totais calculados para prévia antes de enviar ao backend."
+          >
             <div class="estimate-review-grid">
               <div class="estimate-review-summary">
                 <app-metadata-grid [items]="reviewMetadata()" gridClass="grid-cols-1" />
@@ -328,9 +398,13 @@ interface SelectedItemSummary {
                   <tbody>
                     @for (entry of selectedItemSummaries(); track entry.item.id) {
                       <tr>
-                        <td><b>{{ entry.item.referenceCode || 'Item' }}</b></td>
+                        <td>
+                          <b>{{ entry.item.referenceCode || 'Item' }}</b>
+                        </td>
                         <td class="text-right">{{ entry.quantity }}</td>
-                        <td class="text-right"><b>{{ formatCurrency(entry.subtotal) }}</b></td>
+                        <td class="text-right">
+                          <b>{{ formatCurrency(entry.subtotal) }}</b>
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -381,6 +455,7 @@ export class EstimateCreatePageComponent implements OnInit {
   private readonly atasService = inject(AtasService);
   private readonly militaryOrganizationsService = inject(MilitaryOrganizationsService);
   private readonly estimatesService = inject(EstimatesService);
+  private readonly authService = inject(AuthService);
 
   readonly steps = [
     { id: 1, label: 'Projeto' },
@@ -415,6 +490,9 @@ export class EstimateCreatePageComponent implements OnInit {
   readonly ataItems = signal<AtaItem[]>([]);
   readonly selectedProject = signal<Project | null>(null);
   readonly selectedAta = signal<Ata | null>(null);
+  readonly canCreateEstimate = computed(() =>
+    this.authService.canPerformMutation(['estimates.create']),
+  );
 
   readonly filteredAtas = computed(() => {
     const term = this.ataSearchControl.value.trim().toLowerCase();
@@ -472,10 +550,17 @@ export class EstimateCreatePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (!this.canCreateEstimate()) {
+      this.loading.set(false);
+      return;
+    }
+
     this.loadInitialData();
-    this.projectSearchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe((search) => {
-      this.loadProjects(search);
-    });
+    this.projectSearchControl.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((search) => {
+        this.loadProjects(search);
+      });
   }
 
   loadInitialData(): void {
@@ -497,7 +582,9 @@ export class EstimateCreatePageComponent implements OnInit {
         },
         error: (error) => {
           this.forbidden.set(isForbiddenError(error));
-          this.errorMessage.set(getErrorMessage(error, 'Falha ao carregar dados para criação da estimativa.'));
+          this.errorMessage.set(
+            getErrorMessage(error, 'Falha ao carregar dados para criação da estimativa.'),
+          );
         },
       });
   }
@@ -561,7 +648,9 @@ export class EstimateCreatePageComponent implements OnInit {
   }
 
   toggleItem(item: AtaItem, checked: boolean): void {
-    const index = this.itemsArray.controls.findIndex((control) => control.controls.ataItemId.value === item.id);
+    const index = this.itemsArray.controls.findIndex(
+      (control) => control.controls.ataItemId.value === item.id,
+    );
 
     if (checked && index === -1) {
       this.itemsArray.push(
@@ -582,7 +671,9 @@ export class EstimateCreatePageComponent implements OnInit {
   }
 
   quantityControl(itemId: string): FormControl<number> {
-    const control = this.itemsArray.controls.find((candidate) => candidate.controls.ataItemId.value === itemId);
+    const control = this.itemsArray.controls.find(
+      (candidate) => candidate.controls.ataItemId.value === itemId,
+    );
     return control?.controls.quantity ?? this.fb.nonNullable.control(0);
   }
 
@@ -619,27 +710,39 @@ export class EstimateCreatePageComponent implements OnInit {
       case 2:
         return Boolean(
           this.form.controls.ataId.value &&
-            this.form.controls.coverageGroupId.value &&
-            this.form.controls.omId.value,
+          this.form.controls.coverageGroupId.value &&
+          this.form.controls.omId.value,
         );
       case 3:
         return this.itemsArray.length > 0;
       case 4:
-        return this.itemsArray.controls.every((control) => this.normalizedQuantity(control.controls.quantity.value) > 0);
+        return this.itemsArray.controls.every(
+          (control) => this.normalizedQuantity(control.controls.quantity.value) > 0,
+        );
       default:
         return true;
     }
   }
 
   canSave(): boolean {
-    return this.form.valid && this.itemsArray.length > 0;
+    return this.canCreateEstimate() && this.form.valid && this.itemsArray.length > 0;
   }
 
   maxReachableStep(): number {
     if (!this.form.controls.projectId.value) return 1;
-    if (!this.form.controls.ataId.value || !this.form.controls.coverageGroupId.value || !this.form.controls.omId.value) return 2;
+    if (
+      !this.form.controls.ataId.value ||
+      !this.form.controls.coverageGroupId.value ||
+      !this.form.controls.omId.value
+    )
+      return 2;
     if (!this.itemsArray.length) return 3;
-    if (!this.itemsArray.controls.every((control) => this.normalizedQuantity(control.controls.quantity.value) > 0)) return 4;
+    if (
+      !this.itemsArray.controls.every(
+        (control) => this.normalizedQuantity(control.controls.quantity.value) > 0,
+      )
+    )
+      return 4;
     return 5;
   }
 
@@ -684,14 +787,20 @@ export class EstimateCreatePageComponent implements OnInit {
 
   projectMetadata(project: Project): MetadataItem[] {
     return [
-      { label: 'OM', value: this.recordValue(project, ['omName', 'militaryOrganizationName', 'om.sigla']) },
+      {
+        label: 'OM',
+        value: this.recordValue(project, ['omName', 'militaryOrganizationName', 'om.sigla']),
+      },
       { label: 'Cidade / UF', value: this.locationFromRecord(project) },
       { label: 'Criado em', value: formatDate(project.createdAt) },
     ];
   }
 
   ataLabel(ata: Ata): string {
-    return [ata.type ? formatLabel(ata.type) : 'ATA', ata.number || (ata.ataCode ? `#${ata.ataCode}` : '')]
+    return [
+      ata.type ? formatLabel(ata.type) : 'ATA',
+      ata.number || (ata.ataCode ? `#${ata.ataCode}` : ''),
+    ]
       .filter(Boolean)
       .join(' ');
   }
@@ -700,7 +809,10 @@ export class EstimateCreatePageComponent implements OnInit {
     return [
       { label: 'Tipo', value: ata.type ? formatLabel(ata.type) : null },
       { label: 'Número', value: ata.number || ata.ataCode },
-      { label: 'Vigência', value: this.dateRange(ata.validFrom || ata.startDate, ata.validUntil || ata.endDate) },
+      {
+        label: 'Vigência',
+        value: this.dateRange(ata.validFrom || ata.startDate, ata.validUntil || ata.endDate),
+      },
     ];
   }
 
@@ -709,7 +821,12 @@ export class EstimateCreatePageComponent implements OnInit {
       { label: 'Código', value: item.ataItemCode ? `#${item.ataItemCode}` : item.referenceCode },
       { label: 'Saldo disponível', value: item.balance?.availableQuantity ?? null },
       { label: 'Saldo reservado', value: item.balance?.reservedQuantity ?? null },
-      { label: 'Grupo', value: item.coverageGroup ? this.coverageGroupLabel(item.coverageGroup) : item.coverageGroupId },
+      {
+        label: 'Grupo',
+        value: item.coverageGroup
+          ? this.coverageGroupLabel(item.coverageGroup)
+          : item.coverageGroupId,
+      },
     ];
   }
 
@@ -723,9 +840,17 @@ export class EstimateCreatePageComponent implements OnInit {
 
   reviewMetadata(): MetadataItem[] {
     return [
-      { label: 'Projeto', value: this.selectedProject() ? this.projectFriendlyCode(this.selectedProject() as Project) : null },
+      {
+        label: 'Projeto',
+        value: this.selectedProject()
+          ? this.projectFriendlyCode(this.selectedProject() as Project)
+          : null,
+      },
       { label: 'ATA', value: this.selectedAta() ? this.ataLabel(this.selectedAta() as Ata) : null },
-      { label: 'Grupo de cobertura', value: this.coverageGroupLabelById(this.form.controls.coverageGroupId.value) },
+      {
+        label: 'Grupo de cobertura',
+        value: this.coverageGroupLabelById(this.form.controls.coverageGroupId.value),
+      },
       { label: 'OM', value: this.omLabelById(this.form.controls.omId.value) },
     ];
   }
@@ -757,7 +882,7 @@ export class EstimateCreatePageComponent implements OnInit {
   }
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
-    return Array.isArray(response) ? response : response.items ?? [];
+    return Array.isArray(response) ? response : (response.items ?? []);
   }
 
   private selectDefaultCoverageGroup(): void {
@@ -811,7 +936,12 @@ export class EstimateCreatePageComponent implements OnInit {
   }
 
   private numericValue(value: unknown): number {
-    const numericValue = typeof value === 'number' ? value : typeof value === 'string' ? Number.parseFloat(value) : Number.NaN;
+    const numericValue =
+      typeof value === 'number'
+        ? value
+        : typeof value === 'string'
+          ? Number.parseFloat(value)
+          : Number.NaN;
     return Number.isNaN(numericValue) ? 0 : numericValue;
   }
 

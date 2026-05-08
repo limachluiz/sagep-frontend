@@ -13,7 +13,10 @@ import { AccessDeniedStateComponent } from '../../shared/components/access-denie
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state.component';
-import { MetadataGridComponent, MetadataItem } from '../../shared/components/metadata-grid.component';
+import {
+  MetadataGridComponent,
+  MetadataItem,
+} from '../../shared/components/metadata-grid.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SectionCardComponent } from '../../shared/components/section-card.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -57,12 +60,22 @@ import { EstimatesService } from './estimates.service';
         backLink="/estimates"
       >
         @if (estimate()?.id) {
-          <button page-header-actions type="button" (click)="openHtmlDocument()" class="btn btn-ghost">
+          <button
+            page-header-actions
+            type="button"
+            (click)="openHtmlDocument()"
+            class="btn btn-ghost"
+          >
             Visualizar documento
           </button>
         }
         @if (estimate()?.id) {
-          <button page-header-actions type="button" (click)="openPdfDocument()" class="btn btn-gold">
+          <button
+            page-header-actions
+            type="button"
+            (click)="openPdfDocument()"
+            class="btn btn-gold"
+          >
             Abrir PDF
           </button>
         }
@@ -101,20 +114,28 @@ import { EstimatesService } from './estimates.service';
       }
 
       @if (finalizeSuccess()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
+        <div
+          class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]"
+        >
           Estimativa finalizada com sucesso. O detalhe foi atualizado com o status mais recente.
         </div>
       }
 
       @if (creditNoteSuccess()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
+        <div
+          class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]"
+        >
           Nota de Crédito informada com sucesso. A geração do DIEx requisitório foi liberada.
         </div>
       }
 
       @if (diexSuccess()) {
-        <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
-          DIEx requisitório gerado com sucesso{{ createdDiexLabel() ? ': ' + createdDiexLabel() : '' }}.
+        <div
+          class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]"
+        >
+          DIEx requisitório gerado com sucesso{{
+            createdDiexLabel() ? ': ' + createdDiexLabel() : ''
+          }}.
         </div>
       }
 
@@ -128,7 +149,11 @@ import { EstimatesService } from './estimates.service';
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (finalizeError()) {
-        <app-error-state title="Não foi possível finalizar a estimativa" [message]="finalizeError()" retryLabel="" />
+        <app-error-state
+          title="Não foi possível finalizar a estimativa"
+          [message]="finalizeError()"
+          retryLabel=""
+        />
       }
 
       @if (creditNoteForbidden()) {
@@ -141,7 +166,11 @@ import { EstimatesService } from './estimates.service';
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (creditNoteError()) {
-        <app-error-state title="Não foi possível informar a Nota de Crédito" [message]="creditNoteError()" retryLabel="" />
+        <app-error-state
+          title="Não foi possível informar a Nota de Crédito"
+          [message]="creditNoteError()"
+          retryLabel=""
+        />
       }
 
       @if (diexForbidden()) {
@@ -154,7 +183,11 @@ import { EstimatesService } from './estimates.service';
           secondaryLabel="Ir para o dashboard"
         />
       } @else if (diexError()) {
-        <app-error-state title="Não foi possível gerar o DIEx requisitório" [message]="diexError()" retryLabel="" />
+        <app-error-state
+          title="Não foi possível gerar o DIEx requisitório"
+          [message]="diexError()"
+          retryLabel=""
+        />
       }
 
       @if (loading()) {
@@ -188,7 +221,10 @@ import { EstimatesService } from './estimates.service';
               <p class="estimate-hero-kicker">Estimativa de preço</p>
               <div class="estimate-hero-title-row">
                 <h2>{{ estimateDisplayCode() }}</h2>
-                <app-status-badge [label]="formatLabel(estimate()?.status || '')" [status]="estimate()?.status" />
+                <app-status-badge
+                  [label]="formatLabel(estimate()?.status || '')"
+                  [status]="estimate()?.status"
+                />
               </div>
               <p class="estimate-hero-copy">
                 {{ estimate()?.project?.title || 'Projeto não informado' }} ·
@@ -196,7 +232,11 @@ import { EstimatesService } from './estimates.service';
                 {{ locationLabel(estimate()) }}
               </p>
               <div class="estimate-hero-tags">
-                <span class="badge b-neutral">Projeto #{{ estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I' }}</span>
+                <span class="badge b-neutral"
+                  >Projeto #{{
+                    estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I'
+                  }}</span
+                >
                 <span class="badge b-info">{{ (estimate()?.items ?? []).length }} item(ns)</span>
                 @if (hasCreditNote()) {
                   <span class="badge b-ok">NC informada</span>
@@ -245,7 +285,9 @@ import { EstimatesService } from './estimates.service';
               variantClass="b-info"
             />
             <div class="estimate-project-callout">
-              <p class="estimate-project-code">Projeto #{{ estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I' }}</p>
+              <p class="estimate-project-code">
+                Projeto #{{ estimate()?.project?.projectCode || estimate()?.projectCode || 'N/I' }}
+              </p>
               <h3>{{ estimate()?.project?.title || 'Projeto não informado' }}</h3>
               <p>
                 Fluxo atual: {{ formatLabel(projectStage()) }} · Nota de Crédito:
@@ -268,7 +310,11 @@ import { EstimatesService } from './estimates.service';
             <app-metadata-grid [items]="generalFacts()" gridClass="md:grid-cols-2" />
             <div class="estimate-note-block">
               <p class="estimate-note-label">Observações</p>
-              <p>{{ estimate()?.notes | emptyValue:'Sem observações registradas nesta estimativa.' }}</p>
+              <p>
+                {{
+                  estimate()?.notes | emptyValue: 'Sem observações registradas nesta estimativa.'
+                }}
+              </p>
             </div>
           </app-section-card>
         </div>
@@ -299,16 +345,21 @@ import { EstimatesService } from './estimates.service';
                   @for (item of estimate()?.items ?? []; track item.id) {
                     <tr>
                       <td>
-                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
+                        <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                          {{ item.referenceCode }} - {{ item.description }}
+                        </p>
                         <p class="mt-1 text-sm text-[var(--sagep-muted)]">
-                          ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
+                          ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} -
+                          {{ item.ataItem?.referenceCode || 'Sem referência' }}
                         </p>
                       </td>
                       <td>{{ item.quantity }}</td>
                       <td>{{ item.unit }}</td>
                       <td>{{ formatCurrency(item.unitPrice) }}</td>
-                      <td class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.subtotal) }}</td>
-                      <td>{{ item.notes | emptyValue:'Sem observações' }}</td>
+                      <td class="font-semibold text-[var(--sagep-brand-deep)]">
+                        {{ formatCurrency(item.subtotal) }}
+                      </td>
+                      <td>{{ item.notes | emptyValue: 'Sem observações' }}</td>
                     </tr>
                   }
                 </tbody>
@@ -319,9 +370,12 @@ import { EstimatesService } from './estimates.service';
               @for (item of estimate()?.items ?? []; track item.id) {
                 <article class="estimate-item-card">
                   <div>
-                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode }} - {{ item.description }}</p>
+                    <p class="font-semibold text-[var(--sagep-brand-deep)]">
+                      {{ item.referenceCode }} - {{ item.description }}
+                    </p>
                     <p class="mt-1 text-sm text-[var(--sagep-muted)]">
-                      ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} - {{ item.ataItem?.referenceCode || 'Sem referência' }}
+                      ATA item: {{ item.ataItem?.ataItemCode || 'Não informado' }} -
+                      {{ item.ataItem?.referenceCode || 'Sem referência' }}
                     </p>
                   </div>
                   <app-metadata-grid
@@ -330,7 +384,7 @@ import { EstimatesService } from './estimates.service';
                     gridClass="sm:grid-cols-2"
                   />
                   <p class="text-sm text-[var(--sagep-muted)]">
-                    {{ item.notes | emptyValue:'Sem observações para esta linha.' }}
+                    {{ item.notes | emptyValue: 'Sem observações para esta linha.' }}
                   </p>
                 </article>
               }
@@ -353,9 +407,11 @@ import { EstimatesService } from './estimates.service';
                 <p class="document-action-label">Finalização da estimativa</p>
                 <h3>{{ isFinalized() ? 'Estimativa finalizada' : 'Estimativa em elaboração' }}</h3>
                 <p>
-                  {{ isFinalized()
-                    ? 'A finalização já ocorreu e a estimativa segue pronta para o fluxo documental.'
-                    : 'A estimativa ainda pode ser finalizada para avançar no fluxo.' }}
+                  {{
+                    isFinalized()
+                      ? 'A finalização já ocorreu e a estimativa segue pronta para o fluxo documental.'
+                      : 'A estimativa ainda pode ser finalizada para avançar no fluxo.'
+                  }}
                 </p>
               </div>
               @if (canFinalizeEstimate()) {
@@ -379,11 +435,15 @@ import { EstimatesService } from './estimates.service';
             <article class="document-action-card">
               <div>
                 <p class="document-action-label">Nota de Crédito</p>
-                <h3>{{ hasCreditNote() ? 'Nota de Crédito registrada' : 'Nota de Crédito pendente' }}</h3>
+                <h3>
+                  {{ hasCreditNote() ? 'Nota de Crédito registrada' : 'Nota de Crédito pendente' }}
+                </h3>
                 <p>
-                  {{ hasCreditNote()
-                    ? 'O contexto do projeto já informa a Nota de Crédito exigida antes da emissão do DIEx.'
-                    : 'Sem Nota de Crédito, a geração do DIEx permanece bloqueada.' }}
+                  {{
+                    hasCreditNote()
+                      ? 'O contexto do projeto já informa a Nota de Crédito exigida antes da emissão do DIEx.'
+                      : 'Sem Nota de Crédito, a geração do DIEx permanece bloqueada.'
+                  }}
                 </p>
               </div>
               @if (showCreditNotePrompt() && !showCreditNotePanel()) {
@@ -405,18 +465,22 @@ import { EstimatesService } from './estimates.service';
               <div>
                 <p class="document-action-label">DIEx requisitório</p>
                 <h3>
-                  {{ hasDiexIssued()
-                    ? 'DIEx já emitido'
-                    : canGenerateDiex()
-                      ? 'DIEx liberado para emissão'
-                      : 'DIEx ainda indisponível' }}
+                  {{
+                    hasDiexIssued()
+                      ? 'DIEx já emitido'
+                      : canGenerateDiex()
+                        ? 'DIEx liberado para emissão'
+                        : 'DIEx ainda indisponível'
+                  }}
                 </h3>
                 <p>
-                  {{ hasDiexIssued()
-                    ? 'A emissão já foi registrada no contexto do projeto e novas gerações permanecem bloqueadas.'
-                    : canGenerateDiex()
-                      ? 'Os requisitos atuais permitem emitir o DIEx requisitório.'
-                      : 'A liberação depende da finalização da estimativa, da Nota de Crédito e da etapa correta do projeto.' }}
+                  {{
+                    hasDiexIssued()
+                      ? 'A emissão já foi registrada no contexto do projeto e novas gerações permanecem bloqueadas.'
+                      : canGenerateDiex()
+                        ? 'Os requisitos atuais permitem emitir o DIEx requisitório.'
+                        : 'A liberação depende da finalização da estimativa, da Nota de Crédito e da etapa correta do projeto.'
+                  }}
                 </p>
               </div>
               @if (canGenerateDiex() && !showDiexPanel()) {
@@ -429,7 +493,7 @@ import { EstimatesService } from './estimates.service';
                 </button>
               } @else {
                 <app-status-badge
-                  [label]="hasDiexIssued() ? (diexNumber() || 'Emitido') : 'Sem emissão disponível'"
+                  [label]="hasDiexIssued() ? diexNumber() || 'Emitido' : 'Sem emissão disponível'"
                   [variantClass]="hasDiexIssued() ? 'b-ok' : 'b-neutral'"
                 />
               }
@@ -442,13 +506,20 @@ import { EstimatesService } from './estimates.service';
                 <div>
                   <p class="estimate-form-kicker">Etapa obrigatória</p>
                   <h3>Informar Nota de Crédito</h3>
-                  <p>Antes de gerar o DIEx requisitório, registre os dados mínimos exigidos no fluxo do projeto.</p>
+                  <p>
+                    Antes de gerar o DIEx requisitório, registre os dados mínimos exigidos no fluxo
+                    do projeto.
+                  </p>
                 </div>
               </div>
               <form [formGroup]="creditNoteForm" class="estimate-form-grid estimate-form-grid--two">
                 <label class="estimate-field">
                   Número da Nota de Crédito
-                  <input type="text" formControlName="creditNoteNumber" placeholder="Ex.: NC-2026-001" />
+                  <input
+                    type="text"
+                    formControlName="creditNoteNumber"
+                    placeholder="Ex.: NC-2026-001"
+                  />
                 </label>
                 <label class="estimate-field">
                   Data de recebimento
@@ -482,7 +553,10 @@ import { EstimatesService } from './estimates.service';
                 <div>
                   <p class="estimate-form-kicker">Emissão documental</p>
                   <h3>Gerar DIEx requisitório</h3>
-                  <p>Informe os dados documentais mínimos para emitir o DIEx a partir desta estimativa finalizada.</p>
+                  <p>
+                    Informe os dados documentais mínimos para emitir o DIEx a partir desta
+                    estimativa finalizada.
+                  </p>
                 </div>
               </div>
               <form [formGroup]="diexForm" class="estimate-form-grid estimate-form-grid--wide">
@@ -539,10 +613,15 @@ import { EstimatesService } from './estimates.service';
             subtitle="Dados do DIEx requisitório emitido e bloqueio de geração duplicada preservado."
             bodyClass="estimate-section-stack"
           >
-            <app-status-badge section-card-actions [label]="diexNumber() || 'Emitido'" variantClass="b-ok" />
+            <app-status-badge
+              section-card-actions
+              [label]="diexNumber() || 'Emitido'"
+              variantClass="b-ok"
+            />
             <app-metadata-grid [items]="diexIssuedFacts()" gridClass="md:grid-cols-2" />
             <div class="estimate-inline-state estimate-inline-state--success">
-              O detalhe reconhece o DIEx já emitido no contexto do projeto e mantém bloqueada uma nova geração.
+              O detalhe reconhece o DIEx já emitido no contexto do projeto e mantém bloqueada uma
+              nova geração.
             </div>
           </app-section-card>
         }
@@ -596,17 +675,24 @@ export class EstimateDetailPageComponent implements OnInit {
 
   readonly estimateDisplayCode = computed(() => {
     const estimate = this.estimate();
-    return estimate ? buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt) : 'Estimativa';
+    return estimate
+      ? buildEstimateIdentifier(estimate.estimateCode, estimate.id, estimate.createdAt)
+      : 'Estimativa';
   });
   readonly isFinalized = computed(() => this.estimate()?.status === 'FINALIZADA');
-  readonly projectStage = computed(() => this.projectDetails()?.workflow?.stage || this.estimateProjectValue('stage') || 'Não informado');
+  readonly projectStage = computed(
+    () =>
+      this.projectDetails()?.workflow?.stage ||
+      this.estimateProjectValue('stage') ||
+      'Não informado',
+  );
   readonly hasCreditNote = computed(() => {
     const milestones = this.projectDetails()?.workflow?.milestones ?? {};
     return Boolean(
       milestones['creditNoteNumber'] ||
-        milestones['creditNoteReceivedAt'] ||
-        this.estimateProjectValue('creditNoteNumber') ||
-        this.estimateProjectValue('creditNoteReceivedAt'),
+      milestones['creditNoteReceivedAt'] ||
+      this.estimateProjectValue('creditNoteNumber') ||
+      this.estimateProjectValue('creditNoteReceivedAt'),
     );
   });
   readonly creditNoteLabel = computed(() => {
@@ -618,13 +704,10 @@ export class EstimateDetailPageComponent implements OnInit {
     );
   });
   readonly canFinalizeEstimate = computed(() => {
-    const role = this.authService.getUserRole();
     const status = this.estimate()?.status as string | undefined;
     const isDraft = status === 'RASCUNHO' || status === 'DRAFT';
-    const hasPermission = this.authService.hasAnyPermission(['estimates.finalize', 'estimates.edit']);
-    const roleAllowed = role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
 
-    return isDraft && (hasPermission || roleAllowed);
+    return isDraft && this.authService.canPerformMutation(['estimates.finalize', 'estimates.edit']);
   });
   readonly hasLinkedDiex = computed(() => {
     const estimate = this.estimate() as (Estimate & Record<string, unknown>) | null;
@@ -633,19 +716,23 @@ export class EstimateDetailPageComponent implements OnInit {
 
     return Boolean(
       estimate['diexId'] ||
-        estimate['diexRequestId'] ||
-        estimate['diex'] ||
-        estimate['diexRequest'] ||
-        (Array.isArray(estimate['diexRequests']) && estimate['diexRequests'].length),
+      estimate['diexRequestId'] ||
+      estimate['diex'] ||
+      estimate['diexRequest'] ||
+      (Array.isArray(estimate['diexRequests']) && estimate['diexRequests'].length),
     );
   });
-  readonly hasDiexIssued = computed(() => Boolean(this.diexNumber() || this.diexIssuedAt() || this.hasLinkedDiex()));
+  readonly hasDiexIssued = computed(() =>
+    Boolean(this.diexNumber() || this.diexIssuedAt() || this.hasLinkedDiex()),
+  );
   readonly diexNumber = computed(() => {
     const details = this.projectDetails();
     const milestones = details?.workflow?.milestones ?? {};
     const project = details?.project as Record<string, unknown> | undefined;
     const documents = details?.documents ?? {};
-    const diexRequests = this.asRecordArray(documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest']);
+    const diexRequests = this.asRecordArray(
+      documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest'],
+    );
     const firstDiex = diexRequests[0];
 
     return this.firstValue([
@@ -666,7 +753,9 @@ export class EstimateDetailPageComponent implements OnInit {
     const milestones = details?.workflow?.milestones ?? {};
     const project = details?.project as Record<string, unknown> | undefined;
     const documents = details?.documents ?? {};
-    const diexRequests = this.asRecordArray(documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest']);
+    const diexRequests = this.asRecordArray(
+      documents['diexRequests'] ?? documents['diex'] ?? documents['diexRequest'],
+    );
     const firstDiex = diexRequests[0];
 
     return this.firstValue([
@@ -680,29 +769,35 @@ export class EstimateDetailPageComponent implements OnInit {
   });
   readonly diexIssuedFacts = computed<MetadataItem[]>(() => [
     { label: 'Número do DIEx', value: this.diexNumber() || 'Não informado', highlight: true },
-    { label: 'Emitido em', value: this.diexIssuedAt() ? formatDate(this.diexIssuedAt()) : 'Não informado' },
+    {
+      label: 'Emitido em',
+      value: this.diexIssuedAt() ? formatDate(this.diexIssuedAt()) : 'Não informado',
+    },
   ]);
   readonly canInformCreditNote = computed(() => {
-    const role = this.authService.getUserRole();
-    return this.authService.hasAnyPermission(['projects.edit_own', 'projects.edit_all']) ||
-      role === 'ADMIN' ||
-      role === 'GESTOR' ||
-      role === 'PROJETISTA';
+    return this.authService.canPerformMutation(['projects.edit_own', 'projects.edit_all']);
   });
-  readonly showCreditNotePrompt = computed(() =>
-    this.isFinalized() && !this.hasCreditNote() && !this.hasLinkedDiex() && this.canInformCreditNote(),
+  readonly showCreditNotePrompt = computed(
+    () =>
+      this.isFinalized() &&
+      !this.hasCreditNote() &&
+      !this.hasLinkedDiex() &&
+      this.canInformCreditNote(),
   );
   readonly canGenerateDiex = computed(() => {
-    const role = this.authService.getUserRole();
-    const hasPermission = this.authService.hasAnyPermission(['diex.issue']);
-    const roleAllowed = role === 'ADMIN' || role === 'GESTOR' || role === 'PROJETISTA';
-    const compatibleStage = ['DIEX_REQUISITORIO', 'AGUARDANDO_NOTA_EMPENHO', 'OS_LIBERADA'].includes(this.projectStage());
+    const compatibleStage = [
+      'DIEX_REQUISITORIO',
+      'AGUARDANDO_NOTA_EMPENHO',
+      'OS_LIBERADA',
+    ].includes(this.projectStage());
 
-    return this.isFinalized() &&
+    return (
+      this.isFinalized() &&
       this.hasCreditNote() &&
       compatibleStage &&
       !this.hasDiexIssued() &&
-      (hasPermission || roleAllowed);
+      this.authService.canPerformMutation(['diex.issue'])
+    );
   });
   readonly createdDiexLabel = computed(() => {
     const diex = this.createdDiex();
@@ -715,7 +810,12 @@ export class EstimateDetailPageComponent implements OnInit {
       { label: 'Valor total', value: formatCurrency(estimate?.totalAmount), highlight: true },
       { label: 'Criada em', value: formatDate(estimate?.createdAt) },
       { label: 'Atualizada em', value: formatDate(estimate?.updatedAt || estimate?.createdAt) },
-      { label: 'Ata vinculada', value: estimate?.ata ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}` : 'Não informado' },
+      {
+        label: 'Ata vinculada',
+        value: estimate?.ata
+          ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}`
+          : 'Não informado',
+      },
     ];
   });
   readonly summaryCards = computed(() => {
@@ -740,20 +840,30 @@ export class EstimateDetailPageComponent implements OnInit {
       {
         title: 'Nota de Crédito',
         value: this.hasCreditNote() ? 'Informada' : 'Pendente',
-        description: this.hasCreditNote() ? this.creditNoteLabel() : 'Obrigatória antes da emissão do DIEx',
+        description: this.hasCreditNote()
+          ? this.creditNoteLabel()
+          : 'Obrigatória antes da emissão do DIEx',
         icon: 'NC',
         tone: this.hasCreditNote() ? ('success' as const) : ('warning' as const),
       },
       {
         title: 'DIEx',
-        value: this.hasDiexIssued() ? (this.diexNumber() || 'Emitido') : this.canGenerateDiex() ? 'Liberado' : 'Pendente',
+        value: this.hasDiexIssued()
+          ? this.diexNumber() || 'Emitido'
+          : this.canGenerateDiex()
+            ? 'Liberado'
+            : 'Pendente',
         description: this.hasDiexIssued()
           ? 'Emissão já registrada'
           : this.canGenerateDiex()
             ? 'Pronto para gerar'
             : 'Aguardando requisitos do fluxo',
         icon: 'DX',
-        tone: this.hasDiexIssued() ? ('success' as const) : this.canGenerateDiex() ? ('soft' as const) : ('warning' as const),
+        tone: this.hasDiexIssued()
+          ? ('success' as const)
+          : this.canGenerateDiex()
+            ? ('soft' as const)
+            : ('warning' as const),
       },
     ];
   });
@@ -761,7 +871,12 @@ export class EstimateDetailPageComponent implements OnInit {
     const estimate = this.estimate();
     return [
       { label: 'Status', value: formatLabel(estimate?.status ?? '') },
-      { label: 'Projeto', value: estimate?.project?.projectCode ? `#${estimate.project.projectCode}` : `#${estimate?.projectCode ?? '-'}` },
+      {
+        label: 'Projeto',
+        value: estimate?.project?.projectCode
+          ? `#${estimate.project.projectCode}`
+          : `#${estimate?.projectCode ?? '-'}`,
+      },
       { label: 'OM', value: estimate?.om?.sigla || estimate?.omName || 'Não informado' },
       { label: 'Cidade / UF', value: this.locationLabel(estimate) },
       { label: 'Valor total', value: formatCurrency(estimate?.totalAmount) },
@@ -774,8 +889,15 @@ export class EstimateDetailPageComponent implements OnInit {
     const owner = project?.owner?.name || project?.ownerName;
 
     return [
-      { label: 'Status do projeto', value: formatLabel(project?.status || details?.workflow?.status || '') || 'Não informado' },
-      { label: 'Próxima ação', value: nextAction?.label || 'Não informada', description: nextAction?.description ? String(nextAction.description) : undefined },
+      {
+        label: 'Status do projeto',
+        value: formatLabel(project?.status || details?.workflow?.status || '') || 'Não informado',
+      },
+      {
+        label: 'Próxima ação',
+        value: nextAction?.label || 'Não informada',
+        description: nextAction?.description ? String(nextAction.description) : undefined,
+      },
       { label: 'Responsável', value: owner || 'Não informado' },
       { label: 'Pendências abertas', value: String(details?.pendingActions?.length ?? 0) },
     ];
@@ -783,12 +905,30 @@ export class EstimateDetailPageComponent implements OnInit {
   readonly generalFacts = computed<MetadataItem[]>(() => {
     const estimate = this.estimate();
     return [
-      { label: 'Código da estimativa', value: estimate?.estimateCode ? `EST-${estimate.estimateCode}` : 'Não informado' },
+      {
+        label: 'Código da estimativa',
+        value: estimate?.estimateCode ? `EST-${estimate.estimateCode}` : 'Não informado',
+      },
       { label: 'Projeto vinculado', value: estimate?.project?.title || 'Não informado' },
-      { label: 'Ata', value: estimate?.ata ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}` : 'Não informado' },
+      {
+        label: 'Ata',
+        value: estimate?.ata
+          ? `ATA #${estimate.ata.ataCode} - ${estimate.ata.number}`
+          : 'Não informado',
+      },
       { label: 'Fornecedor', value: estimate?.ata?.vendorName || 'Não informado' },
-      { label: 'Grupo de cobertura', value: estimate?.coverageGroup ? `${estimate.coverageGroup.code} - ${estimate.coverageGroup.name}` : 'Não informado' },
-      { label: 'OM', value: estimate?.om ? `${estimate.om.sigla} - ${estimate.om.name}` : estimate?.omName || 'Não informado' },
+      {
+        label: 'Grupo de cobertura',
+        value: estimate?.coverageGroup
+          ? `${estimate.coverageGroup.code} - ${estimate.coverageGroup.name}`
+          : 'Não informado',
+      },
+      {
+        label: 'OM',
+        value: estimate?.om
+          ? `${estimate.om.sigla} - ${estimate.om.name}`
+          : estimate?.omName || 'Não informado',
+      },
       { label: 'Criada em', value: formatDate(estimate?.createdAt) },
       { label: 'Atualizada em', value: formatDate(estimate?.updatedAt || estimate?.createdAt) },
     ];
@@ -815,14 +955,21 @@ export class EstimateDetailPageComponent implements OnInit {
 
     const routeIdentifier = this.estimateIdentifier;
     const codeCandidate = extractEstimateCodeFromFriendlyIdentifier(routeIdentifier);
-    const shouldTryCodeLookup = routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
+    const shouldTryCodeLookup =
+      routeIdentifier !== codeCandidate || /^\d+$/.test(routeIdentifier.trim());
     const estimateRequest$ = shouldTryCodeLookup
-      ? this.estimatesService.getByCode(codeCandidate).pipe(catchError(() => this.estimatesService.getByIdentifier(routeIdentifier)))
-      : this.estimatesService.getByIdentifier(routeIdentifier).pipe(
-          catchError((originalError) =>
-            this.estimatesService.getByCode(codeCandidate).pipe(catchError(() => throwError(() => originalError))),
-          ),
-        );
+      ? this.estimatesService
+          .getByCode(codeCandidate)
+          .pipe(catchError(() => this.estimatesService.getByIdentifier(routeIdentifier)))
+      : this.estimatesService
+          .getByIdentifier(routeIdentifier)
+          .pipe(
+            catchError((originalError) =>
+              this.estimatesService
+                .getByCode(codeCandidate)
+                .pipe(catchError(() => throwError(() => originalError))),
+            ),
+          );
 
     estimateRequest$.subscribe({
       next: (response) => {
@@ -832,7 +979,9 @@ export class EstimateDetailPageComponent implements OnInit {
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
-        this.errorMessage.set(getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'));
+        this.errorMessage.set(
+          getErrorMessage(error, 'Estimativa não encontrada ou sem permissão de acesso.'),
+        );
         this.estimate.set(null);
         this.projectDetails.set(null);
         if (showLoading) this.loading.set(false);
@@ -863,7 +1012,9 @@ export class EstimateDetailPageComponent implements OnInit {
     this.estimatesService.getDocumentHtml(id).subscribe({
       next: (html) => this.openBlobWindow(new Blob([html], { type: 'text/html' })),
       error: (error) => {
-        this.documentError.set(getErrorMessage(error, 'Não foi possível abrir o HTML da estimativa.'));
+        this.documentError.set(
+          getErrorMessage(error, 'Não foi possível abrir o HTML da estimativa.'),
+        );
       },
     });
   }
@@ -876,7 +1027,9 @@ export class EstimateDetailPageComponent implements OnInit {
     this.estimatesService.getDocumentPdf(id).subscribe({
       next: (blob) => this.openBlobWindow(new Blob([blob], { type: 'application/pdf' })),
       error: (error) => {
-        this.documentError.set(getErrorMessage(error, 'Não foi possível abrir o PDF da estimativa.'));
+        this.documentError.set(
+          getErrorMessage(error, 'Não foi possível abrir o PDF da estimativa.'),
+        );
       },
     });
   }
@@ -885,7 +1038,11 @@ export class EstimateDetailPageComponent implements OnInit {
     const estimate = this.estimate();
     if (!estimate || !this.canFinalizeEstimate()) return;
 
-    if (!window.confirm('Deseja finalizar esta estimativa? Após a finalização, ela poderá avançar no fluxo documental.')) {
+    if (
+      !window.confirm(
+        'Deseja finalizar esta estimativa? Após a finalização, ela poderá avançar no fluxo documental.',
+      )
+    ) {
       return;
     }
 
@@ -946,13 +1103,20 @@ export class EstimateDetailPageComponent implements OnInit {
     const estimate = this.estimate();
     if (!estimate || !this.canGenerateDiex()) return;
 
-    if (this.diexForm.invalid || this.onlyDigits(this.diexForm.controls.supplierCnpj.value).length < 14) {
+    if (
+      this.diexForm.invalid ||
+      this.onlyDigits(this.diexForm.controls.supplierCnpj.value).length < 14
+    ) {
       this.diexForm.markAllAsTouched();
       this.diexError.set('Informe o CNPJ do fornecedor com ao menos 14 dígitos.');
       return;
     }
 
-    if (!window.confirm('Deseja gerar o DIEx requisitório desta estimativa? O documento será vinculado ao projeto e dará continuidade ao fluxo documental.')) {
+    if (
+      !window.confirm(
+        'Deseja gerar o DIEx requisitório desta estimativa? O documento será vinculado ao projeto e dará continuidade ao fluxo documental.',
+      )
+    ) {
       return;
     }
 
@@ -1033,7 +1197,9 @@ export class EstimateDetailPageComponent implements OnInit {
 
   private asRecordArray(value: unknown): Array<Record<string, unknown>> {
     if (Array.isArray(value)) {
-      return value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object');
+      return value.filter(
+        (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+      );
     }
 
     if (value && typeof value === 'object') {
