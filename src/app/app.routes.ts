@@ -104,8 +104,18 @@ export const routes: Routes = [
       },
       {
         path: 'atas',
-        component: UnderConstructionComponent,
-        data: { title: 'ATAs' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/atas/atas-page.component').then((m) => m.AtasPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/atas/ata-detail-page.component').then((m) => m.AtaDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'itens-ata',
