@@ -134,8 +134,8 @@ export const routes: Routes = [
       },
       {
         path: 'auditoria',
-        component: UnderConstructionComponent,
-        data: { title: 'Auditoria' },
+        loadComponent: () =>
+          import('./features/audit/audit-page.component').then((m) => m.AuditPageComponent),
       },
       {
         path: 'users',
