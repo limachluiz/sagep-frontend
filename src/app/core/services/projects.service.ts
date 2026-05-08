@@ -26,12 +26,27 @@ export interface ProjectFlowUpdatePayload {
   creditNoteReceivedAt?: string | null;
   commitmentNoteNumber?: string | null;
   commitmentNoteReceivedAt?: string | null;
+  executionStartedAt?: string | null;
+  asBuiltReceivedAt?: string | null;
+  invoiceAttestedAt?: string | null;
+  serviceCompletedAt?: string | null;
 }
 
 export interface InformCommitmentNotePayload {
   commitmentNoteNumber: string;
   commitmentNoteReceivedAt?: string | null;
 }
+
+export type ProjectAsBuiltReviewPayload =
+  | {
+      approved: true;
+      reviewedAt: string;
+    }
+  | {
+      approved: false;
+      reviewedAt: string;
+      rejectionReason: string;
+    };
 
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
@@ -73,6 +88,10 @@ export class ProjectsService {
 
   updateFlow(projectId: string, payload: ProjectFlowUpdatePayload) {
     return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${projectId}/flow`, payload);
+  }
+
+  reviewAsBuilt(projectId: string, payload: ProjectAsBuiltReviewPayload) {
+    return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${projectId}/as-built/review`, payload);
   }
 
   informCommitmentNote(projectId: string, payload: InformCommitmentNotePayload) {

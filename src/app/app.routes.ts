@@ -74,13 +74,33 @@ export const routes: Routes = [
       },
       {
         path: 'diex',
-        component: UnderConstructionComponent,
-        data: { title: 'DIEx' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/diex/diex-page.component').then((m) => m.DiexPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/diex/diex-detail-page.component').then((m) => m.DiexDetailPageComponent),
+          },
+        ],
       },
       {
-        path: 'ordens-servico',
-        component: UnderConstructionComponent,
-        data: { title: 'Ordens de Serviço' },
+        path: 'service-orders',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/service-orders/service-orders-page.component').then((m) => m.ServiceOrdersPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/service-orders/service-order-detail-page.component').then((m) => m.ServiceOrderDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'atas',

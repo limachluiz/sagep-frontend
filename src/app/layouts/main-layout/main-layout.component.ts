@@ -13,9 +13,11 @@ import { TopbarComponent } from './topbar.component';
       <app-topbar />
       <div class="main-layout">
         <app-sidebar />
-        <main class="content">
-          <app-breadcrumb />
-          <router-outlet />
+        <main class="content" tabindex="-1">
+          <div class="content-inner">
+            <app-breadcrumb />
+            <router-outlet />
+          </div>
         </main>
       </div>
     </div>

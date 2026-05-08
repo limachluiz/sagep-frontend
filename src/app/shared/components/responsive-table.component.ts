@@ -96,9 +96,9 @@ export class ResponsiveTableActionsDirective<T = unknown> {
         </table>
       </div>
 
-      <div class="responsive-table__cards">
+      <div class="responsive-table__cards" aria-label="Listagem em cards">
         @for (row of data; track trackRow(row, $index)) {
-          <article class="card">
+          <article class="card responsive-table-card">
             <div class="card-body grid grid-2">
               @for (column of columns; track column.key) {
                 <div class="detail-item" [ngClass]="column.class || ''">
@@ -117,7 +117,7 @@ export class ResponsiveTableActionsDirective<T = unknown> {
               }
             </div>
             @if (actionsTemplate?.template; as template) {
-              <div class="mt-4">
+              <div class="responsive-table-card__actions">
                 <ng-container
                   [ngTemplateOutlet]="template"
                   [ngTemplateOutletContext]="actionContext(row)"
@@ -131,20 +131,24 @@ export class ResponsiveTableActionsDirective<T = unknown> {
   `,
   styles: [
     `
-      .responsive-table__desktop {
+      :host {
         display: block;
       }
 
-      .responsive-table__cards {
+      :host .responsive-table__desktop {
+        display: block;
+      }
+
+      :host .responsive-table__cards {
         display: none;
       }
 
       @media (max-width: 1023.98px) {
-        .responsive-table__desktop {
+        :host .responsive-table__desktop {
           display: none;
         }
 
-        .responsive-table__cards {
+        :host .responsive-table__cards {
           display: grid;
           gap: 1rem;
         }

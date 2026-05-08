@@ -14,17 +14,14 @@ import { getErrorMessage } from '../../../shared/utils/http-error.util';
     <div class="login-card">
       <p class="tag">Sessão segura</p>
       <h2>Entrar no SAGEP</h2>
-      <p class="sub">
-        Use as credenciais provisionadas no backend. Exemplo local:
-        <strong>admin@sagep.com</strong> / <strong>123456</strong>.
-      </p>
+      <p class="sub">Use suas credenciais institucionais para acessar o ambiente.</p>
 
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="field">
           <label for="email">E-mail</label>
-          <input id="email" type="email" formControlName="email" placeholder="admin@sagep.com" />
+          <input id="email" type="email" formControlName="email" placeholder="seu.email@exemplo.mil.br" />
           @if (form.controls.email.invalid && form.controls.email.touched) {
-            <span class="mt-2 block text-xs text-[var(--danger)]">Informe um e-mail válido.</span>
+            <span class="form-error">Informe um e-mail válido.</span>
           }
         </div>
 
@@ -32,12 +29,12 @@ import { getErrorMessage } from '../../../shared/utils/http-error.util';
           <label for="password">Senha</label>
           <input id="password" type="password" formControlName="password" placeholder="Digite sua senha" />
           @if (form.controls.password.invalid && form.controls.password.touched) {
-            <span class="mt-2 block text-xs text-[var(--danger)]">A senha precisa ter ao menos 6 caracteres.</span>
+            <span class="form-error">A senha precisa ter ao menos 6 caracteres.</span>
           }
         </div>
 
         @if (errorMessage()) {
-          <div class="mb-4 rounded-[14px] border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm leading-6 text-[var(--danger)]">
+          <div class="form-alert">
             {{ errorMessage() }}
           </div>
         }

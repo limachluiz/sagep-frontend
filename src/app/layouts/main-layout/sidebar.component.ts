@@ -24,13 +24,13 @@ interface MenuSection {
   selector: 'app-sidebar',
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Menu principal">
       @for (section of visibleSections(); track section.title) {
         <nav class="nav-group" aria-label="Navegação principal">
           <div class="nav-title">{{ section.title }}</div>
           @for (item of section.items; track item.path) {
             @if (item.disabled) {
-              <div class="nav-item disabled" [title]="item.hint || item.label">
+              <div class="nav-item disabled" [title]="item.hint || item.label" aria-disabled="true">
                 <span class="nav-icon">{{ item.icon }}</span>
                 <span>{{ item.label }}</span>
                 <small>Em construção</small>
@@ -48,6 +48,10 @@ interface MenuSection {
           }
         </nav>
       }
+      <div class="sidebar-footer">
+        <strong>SAGEP</strong>
+        <span>Ambiente operacional integrado ao perfil autenticado.</span>
+      </div>
     </aside>
   `,
 })
@@ -76,13 +80,11 @@ export class SidebarComponent {
     {
       title: 'Documentos',
       items: [
-        { label: 'DIEx', path: '/diex', icon: '◇', disabled: true, hint: 'Será integrado a partir de estimativas finalizadas.' },
+        { label: 'DIEx Requisitório', path: '/diex', icon: '◇' },
         {
           label: 'Ordens de Serviço',
-          path: '/ordens-servico',
+          path: '/service-orders',
           icon: '▤',
-          disabled: true,
-          hint: 'Módulo planejado após DIEx e Nota de Empenho.',
         },
       ],
     },

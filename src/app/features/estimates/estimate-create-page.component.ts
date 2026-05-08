@@ -60,12 +60,12 @@ interface SelectedItemSummary {
     StatusBadgeComponent,
   ],
   template: `
-    <section class="space-y-6">
+    <section class="estimate-wizard-workspace">
       <app-page-header
         title="Nova estimativa"
         eyebrow="Estimativas"
         subtitle="Fluxo inicial para montar uma estimativa de preço a partir de projeto, ATA, grupo de cobertura, OM e itens."
-        badge="Fonte: POST /estimates"
+        badge="Nova estimativa"
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
       />
@@ -91,17 +91,17 @@ interface SelectedItemSummary {
           />
         }
 
-        <div class="grid gap-3 md:grid-cols-5">
+        <div class="estimate-stepper">
           @for (step of steps; track step.id) {
             <button
               type="button"
               (click)="goToStep(step.id)"
               [disabled]="step.id > maxReachableStep()"
-              class="rounded-[14px] border px-4 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
-              [ngClass]="currentStep() === step.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)] text-[var(--sagep-brand-deep)] shadow-[var(--sagep-shadow-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] text-[var(--sagep-muted)] hover:border-[var(--sagep-line-strong)]'"
+              class="estimate-step"
+              [class.active]="currentStep() === step.id"
             >
-              <span class="text-xs font-semibold uppercase tracking-[0.18em]">Etapa {{ step.id }}</span>
-              <span class="mt-1 block text-sm font-medium">{{ step.label }}</span>
+              <span>Etapa {{ step.id }}</span>
+              <b>{{ step.label }}</b>
             </button>
           }
         </div>
@@ -119,7 +119,7 @@ interface SelectedItemSummary {
             <input
               type="search"
               [formControl]="projectSearchControl"
-              class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+              class="input estimate-search"
               placeholder="Buscar projeto por título ou código"
             />
 
@@ -131,8 +131,8 @@ interface SelectedItemSummary {
                   <button
                     type="button"
                     (click)="selectProject(project)"
-                    class="rounded-[var(--sagep-radius-sm)] border p-4 text-left transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)]"
-                    [ngClass]="selectedProject()?.id === project.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)]'"
+                    class="estimate-choice-card"
+                    [class.active]="selectedProject()?.id === project.id"
                   >
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
@@ -149,7 +149,7 @@ interface SelectedItemSummary {
                     <app-metadata-grid class="mt-4 block" [items]="projectMetadata(project)" gridClass="md:grid-cols-3" />
                   </button>
                 } @empty {
-                  <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
+                  <div class="estimate-empty-note">
                     Nenhum projeto retornado para a busca atual.
                   </div>
                 }
@@ -160,12 +160,12 @@ interface SelectedItemSummary {
 
         @if (currentStep() === 2) {
           <app-section-card title="Selecionar ATA, cobertura e OM" subtitle="Escolha a ATA disponível e complete os vínculos exigidos para criação.">
-            <div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div class="estimate-wizard-grid">
               <div>
                 <input
                   type="search"
                   [formControl]="ataSearchControl"
-                  class="w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+                  class="input estimate-search"
                   placeholder="Filtrar ATAs por número, tipo ou fornecedor"
                 />
                 <div class="mt-5 grid gap-4">
@@ -173,8 +173,8 @@ interface SelectedItemSummary {
                     <button
                       type="button"
                       (click)="selectAta(ata)"
-                      class="rounded-[var(--sagep-radius-sm)] border p-4 text-left transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)]"
-                      [ngClass]="selectedAta()?.id === ata.id ? 'border-[var(--sagep-gold)] bg-[var(--sagep-gold-soft)]' : 'border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)]'"
+                      class="estimate-choice-card"
+                      [class.active]="selectedAta()?.id === ata.id"
                     >
                       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -188,23 +188,23 @@ interface SelectedItemSummary {
                       <app-metadata-grid class="mt-4 block" [items]="ataMetadata(ata)" gridClass="md:grid-cols-3" />
                     </button>
                   } @empty {
-                    <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
+                    <div class="estimate-empty-note">
                       Nenhuma ATA disponível para o filtro atual.
                     </div>
                   }
                 </div>
               </div>
 
-              <div class="space-y-4" [formGroup]="form">
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
-                  <label class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]" for="coverageGroupId">
+              <div class="estimate-side-panel" [formGroup]="form">
+                <div class="field">
+                  <label for="coverageGroupId">
                     Grupo de cobertura
                   </label>
                   <select
                     id="coverageGroupId"
                     formControlName="coverageGroupId"
                     (change)="selectCoverageGroup($any($event.target).value)"
-                    class="mt-3 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+                    class="select"
                   >
                     <option value="">Selecione</option>
                     @for (group of coverageGroups(); track group.id) {
@@ -216,13 +216,13 @@ interface SelectedItemSummary {
                   }
                 </div>
 
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
-                  <label class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]" for="omId">OM</label>
+                <div class="field">
+                  <label for="omId">OM</label>
                   <select
                     id="omId"
                     formControlName="omId"
                     (change)="selectOm($any($event.target).value)"
-                    class="mt-3 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+                    class="select"
                   >
                     <option value="">Selecione</option>
                     @for (om of oms(); track om.id) {
@@ -243,14 +243,14 @@ interface SelectedItemSummary {
           <app-section-card title="Selecionar itens" subtitle="Marque os itens da ATA que farão parte da estimativa.">
             <div class="grid gap-4">
               @for (item of ataItems(); track item.id) {
-                <label class="flex flex-col gap-4 rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4 transition hover:border-[var(--sagep-gold)] hover:bg-[var(--sagep-gold-soft)] md:flex-row md:items-start">
+                <label class="estimate-item-card">
                   <input
                     type="checkbox"
                     class="mt-1 h-5 w-5 rounded border-[var(--sagep-line)] text-[var(--sagep-brand)]"
                     [checked]="isItemSelected(item.id)"
                     (change)="toggleItem(item, $any($event.target).checked)"
                   />
-                  <div class="flex-1">
+                  <div class="estimate-item-card-body">
                     <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode || 'Item sem referência' }} - {{ item.description || 'Sem descrição' }}</p>
@@ -262,7 +262,7 @@ interface SelectedItemSummary {
                   </div>
                 </label>
               } @empty {
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
+                <div class="estimate-empty-note">
                   Selecione uma ATA para carregar os itens disponíveis.
                 </div>
               }
@@ -274,7 +274,7 @@ interface SelectedItemSummary {
           <app-section-card title="Informar quantidades" subtitle="Defina a quantidade desejada para cada item selecionado.">
             <div class="grid gap-4">
               @for (entry of selectedItemSummaries(); track entry.item.id) {
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-4">
+                <div class="estimate-quantity-card">
                   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ entry.item.referenceCode || 'Item' }} - {{ entry.item.description || 'Sem descrição' }}</p>
@@ -287,7 +287,7 @@ interface SelectedItemSummary {
                         min="0.01"
                         step="0.01"
                         [formControl]="quantityControl(entry.item.id)"
-                        class="mt-2 w-full rounded-[14px] border border-[var(--sagep-line)] bg-white px-4 py-3 outline-none transition focus:border-[var(--sagep-brand-mid)] focus:ring-4 focus:ring-[rgba(82,102,43,0.12)]"
+                        class="input"
                       />
                     </label>
                   </div>
@@ -298,7 +298,7 @@ interface SelectedItemSummary {
                   />
                 </div>
               } @empty {
-                <div class="rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-subtle)] p-6 text-sm text-[var(--sagep-muted)]">
+                <div class="estimate-empty-note">
                   Selecione ao menos um item antes de informar quantidades.
                 </div>
               }
@@ -308,38 +308,44 @@ interface SelectedItemSummary {
 
         @if (currentStep() === 5) {
           <app-section-card title="Revisar e salvar" subtitle="Confira os vínculos e os totais calculados para prévia antes de enviar ao backend.">
-            <div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-              <div class="space-y-4">
+            <div class="estimate-review-grid">
+              <div class="estimate-review-summary">
                 <app-metadata-grid [items]="reviewMetadata()" gridClass="grid-cols-1" />
-                <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-brand-soft)] p-5">
-                  <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-brand)]">Total estimado</p>
-                  <p class="mt-3 text-2xl font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(totalPreview()) }}</p>
+                <div class="estimate-total-card">
+                  <p>Total estimado</p>
+                  <b>{{ formatCurrency(totalPreview()) }}</b>
                 </div>
               </div>
-              <div class="overflow-hidden rounded-[var(--sagep-radius-sm)] border border-[var(--sagep-line)]">
-                <div class="grid grid-cols-[1fr_7rem_8rem] gap-3 bg-[var(--sagep-surface-subtle)] px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--sagep-muted)]">
-                  <span>Item</span>
-                  <span class="text-right">Qtd.</span>
-                  <span class="text-right">Subtotal</span>
-                </div>
-                @for (entry of selectedItemSummaries(); track entry.item.id) {
-                  <div class="grid grid-cols-[1fr_7rem_8rem] gap-3 border-t border-slate-100 px-4 py-3 text-sm">
-                    <span class="font-medium text-[var(--sagep-brand-deep)]">{{ entry.item.referenceCode || 'Item' }}</span>
-                    <span class="text-right text-[var(--sagep-ink)]">{{ entry.quantity }}</span>
-                    <span class="text-right font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(entry.subtotal) }}</span>
-                  </div>
-                }
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th class="text-right">Qtd.</th>
+                      <th class="text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of selectedItemSummaries(); track entry.item.id) {
+                      <tr>
+                        <td><b>{{ entry.item.referenceCode || 'Item' }}</b></td>
+                        <td class="text-right">{{ entry.quantity }}</td>
+                        <td class="text-right"><b>{{ formatCurrency(entry.subtotal) }}</b></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             </div>
           </app-section-card>
         }
 
-        <div class="flex flex-col gap-3 rounded-[var(--sagep-radius)] border border-[var(--sagep-line)] bg-[var(--sagep-surface-strong)] p-5 shadow-[var(--sagep-shadow-soft)] md:flex-row md:items-center md:justify-between">
+        <div class="estimate-wizard-actions">
           <button
             type="button"
             (click)="previousStep()"
             [disabled]="currentStep() === 1 || saving()"
-            class="rounded-[14px] border border-[var(--sagep-line)] px-5 py-3 text-sm font-semibold text-[var(--sagep-brand-dark)] transition hover:border-[var(--sagep-brand-mid)] hover:bg-[var(--sagep-brand-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+            class="btn btn-ghost"
           >
             Anterior
           </button>
@@ -349,7 +355,7 @@ interface SelectedItemSummary {
               type="button"
               (click)="nextStep()"
               [disabled]="!canGoNext() || saving()"
-              class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
+              class="btn btn-primary"
             >
               Próxima etapa
             </button>
@@ -358,7 +364,7 @@ interface SelectedItemSummary {
               type="button"
               (click)="saveEstimate()"
               [disabled]="!canSave() || saving()"
-              class="rounded-[14px] bg-[linear-gradient(135deg,var(--sagep-brand),var(--sagep-brand-dark))] px-5 py-3 text-sm font-bold text-white shadow-[var(--sagep-shadow-soft)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300"
+              class="btn btn-primary"
             >
               {{ saving() ? 'Salvando...' : 'Salvar estimativa' }}
             </button>

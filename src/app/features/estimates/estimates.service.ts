@@ -64,4 +64,16 @@ export class EstimatesService {
       status: 'FINALIZADA',
     });
   }
+
+  getDocumentHtml(id: string) {
+    return this.http.get(`${this.apiUrl}/estimates/${encodeURIComponent(id)}/document/html`, {
+      responseType: 'text',
+    });
+  }
+
+  getDocumentPdf(id: string) {
+    return this.http.get(`${this.apiUrl}/estimates/${encodeURIComponent(id)}/document/pdf`, {
+      responseType: 'blob',
+    });
+  }
 }
