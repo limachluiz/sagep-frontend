@@ -48,7 +48,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
       [title]="details()?.project?.title || 'Detalhe do projeto'"
       [eyebrow]="projectDisplayCode()"
       subtitle="Visão consolidada do projeto com workflow documental, dados gerais, documentos vinculados e timeline."
-      badge="Fonte: GET /projects/:id/details"
+      badge="Dados atualizados"
       backLabel="Voltar para projetos"
       backLink="/projects"
     />
@@ -237,7 +237,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
             <app-metadata-grid [items]="generalFacts()" />
           </app-section-card>
 
-          <app-section-card title="Próxima ação" subtitle="Recomendação calculada por GET /projects/:id/next-action.">
+          <app-section-card title="Próxima ação" subtitle="Recomendação operacional para continuidade do fluxo.">
             <div class="next-action-card">
               <span class="badge b-info">{{ details()?.workflow?.nextAction?.code || 'Não informado' }}</span>
               <h3>{{ details()?.workflow?.nextAction?.label | emptyValue:'Sem próxima ação calculada' }}</h3>

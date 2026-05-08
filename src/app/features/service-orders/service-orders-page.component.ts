@@ -41,8 +41,8 @@ import { ServiceOrdersService } from './service-orders.service';
       <app-page-header
         title="Ordens de Serviço"
         eyebrow="Documentos"
-        subtitle="Listagem operacional integrada a GET /service-orders com filtros simples, paginação e navegação para o detalhe."
-        badge="Fonte: GET /service-orders"
+        subtitle="Listagem operacional de ordens de serviço com filtros simples, paginação e navegação para o detalhe."
+        badge="Ordem de Serviço"
       />
 
       <section class="card">
@@ -95,7 +95,7 @@ import { ServiceOrdersService } from './service-orders.service';
                 <span class="badge b-neutral">{{ activeFilterSummary() }}</span>
               }
             </div>
-            <span>Fonte: GET /service-orders</span>
+            <span>Dados atualizados</span>
           </div>
 
           <app-responsive-table

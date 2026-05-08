@@ -38,12 +38,12 @@ import { DiexService } from './diex.service';
       [title]="diex()?.diexNumber || 'Detalhe do DIEx requisitório'"
       [eyebrow]="diexDisplayCode()"
       subtitle="Detalhe do DIEx com contexto do projeto, estimativa vinculada, dados documentais, itens e acesso ao documento."
-      badge="Fonte: GET /diex/:identifier"
+      badge="Documento"
       backLabel="Voltar para DIEx"
       backLink="/diex"
     >
       <button page-header-actions type="button" (click)="openHtmlDocument()" class="btn btn-ghost">
-        Ver HTML
+        Visualizar documento
       </button>
       <button page-header-actions type="button" (click)="openPdfDocument()" class="btn btn-gold">
         Abrir PDF

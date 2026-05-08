@@ -48,7 +48,7 @@ import { ServiceOrdersService } from './service-orders.service';
       backLink="/service-orders"
     >
       <button page-header-actions type="button" (click)="openHtmlDocument()" class="btn btn-ghost">
-        Ver HTML
+        Visualizar documento
       </button>
       <button page-header-actions type="button" (click)="openPdfDocument()" class="btn btn-gold">
         Abrir PDF
@@ -267,7 +267,7 @@ export class ServiceOrderDetailPageComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly documentError = signal('');
   readonly serviceOrder = signal<ServiceOrder | null>(null);
-  readonly sourceBadge = signal('Fonte: GET /service-orders/:identifier');
+  readonly sourceBadge = signal('Ordem de Serviço emitida');
   private serviceOrderIdentifierRoute: string | null = null;
 
   readonly serviceOrderDisplayCode = computed(() => this.serviceOrder()?.serviceOrderNumber || 'Ordem de Serviço');
@@ -509,21 +509,21 @@ export class ServiceOrderDetailPageComponent implements OnInit {
     const trimmed = identifier.trim();
 
     if (this.isServiceOrderNumber(trimmed)) {
-      this.sourceBadge.set('Fonte: GET /service-orders/number/:serviceOrderNumber');
+      this.sourceBadge.set('Ordem de Serviço emitida');
       return this.serviceOrdersService.getByNumber(trimmed).pipe(
         catchError(() => {
-          this.sourceBadge.set('Fonte: GET /service-orders/:id');
+          this.sourceBadge.set('Dados atualizados');
           return this.serviceOrdersService.getById(identifier);
         }),
       );
     }
 
     if (/^\d+$/.test(trimmed)) {
-      this.sourceBadge.set('Fonte: GET /service-orders/code/:code');
+      this.sourceBadge.set('Ordem de Serviço emitida');
       return this.serviceOrdersService.getByCode(Number(trimmed));
     }
 
-    this.sourceBadge.set('Fonte: GET /service-orders/:id');
+    this.sourceBadge.set('Dados atualizados');
     return this.serviceOrdersService.getById(identifier);
   }
 

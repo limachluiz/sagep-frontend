@@ -32,7 +32,7 @@ type SummaryTone = 'default' | 'accent' | 'soft' | 'success' | 'warning' | 'dang
       title="Painel de Comando"
       eyebrow="Dashboard operacional"
       subtitle="Visão institucional para acompanhamento do fluxo de projetos, pendências, estoque e próximas ações."
-      [badge]="dashboard() ? 'Atualizado em ' + formatDateValue(dashboard()?.generatedAt) : 'Fonte: /dashboard/operational'"
+      [badge]="dashboard() ? 'Atualizado em ' + formatDateValue(dashboard()?.generatedAt) : 'Painel operacional'"
     />
 
     @if (loading()) {
@@ -78,7 +78,7 @@ type SummaryTone = 'default' | 'accent' | 'soft' | 'success' | 'warning' | 'dang
               <span class="badge b-neutral">4º CTA · Operação</span>
               <h2>Controle operacional em tempo real</h2>
               <p>
-                Dados reais de /dashboard/operational consolidados para leitura de comando: volume, alertas, fila,
+                Dados operacionais consolidados para leitura de comando: volume, alertas, fila,
                 pendências por etapa e sinais de estoque.
               </p>
               <div class="command-tiles">

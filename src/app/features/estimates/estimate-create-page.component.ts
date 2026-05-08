@@ -65,7 +65,7 @@ interface SelectedItemSummary {
         title="Nova estimativa"
         eyebrow="Estimativas"
         subtitle="Fluxo inicial para montar uma estimativa de preço a partir de projeto, ATA, grupo de cobertura, OM e itens."
-        badge="Fonte: POST /estimates"
+        badge="Nova estimativa"
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
       />

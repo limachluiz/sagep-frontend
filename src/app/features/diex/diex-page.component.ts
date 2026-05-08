@@ -41,8 +41,8 @@ import { DiexService } from './diex.service';
       <app-page-header
         title="DIEx Requisitório"
         eyebrow="Documentos"
-        subtitle="Listagem operacional integrada a GET /diex com busca, filtros simples, paginação e navegação para o detalhe."
-        badge="Fonte: GET /diex"
+        subtitle="Listagem operacional de DIEx com busca, filtros simples, paginação e navegação para o detalhe."
+        badge="Documento"
       />
 
       <section class="card">
@@ -112,7 +112,7 @@ import { DiexService } from './diex.service';
                 <span class="badge b-neutral">{{ activeFilterSummary() }}</span>
               }
             </div>
-            <span>Fonte: GET /diex</span>
+            <span>Dados atualizados</span>
           </div>
 
           <app-responsive-table

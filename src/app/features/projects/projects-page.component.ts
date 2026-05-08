@@ -42,7 +42,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
       title="Projetos"
       eyebrow="Operação"
       subtitle="Consulta integrada ao backend com busca, filtros, paginação e acesso ao detalhe do projeto."
-      badge="Fonte: GET /projects"
+      badge="Painel operacional"
     />
 
     <div class="workspace projects-workspace">

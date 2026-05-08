@@ -52,13 +52,13 @@ import { EstimatesService } from './estimates.service';
         [title]="estimate()?.project?.title || 'Detalhe da estimativa'"
         [eyebrow]="estimateDisplayCode()"
         subtitle="Detalhe da estimativa com contexto do projeto, resumo executivo, itens e andamento documental."
-        badge="Fonte: GET /estimates/:identifier"
+        badge="Documento"
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
       >
         @if (estimate()?.id) {
           <button page-header-actions type="button" (click)="openHtmlDocument()" class="btn btn-ghost">
-            Ver HTML
+            Visualizar documento
           </button>
         }
         @if (estimate()?.id) {

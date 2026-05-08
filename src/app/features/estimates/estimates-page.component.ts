@@ -48,7 +48,7 @@ import { EstimatesService } from './estimates.service';
       <app-page-header
         title="Estimativas"
         eyebrow="Estimativas"
-        subtitle="Integração com GET /estimates para leitura da fila atual sem implementar criação, edição ou finalização nesta etapa."
+        subtitle="Fila atual de estimativas com filtros, paginação e acesso ao detalhe."
       >
         @if (canCreateEstimate()) {
           <a
@@ -136,7 +136,7 @@ import { EstimatesService } from './estimates.service';
                 </span>
               }
             </div>
-            <span>Fonte: GET /estimates</span>
+            <span>Dados atualizados</span>
           </div>
 
           <app-responsive-table
