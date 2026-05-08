@@ -33,5 +33,29 @@ export interface ExecutiveDashboardSummary {
   ata?: Record<string, unknown>;
   ataBalance?: Record<string, unknown>;
   risks?: Record<string, unknown>;
+  topProjects?: Record<string, unknown>[];
+  projectsAtRisk?: Record<string, unknown>[];
+  criticalActions?: Record<string, unknown>[];
+  nextCriticalActions?: Record<string, unknown>[];
+  criticalAtaItems?: Record<string, unknown>[];
+  relevantAlerts?: Record<string, unknown>[];
+  alerts?: Record<string, unknown>[] | Record<string, unknown>;
+  latestMovements?: Record<string, unknown>[];
+  movements?: Record<string, unknown>[];
+  projectsSummary?: Record<string, unknown>[];
+  projectSummaries?: Record<string, unknown>[];
+  timeline?: Record<string, unknown>[] | Record<string, unknown>;
+  evolution?: Record<string, unknown>[] | Record<string, unknown>;
+  timeSeries?: Record<string, unknown>[] | Record<string, unknown>;
+  bySupplier?: Record<string, unknown>;
+  byAtaType?: Record<string, unknown>;
   [key: string]: unknown;
+}
+
+export interface ExecutiveDashboardFilters {
+  periodType?: 'month' | 'quarter' | 'semester' | 'year';
+  referenceDate?: string;
+  startDate?: string;
+  endDate?: string;
+  asOfDate?: string;
 }

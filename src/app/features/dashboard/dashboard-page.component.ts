@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import { DashboardSummary, ExecutiveDashboardSummary } from '../../core/models/dashboard.model';
+import {
+  DashboardSummary,
+  ExecutiveDashboardFilters,
+  ExecutiveDashboardSummary,
+} from '../../core/models/dashboard.model';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -16,6 +20,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
 type SummaryTone = 'default' | 'accent' | 'soft' | 'success' | 'warning' | 'danger';
 type DashboardMode = 'operational' | 'executive';
 type ExecutivePeriod = 'month' | 'quarter' | 'semester' | 'year' | 'manual';
+type ChartEntry = { label: string; value: string; raw: unknown; percent: number };
 
 @Component({
   selector: 'app-dashboard-page',
@@ -69,9 +74,37 @@ type ExecutivePeriod = 'month' | 'quarter' | 'semester' | 'year' | 'manual';
             </button>
           }
           @if (executivePeriod() === 'manual') {
-            <input type="date" class="input" aria-label="Data inicial" disabled />
-            <input type="date" class="input" aria-label="Data final" disabled />
+            <input
+              type="date"
+              class="input"
+              aria-label="Data inicial"
+              [value]="executiveStartDate()"
+              (change)="setExecutiveDate('startDate', $any($event.target).value)"
+            />
+            <input
+              type="date"
+              class="input"
+              aria-label="Data final"
+              [value]="executiveEndDate()"
+              (change)="setExecutiveDate('endDate', $any($event.target).value)"
+            />
+          } @else {
+            <input
+              type="date"
+              class="input"
+              aria-label="Data de referência"
+              [value]="executiveReferenceDate()"
+              (change)="setExecutiveDate('referenceDate', $any($event.target).value)"
+            />
           }
+          <input
+            type="date"
+            class="input"
+            aria-label="Data de posição"
+            [value]="executiveAsOfDate()"
+            (change)="setExecutiveDate('asOfDate', $any($event.target).value)"
+          />
+          <button type="button" class="active" (click)="loadDashboard()">Aplicar</button>
         </div>
       }
     </div>
@@ -112,7 +145,7 @@ type ExecutivePeriod = 'month' | 'quarter' | 'semester' | 'year' | 'manual';
         />
       </div>
     } @else if (viewMode() === 'executive') {
-      <div class="workspace dashboard-workspace">
+      <div class="workspace dashboard-workspace executive-workspace">
         <div class="hero-panel">
           <section class="card command-card">
             <div class="card-body">
@@ -241,6 +274,177 @@ type ExecutivePeriod = 'month' | 'quarter' | 'semester' | 'year' | 'manual';
             </div>
           </app-section-card>
         </div>
+
+        <section class="executive-chart-grid">
+          @if (executivePhaseEntries().length) {
+            <article class="executive-panel">
+              <header>
+                <h3>Projetos por fase</h3>
+                <span>{{ executivePhaseEntries().length }} fases</span>
+              </header>
+              <div class="executive-bars">
+                @for (item of executivePhaseEntries(); track item.label) {
+                  <div class="executive-bar-row">
+                    <div>
+                      <b>{{ item.label }}</b>
+                      <span>{{ item.value }}</span>
+                    </div>
+                    <i><em [style.width.%]="item.percent"></em></i>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (executiveEvolutionEntries().length) {
+            <article class="executive-panel">
+              <header>
+                <h3>Evolução no tempo</h3>
+                <span>{{ executiveEvolutionEntries().length }} pontos</span>
+              </header>
+              <div class="sparkline-bars">
+                @for (item of executiveEvolutionEntries(); track item.label) {
+                  <i [style.height.%]="item.percent" [title]="item.label + ': ' + item.value"></i>
+                }
+              </div>
+              <div class="sparkline-caption">
+                <span>{{ executiveEvolutionEntries()[0]?.label }}</span>
+                <span>{{ executiveEvolutionEntries()[executiveEvolutionEntries().length - 1]?.label }}</span>
+              </div>
+            </article>
+          }
+
+          @if (executiveSupplierEntries().length) {
+            <article class="executive-panel">
+              <header>
+                <h3>Fornecedor / tipo de ATA</h3>
+                <span>{{ executiveSupplierEntries().length }} grupos</span>
+              </header>
+              <div class="executive-bars">
+                @for (item of executiveSupplierEntries(); track item.label) {
+                  <div class="executive-bar-row">
+                    <div>
+                      <b>{{ item.label }}</b>
+                      <span>{{ item.value }}</span>
+                    </div>
+                    <i><em [style.width.%]="item.percent"></em></i>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </section>
+
+        <section class="executive-list-grid">
+          @if (topProjectEntries().length) {
+            <article class="executive-panel">
+              <header><h3>Top projetos por valor</h3></header>
+              <div class="executive-list">
+                @for (item of topProjectEntries(); track $index) {
+                  <div>
+                    <b>{{ getFirstString(item, ['title', 'projectTitle', 'projectName', 'name', 'code']) }}</b>
+                    <span>{{ getFirstString(item, ['om', 'omName', 'phase', 'stage', 'status']) }}</span>
+                    <strong>{{ firstCurrency(item, ['value', 'totalValue', 'estimatedValue', 'amount']) }}</strong>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (riskProjectEntries().length) {
+            <article class="executive-panel">
+              <header><h3>Projetos com risco</h3></header>
+              <div class="executive-list risk">
+                @for (item of riskProjectEntries(); track $index) {
+                  <div>
+                    <b>{{ getFirstString(item, ['title', 'projectTitle', 'projectName', 'name', 'code']) }}</b>
+                    <span>{{ getFirstString(item, ['risk', 'riskLevel', 'reason', 'status']) }}</span>
+                    <strong>{{ getFirstString(item, ['nextAction', 'action', 'stage']) }}</strong>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (criticalActionEntries().length) {
+            <article class="executive-panel">
+              <header><h3>Próximas ações críticas</h3></header>
+              <div class="executive-list">
+                @for (item of criticalActionEntries(); track $index) {
+                  <div>
+                    <b>{{ getFirstString(item, ['title', 'action', 'nextAction', 'label']) }}</b>
+                    <span>{{ getFirstString(item, ['projectTitle', 'projectName', 'owner', 'omName']) }}</span>
+                    <strong>{{ getFirstString(item, ['dueDate', 'deadline', 'status', 'priority']) }}</strong>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (criticalAtaItemEntries().length) {
+            <article class="executive-panel">
+              <header><h3>Itens críticos da ATA</h3></header>
+              <div class="executive-list risk">
+                @for (item of criticalAtaItemEntries(); track $index) {
+                  <div>
+                    <b>{{ getFirstString(item, ['description', 'itemDescription', 'name', 'code']) }}</b>
+                    <span>{{ getFirstString(item, ['ataNumber', 'ataCode', 'supplierName', 'status']) }}</span>
+                    <strong>{{ getFirstString(item, ['balance', 'availableBalance', 'risk', 'quantity']) }}</strong>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (executiveAlertEntries().length) {
+            <article class="executive-panel">
+              <header><h3>Alertas relevantes</h3></header>
+              <div class="executive-list risk">
+                @for (item of executiveAlertEntries(); track $index) {
+                  <div>
+                    <b>{{ getFirstString(item, ['title', 'label', 'type', 'message']) }}</b>
+                    <span>{{ stringifyItem(item) }}</span>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </section>
+
+        @if (executiveTableRows().length) {
+          <article class="executive-panel executive-table-panel">
+            <header>
+              <h3>Resumo executivo da carteira</h3>
+              <span>{{ executiveTableRows().length }} registros</span>
+            </header>
+            <div class="table-wrap">
+              <table class="data-table executive-table">
+                <thead>
+                  <tr>
+                    <th>Projeto</th>
+                    <th>OM</th>
+                    <th>Fase</th>
+                    <th>Valor</th>
+                    <th>Próxima ação</th>
+                    <th>Risco</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of executiveTableRows(); track $index) {
+                    <tr>
+                      <td>{{ getFirstString(item, ['title', 'projectTitle', 'projectName', 'name', 'code']) }}</td>
+                      <td>{{ getFirstString(item, ['om', 'omName', 'militaryOrganizationName', 'omSigla']) }}</td>
+                      <td>{{ getFirstString(item, ['phase', 'stage', 'status']) }}</td>
+                      <td>{{ firstCurrency(item, ['value', 'totalValue', 'estimatedValue', 'amount']) }}</td>
+                      <td>{{ getFirstString(item, ['nextAction', 'action', 'pendingAction']) }}</td>
+                      <td>{{ getFirstString(item, ['risk', 'riskLevel', 'riskStatus']) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </article>
+        }
       </div>
     } @else if (!dashboard()) {
       <div class="workspace">
@@ -410,6 +614,10 @@ export class DashboardPageComponent implements OnInit {
   readonly executiveDashboard = signal<ExecutiveDashboardSummary | null>(null);
   readonly viewMode = signal<DashboardMode>('operational');
   readonly executivePeriod = signal<ExecutivePeriod>('month');
+  readonly executiveReferenceDate = signal('');
+  readonly executiveStartDate = signal('');
+  readonly executiveEndDate = signal('');
+  readonly executiveAsOfDate = signal('');
 
   readonly executivePeriodOptions: Array<{ label: string; value: ExecutivePeriod }> = [
     { label: 'Mês', value: 'month' },
@@ -486,6 +694,48 @@ export class DashboardPageComponent implements OnInit {
       tone: 'accent',
     },
     {
+      label: 'Valor em execução',
+      value: this.executiveCurrency(['valueInExecution', 'executionValue', 'inExecutionAmount']),
+      description: 'Carteira em andamento',
+      icon: '▶',
+      tone: 'soft',
+    },
+    {
+      label: 'Valor concluído',
+      value: this.executiveCurrency(['completedValue', 'concludedValue', 'finishedAmount']),
+      description: 'Valor encerrado',
+      icon: '✓',
+      tone: 'success',
+    },
+    {
+      label: 'Projetos com risco',
+      value: this.executiveMetric(['projectsAtRiskCount', 'riskProjects', 'projectsAtRisk']),
+      description: 'Risco informado pela API',
+      icon: '!',
+      tone: 'danger',
+    },
+    {
+      label: 'Saldo disponível ATA',
+      value: this.executiveCurrency(['availableAtaBalance', 'ataAvailableBalance', 'totalAvailableAmount']),
+      description: 'Saldo disponível',
+      icon: 'R$',
+      tone: 'accent',
+    },
+    {
+      label: 'Itens críticos ATA',
+      value: this.executiveMetric(['criticalAtaItemsCount', 'criticalAtaItems', 'lowStockItems', 'itemsAtRisk']),
+      description: 'Itens em atenção',
+      icon: '!',
+      tone: 'warning',
+    },
+    {
+      label: 'Taxa de conclusão',
+      value: this.executivePercent(['completionRate', 'conclusionRate', 'completedPercent']),
+      description: 'Percentual consolidado',
+      icon: '%',
+      tone: 'success',
+    },
+    {
       label: 'Documentos emitidos',
       value: this.executiveMetric(['issuedDocuments', 'documentsIssued', 'documentsTotal']),
       description: 'DIEx, OS e demais documentos',
@@ -502,7 +752,7 @@ export class DashboardPageComponent implements OnInit {
   ]);
 
   readonly executiveValueEntries = computed(() =>
-    this.entriesFromRecords(
+    this.chartEntriesFromRecords(
       [
         this.asRecord(this.executiveDashboard()?.valueByStatus),
         this.asRecord(this.executiveDashboard()?.valueByStage),
@@ -514,25 +764,84 @@ export class DashboardPageComponent implements OnInit {
   );
 
   readonly executiveLocationEntries = computed(() =>
-    this.entriesFromRecords([
+    this.chartEntriesFromRecords([
       this.asRecord(this.executiveDashboard()?.projectsByUf),
       this.asRecord(this.executiveDashboard()?.projectsByRegion),
     ]),
   );
 
   readonly executiveDocumentEntries = computed(() =>
-    this.entriesFromRecords([
+    this.chartEntriesFromRecords([
       this.asRecord(this.executiveDashboard()?.issuedDocuments),
       this.asRecord(this.executiveDashboard()?.documents),
     ]),
   );
 
   readonly executiveAtaEntries = computed(() =>
-    this.entriesFromRecords([
+    this.chartEntriesFromRecords([
       this.asRecord(this.executiveDashboard()?.ataBalance),
       this.asRecord(this.executiveDashboard()?.ata),
       this.asRecord(this.executiveDashboard()?.risks),
     ]),
+  );
+
+  readonly executivePhaseEntries = computed(() =>
+    this.chartEntriesFromRecords([
+      this.asRecord(this.executiveDashboard()?.byStage),
+      this.asRecord(this.executiveDashboard()?.byStatus),
+    ]),
+  );
+
+  readonly executiveEvolutionEntries = computed(() =>
+    this.chartEntriesFromUnknown(
+      this.executiveDashboard()?.timeline ??
+        this.executiveDashboard()?.evolution ??
+        this.executiveDashboard()?.timeSeries,
+    ),
+  );
+
+  readonly executiveSupplierEntries = computed(() =>
+    this.chartEntriesFromRecords([
+      this.asRecord(this.executiveDashboard()?.bySupplier),
+      this.asRecord(this.executiveDashboard()?.byAtaType),
+    ]),
+  );
+
+  readonly topProjectEntries = computed(() =>
+    this.asArray(this.executiveDashboard()?.topProjects).slice(0, 6),
+  );
+
+  readonly riskProjectEntries = computed(() =>
+    this.asArray(this.executiveDashboard()?.projectsAtRisk).slice(0, 6),
+  );
+
+  readonly criticalActionEntries = computed(() =>
+    [
+      ...this.asArray(this.executiveDashboard()?.nextCriticalActions),
+      ...this.asArray(this.executiveDashboard()?.criticalActions),
+    ].slice(0, 6),
+  );
+
+  readonly criticalAtaItemEntries = computed(() =>
+    this.asArray(this.executiveDashboard()?.criticalAtaItems).slice(0, 6),
+  );
+
+  readonly executiveAlertEntries = computed(() =>
+    [
+      ...this.asArray(this.executiveDashboard()?.relevantAlerts),
+      ...this.asArray(this.executiveDashboard()?.alerts),
+      ...this.asArray(this.executiveDashboard()?.latestMovements),
+      ...this.asArray(this.executiveDashboard()?.movements),
+    ].slice(0, 6),
+  );
+
+  readonly executiveTableRows = computed(() =>
+    [
+      ...this.asArray(this.executiveDashboard()?.projectsSummary),
+      ...this.asArray(this.executiveDashboard()?.projectSummaries),
+      ...this.topProjectEntries(),
+      ...this.riskProjectEntries(),
+    ].slice(0, 12),
   );
 
   ngOnInit(): void {
@@ -545,7 +854,7 @@ export class DashboardPageComponent implements OnInit {
     this.errorMessage.set('');
 
     if (this.viewMode() === 'executive') {
-      this.dashboardService.getExecutiveDashboard().subscribe({
+      this.dashboardService.getExecutiveDashboard(this.executiveFilters()).subscribe({
         next: (response) => {
           this.executiveDashboard.set(response);
           this.loading.set(false);
@@ -585,6 +894,19 @@ export class DashboardPageComponent implements OnInit {
 
   setExecutivePeriod(period: ExecutivePeriod): void {
     this.executivePeriod.set(period);
+    if (period !== 'manual') {
+      this.loadDashboard();
+    }
+  }
+
+  setExecutiveDate(
+    field: 'referenceDate' | 'startDate' | 'endDate' | 'asOfDate',
+    value: string,
+  ): void {
+    if (field === 'referenceDate') this.executiveReferenceDate.set(value);
+    if (field === 'startDate') this.executiveStartDate.set(value);
+    if (field === 'endDate') this.executiveEndDate.set(value);
+    if (field === 'asOfDate') this.executiveAsOfDate.set(value);
   }
 
   currentBadge(): string {
@@ -595,6 +917,30 @@ export class DashboardPageComponent implements OnInit {
     }
 
     return this.dashboard() ? 'Atualizado em ' + this.formatDateValue(this.dashboard()?.generatedAt) : 'Painel operacional';
+  }
+
+  activeExecutiveFilterSummary(): string {
+    const filters = this.executiveFilters();
+    const parts = [
+      `Período: ${this.executivePeriodLabel()}`,
+      filters.referenceDate ? `referência ${this.formatDateValue(filters.referenceDate)}` : '',
+      filters.startDate && filters.endDate
+        ? `${this.formatDateValue(filters.startDate)} a ${this.formatDateValue(filters.endDate)}`
+        : '',
+      filters.asOfDate ? `posição ${this.formatDateValue(filters.asOfDate)}` : '',
+    ].filter(Boolean);
+
+    return parts.join(' · ') || 'Sem filtros adicionais aplicados.';
+  }
+
+  executiveRecordLabel(): string {
+    const count =
+      this.topProjectEntries().length +
+      this.riskProjectEntries().length +
+      this.criticalActionEntries().length +
+      this.executiveAlertEntries().length;
+
+    return count ? `${count} sinais executivos` : 'Dados consolidados';
   }
 
   readMetric(source: Record<string, unknown>, keys: string[], currency = false, fallbackObject?: Record<string, unknown>): string {
@@ -666,6 +1012,17 @@ export class DashboardPageComponent implements OnInit {
     return value === undefined ? 'Não informado' : formatCurrency(value);
   }
 
+  executivePercent(keys: string[]): string {
+    const value = this.firstExecutiveValue(keys);
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed)) {
+      return value === undefined ? 'Não informado' : this.displayValue(value);
+    }
+
+    return `${parsed <= 1 ? Math.round(parsed * 100) : Math.round(parsed)}%`;
+  }
+
   executivePeriodLabel(): string {
     return this.executivePeriodOptions.find((option) => option.value === this.executivePeriod())?.label ?? 'Mês';
   }
@@ -684,6 +1041,33 @@ export class DashboardPageComponent implements OnInit {
     }
 
     return this.executiveAtaEntries().length ? String(this.executiveAtaEntries().length) : 'Não informado';
+  }
+
+  firstCurrency(source: Record<string, unknown>, keys: string[]): string {
+    const key = keys.find((item) => source[item] !== undefined && source[item] !== null && source[item] !== '');
+    return key ? formatCurrency(source[key]) : 'Não informado';
+  }
+
+  private executiveFilters(): ExecutiveDashboardFilters {
+    const filters: ExecutiveDashboardFilters = {};
+    const period = this.executivePeriod();
+
+    if (period !== 'manual') {
+      filters.periodType = period;
+    }
+
+    if (period === 'manual') {
+      if (this.executiveStartDate()) filters.startDate = this.executiveStartDate();
+      if (this.executiveEndDate()) filters.endDate = this.executiveEndDate();
+    } else if (this.executiveReferenceDate()) {
+      filters.referenceDate = this.executiveReferenceDate();
+    }
+
+    if (this.executiveAsOfDate()) {
+      filters.asOfDate = this.executiveAsOfDate();
+    }
+
+    return filters;
   }
 
   private firstExecutiveValue(keys: string[]): unknown {
@@ -717,15 +1101,69 @@ export class DashboardPageComponent implements OnInit {
     return undefined;
   }
 
-  private entriesFromRecords(records: Record<string, unknown>[], currency = false): Array<{ label: string; value: string; raw: unknown }> {
-    return records
+  private chartEntriesFromRecords(records: Record<string, unknown>[], currency = false): ChartEntry[] {
+    const entries = records
       .flatMap((record) => Object.entries(record))
-      .filter(([, value]) => value !== undefined && value !== null && value !== '')
-      .map(([key, value]) => ({
+      .filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+    return this.withPercent(
+      entries.map(([key, value]) => ({
         label: formatLabel(key),
         value: currency ? formatCurrency(value) : this.displayValue(value),
         raw: value,
-      }));
+      })),
+    );
+  }
+
+  private chartEntriesFromUnknown(value: unknown): ChartEntry[] {
+    if (Array.isArray(value)) {
+      return this.withPercent(
+        value
+          .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+          .map((item) => {
+            const label = this.getFirstString(item, ['label', 'period', 'month', 'date', 'name']);
+            const raw =
+              item['value'] ??
+              item['total'] ??
+              item['amount'] ??
+              item['count'] ??
+              item['totalProjects'];
+
+            return {
+              label,
+              value: this.displayValue(raw),
+              raw,
+            };
+          }),
+      );
+    }
+
+    return this.chartEntriesFromRecords([this.asRecord(value)]);
+  }
+
+  private withPercent(entries: Array<{ label: string; value: string; raw: unknown }>): ChartEntry[] {
+    const max = Math.max(
+      ...entries.map((entry) => {
+        const parsed = Number(entry.raw);
+        return Number.isFinite(parsed) ? Math.abs(parsed) : 0;
+      }),
+      1,
+    );
+
+    return entries.map((entry) => {
+      const parsed = Number(entry.raw);
+      const percent = Number.isFinite(parsed)
+        ? Math.max(8, Math.min(100, (Math.abs(parsed) / max) * 100))
+        : 12;
+
+      return { ...entry, percent };
+    });
+  }
+
+  private asArray(value: unknown): Record<string, unknown>[] {
+    return Array.isArray(value)
+      ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+      : [];
   }
 
   private asRecord(value: unknown): Record<string, unknown> {
