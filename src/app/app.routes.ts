@@ -138,9 +138,19 @@ export const routes: Routes = [
         data: { title: 'Auditoria' },
       },
       {
-        path: 'usuarios',
-        component: UnderConstructionComponent,
-        data: { title: 'Usuários' },
+        path: 'users',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/users/users-page.component').then((m) => m.UsersPageComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/users/user-detail-page.component').then((m) => m.UserDetailPageComponent),
+          },
+        ],
       },
       {
         path: 'oms',
