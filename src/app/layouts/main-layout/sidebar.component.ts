@@ -99,7 +99,7 @@ export class SidebarComponent {
     {
       title: 'Governança',
       items: [
-        { label: 'Relatórios', path: '/relatorios', icon: '▧', disabled: true, hint: 'Exportações e relatórios serão integrados em etapa futura.' },
+        { label: 'Relatórios', path: '/relatorios', icon: '▧' },
         { label: 'Auditoria', path: '/auditoria', icon: '◎', roles: ['ADMIN', 'GESTOR'] },
         { label: 'Usuários', path: '/users', icon: '◉', roles: ['ADMIN'] },
         { label: 'OMs', path: '/oms', icon: '◆', roles: ['ADMIN'] },
