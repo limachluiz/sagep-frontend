@@ -124,8 +124,8 @@ export const routes: Routes = [
       },
       {
         path: 'saldo-ata',
-        component: UnderConstructionComponent,
-        data: { title: 'Saldo da ATA' },
+        loadComponent: () =>
+          import('./features/ata-balance/ata-balance-page.component').then((m) => m.AtaBalancePageComponent),
       },
       {
         path: 'relatorios',

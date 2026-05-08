@@ -93,7 +93,7 @@ export class SidebarComponent {
       items: [
         { label: 'ATAs', path: '/atas', icon: '◫' },
         { label: 'Itens da ATA', path: '/itens-ata', icon: '▦' },
-        { label: 'Saldo da ATA', path: '/saldo-ata', icon: '▥', disabled: true, hint: 'Painel reservado para movimentações e disponibilidade.' },
+        { label: 'Saldo da ATA', path: '/saldo-ata', icon: '▥' },
       ],
     },
     {
