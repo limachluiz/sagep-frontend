@@ -56,6 +56,16 @@ import { EstimatesService } from './estimates.service';
         backLabel="← Voltar para estimativas"
         backLink="/estimates"
       >
+        @if (estimate()?.id) {
+          <button page-header-actions type="button" (click)="openHtmlDocument()" class="btn btn-ghost">
+            Ver HTML
+          </button>
+        }
+        @if (estimate()?.id) {
+          <button page-header-actions type="button" (click)="openPdfDocument()" class="btn btn-gold">
+            Abrir PDF
+          </button>
+        }
         @if (canFinalizeEstimate()) {
           <button
             page-header-actions
@@ -85,6 +95,10 @@ import { EstimatesService } from './estimates.service';
           </button>
         }
       </app-page-header>
+
+      @if (documentError()) {
+        <div class="form-alert">{{ documentError() }}</div>
+      }
 
       @if (finalizeSuccess()) {
         <div class="rounded-[var(--sagep-radius)] border border-[var(--sagep-success-soft)] bg-[var(--sagep-success-soft)] p-5 text-sm font-semibold text-[var(--sagep-success)] shadow-[var(--sagep-shadow-soft)]">
@@ -560,6 +574,7 @@ export class EstimateDetailPageComponent implements OnInit {
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly documentError = signal('');
   readonly finalizing = signal(false);
   readonly finalizeError = signal('');
   readonly finalizeForbidden = signal(false);
@@ -840,6 +855,32 @@ export class EstimateDetailPageComponent implements OnInit {
     ];
   }
 
+  openHtmlDocument(): void {
+    const id = this.estimate()?.id;
+    if (!id) return;
+
+    this.documentError.set('');
+    this.estimatesService.getDocumentHtml(id).subscribe({
+      next: (html) => this.openBlobWindow(new Blob([html], { type: 'text/html' })),
+      error: (error) => {
+        this.documentError.set(getErrorMessage(error, 'Não foi possível abrir o HTML da estimativa.'));
+      },
+    });
+  }
+
+  openPdfDocument(): void {
+    const id = this.estimate()?.id;
+    if (!id) return;
+
+    this.documentError.set('');
+    this.estimatesService.getDocumentPdf(id).subscribe({
+      next: (blob) => this.openBlobWindow(new Blob([blob], { type: 'application/pdf' })),
+      error: (error) => {
+        this.documentError.set(getErrorMessage(error, 'Não foi possível abrir o PDF da estimativa.'));
+      },
+    });
+  }
+
   confirmFinalizeEstimate(): void {
     const estimate = this.estimate();
     if (!estimate || !this.canFinalizeEstimate()) return;
@@ -1027,6 +1068,12 @@ export class EstimateDetailPageComponent implements OnInit {
 
   private onlyDigits(value: string): string {
     return value.replace(/\D/g, '');
+  }
+
+  private openBlobWindow(blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   protected readonly formatLabel = formatLabel;
