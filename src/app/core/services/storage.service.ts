@@ -8,6 +8,10 @@ export class StorageService {
   private readonly refreshTokenKey = 'sagep.refresh_token';
   private readonly userKey = 'sagep.user';
 
+  constructor() {
+    this.clearLegacyLocalSession();
+  }
+
   getAccessToken(): string | null {
     return this.getItem(this.accessTokenKey);
   }
@@ -26,20 +30,22 @@ export class StorageService {
     try {
       return JSON.parse(raw) as User;
     } catch {
-      this.removeItem(this.userKey);
+      this.clearSession();
       return null;
     }
   }
 
-  setTokens(accessToken: string, refreshToken?: string | null): void {
-    this.setItem(this.accessTokenKey, accessToken);
-
-    if (refreshToken) {
-      this.setItem(this.refreshTokenKey, refreshToken);
-    }
+  setSession(accessToken: string, refreshToken: string, user: User): void {
+    this.setTokens(accessToken, refreshToken);
+    this.setUser(user);
   }
 
-  setUser(user: User): void {
+  private setTokens(accessToken: string, refreshToken: string): void {
+    this.setItem(this.accessTokenKey, accessToken);
+    this.setItem(this.refreshTokenKey, refreshToken);
+  }
+
+  private setUser(user: User): void {
     this.setItem(this.userKey, JSON.stringify(user));
   }
 
@@ -50,26 +56,36 @@ export class StorageService {
   }
 
   getItem(key: string): string | null {
-    if (typeof localStorage === 'undefined') {
+    if (typeof sessionStorage === 'undefined') {
       return null;
     }
 
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   }
 
   setItem(key: string, value: string): void {
-    if (typeof localStorage === 'undefined') {
+    if (typeof sessionStorage === 'undefined') {
       return;
     }
 
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   }
 
   removeItem(key: string): void {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+
+    sessionStorage.removeItem(key);
+  }
+
+  private clearLegacyLocalSession(): void {
     if (typeof localStorage === 'undefined') {
       return;
     }
 
-    localStorage.removeItem(key);
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(this.userKey);
   }
 }
