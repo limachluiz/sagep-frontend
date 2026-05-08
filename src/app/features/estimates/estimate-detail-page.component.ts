@@ -121,7 +121,7 @@ import { EstimatesService } from './estimates.service';
       @if (finalizeForbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite finalizar esta estimativa."
-          description="A API recusou a operação de finalização para o perfil ou permissões atuais. Sua sessão permanece ativa."
+          description="A operação de finalização foi recusada para o perfil ou permissões atuais. Sua sessão permanece ativa."
           primaryLink="/estimates"
           primaryLabel="Voltar à listagem"
           secondaryLink="/dashboard"
@@ -134,7 +134,7 @@ import { EstimatesService } from './estimates.service';
       @if (creditNoteForbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite informar a Nota de Crédito."
-          description="A API recusou a atualização do fluxo do projeto para o perfil ou permissões atuais."
+          description="A atualização do fluxo do projeto foi recusada para o perfil ou permissões atuais."
           primaryLink="/estimates"
           primaryLabel="Voltar à listagem"
           secondaryLink="/dashboard"
@@ -147,7 +147,7 @@ import { EstimatesService } from './estimates.service';
       @if (diexForbidden()) {
         <app-access-denied-state
           title="Seu acesso atual não permite gerar DIEx requisitório."
-          description="A API recusou a emissão do DIEx para o perfil ou permissões atuais. Sua sessão permanece ativa."
+          description="A emissão do DIEx foi recusada para o perfil ou permissões atuais. Sua sessão permanece ativa."
           primaryLink="/estimates"
           primaryLabel="Voltar à listagem"
           secondaryLink="/dashboard"
@@ -275,7 +275,7 @@ import { EstimatesService } from './estimates.service';
 
         <app-section-card
           title="Itens da estimativa"
-          subtitle="Linhas retornadas pela API com quantidades, preços unitários, subtotais e observações."
+          subtitle="Linhas da estimativa com quantidades, preços unitários, subtotais e observações."
           bodyClass="estimate-section-stack"
         >
           <span section-card-actions class="text-sm text-[var(--sagep-muted)]">
@@ -337,7 +337,7 @@ import { EstimatesService } from './estimates.service';
             </div>
           } @else {
             <div class="estimate-inline-state">
-              A API não retornou itens para esta estimativa.
+              Nenhum item foi encontrado para esta estimativa.
             </div>
           }
         </app-section-card>
@@ -482,7 +482,7 @@ import { EstimatesService } from './estimates.service';
                 <div>
                   <p class="estimate-form-kicker">Emissão documental</p>
                   <h3>Gerar DIEx requisitório</h3>
-                  <p>Informe os dados documentais mínimos exigidos pela API para emitir o DIEx a partir desta estimativa finalizada.</p>
+                  <p>Informe os dados documentais mínimos para emitir o DIEx a partir desta estimativa finalizada.</p>
                 </div>
               </div>
               <form [formGroup]="diexForm" class="estimate-form-grid estimate-form-grid--wide">
@@ -733,7 +733,7 @@ export class EstimateDetailPageComponent implements OnInit {
       {
         title: 'Itens',
         value: String(itemsCount),
-        description: 'Linhas retornadas pela API',
+        description: 'Linhas da estimativa',
         icon: 'IT',
         tone: 'soft' as const,
       },

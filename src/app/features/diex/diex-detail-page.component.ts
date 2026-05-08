@@ -155,7 +155,7 @@ import { DiexService } from './diex.service';
           </div>
         </app-section-card>
 
-        <app-section-card title="Itens do DIEx" subtitle="Itens reservados e valores retornados pela API.">
+        <app-section-card title="Itens do DIEx" subtitle="Itens reservados, quantidades e valores do documento.">
           <span section-card-actions class="badge b-neutral">{{ (diex()?.items ?? []).length }} item(ns)</span>
           @if ((diex()?.items ?? []).length) {
             <div class="table-wrap hidden lg:block">
@@ -200,7 +200,7 @@ import { DiexService } from './diex.service';
               }
             </div>
           } @else {
-            <div class="empty"><p>A API não retornou itens para este DIEx.</p></div>
+            <div class="empty"><p>Nenhum item foi encontrado para este DIEx.</p></div>
           }
         </app-section-card>
       }

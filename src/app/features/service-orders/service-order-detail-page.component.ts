@@ -174,7 +174,7 @@ import { ServiceOrdersService } from './service-orders.service';
           </app-section-card>
         </div>
 
-        <app-section-card title="Itens da ordem de serviço" subtitle="Itens ordenados e valores retornados pela API.">
+        <app-section-card title="Itens da ordem de serviço" subtitle="Itens ordenados, quantidades e valores do documento.">
           <span section-card-actions class="badge b-neutral">{{ (serviceOrder()?.items ?? []).length }} item(ns)</span>
           @if ((serviceOrder()?.items ?? []).length) {
             <div class="table-wrap hidden lg:block">
@@ -219,7 +219,7 @@ import { ServiceOrdersService } from './service-orders.service';
               }
             </div>
           } @else {
-            <div class="empty"><p>A API não retornou itens para esta ordem de serviço.</p></div>
+            <div class="empty"><p>Nenhum item foi encontrado para esta ordem de serviço.</p></div>
           }
         </app-section-card>
 
@@ -235,7 +235,7 @@ import { ServiceOrdersService } from './service-orders.service';
                 }
               </div>
             } @else {
-              <div class="empty"><p>A API não retornou cronograma para esta ordem de serviço.</p></div>
+              <div class="empty"><p>Nenhum cronograma foi encontrado para esta ordem de serviço.</p></div>
             }
           </app-section-card>
 
@@ -250,7 +250,7 @@ import { ServiceOrdersService } from './service-orders.service';
                 }
               </div>
             } @else {
-              <div class="empty"><p>A API não retornou documentos entregues para esta ordem de serviço.</p></div>
+              <div class="empty"><p>Nenhum documento entregue foi encontrado para esta ordem de serviço.</p></div>
             }
           </app-section-card>
         </div>
