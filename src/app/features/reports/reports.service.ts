@@ -14,15 +14,12 @@ export class ReportsService {
     });
   }
 
-  getProjectDossierHtml(projectIdentifier: string) {
-    return this.http.get(`${this.apiUrl}/reports/projects/${encodeURIComponent(projectIdentifier)}/dossier`, {
-      responseType: 'blob',
-    });
-  }
-
   getProjectDossierPdf(projectIdentifier: string) {
-    return this.http.get(`${this.apiUrl}/reports/projects/${encodeURIComponent(projectIdentifier)}/dossier.pdf`, {
-      responseType: 'blob',
-    });
+    return this.http.get(
+      `${this.apiUrl}/reports/projects/${encodeURIComponent(projectIdentifier)}/dossier.pdf`,
+      {
+        responseType: 'blob',
+      },
+    );
   }
 }

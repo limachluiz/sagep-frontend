@@ -54,7 +54,7 @@ import { ReportsService } from './reports.service';
           <form
             [formGroup]="dossierForm"
             class="document-actions-panel"
-            (ngSubmit)="openDossierHtml()"
+            (ngSubmit)="openDossierPdf()"
           >
             <label class="form-field">
               <span>Projeto</span>
@@ -71,15 +71,7 @@ import { ReportsService } from './reports.service';
               <button
                 type="submit"
                 class="btn btn-primary"
-                [disabled]="dossierLoading() || dossierForm.invalid"
-              >
-                {{ dossierLoading() === 'html' ? 'Abrindo...' : 'Abrir dossiê HTML' }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost"
                 [disabled]="!!dossierLoading() || dossierForm.invalid"
-                (click)="openDossierPdf()"
               >
                 {{ dossierLoading() === 'pdf' ? 'Abrindo...' : 'Abrir dossiê PDF' }}
               </button>
@@ -101,7 +93,7 @@ export class ReportsPageComponent {
 
   readonly projectsLoading = signal(false);
   readonly projectsError = signal('');
-  readonly dossierLoading = signal<'' | 'html' | 'pdf'>('');
+  readonly dossierLoading = signal<'' | 'pdf'>('');
   readonly dossierError = signal('');
 
   readonly dossierForm = this.fb.nonNullable.group({
@@ -126,34 +118,6 @@ export class ReportsPageComponent {
         this.projectsLoading.set(false);
       },
     });
-  }
-
-  openDossierHtml(): void {
-    if (this.dossierForm.invalid) {
-      this.dossierForm.markAllAsTouched();
-      return;
-    }
-
-    this.dossierLoading.set('html');
-    this.dossierError.set('');
-
-    this.resolveProjectDossierId()
-      .pipe(
-        switchMap((projectId) => this.reportsService.getProjectDossierHtml(projectId)),
-        catchError((error) => throwError(() => this.normalizeDossierError(error))),
-      )
-      .subscribe({
-        next: (blob) => {
-          this.openBlobWindow(new Blob([blob], { type: 'text/html' }));
-          this.dossierLoading.set('');
-        },
-        error: (error) => {
-          this.dossierError.set(
-            getErrorMessage(error, 'Não foi possível abrir o dossiê HTML do projeto.'),
-          );
-          this.dossierLoading.set('');
-        },
-      });
   }
 
   openDossierPdf(): void {
