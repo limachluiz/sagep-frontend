@@ -92,7 +92,7 @@ export class SidebarComponent {
       title: 'Catálogo',
       items: [
         { label: 'ATAs', path: '/atas', icon: '◫' },
-        { label: 'Itens da ATA', path: '/itens-ata', icon: '▦', disabled: true, hint: 'Ligado ao controle de estoque e saldo da ATA.' },
+        { label: 'Itens da ATA', path: '/itens-ata', icon: '▦' },
         { label: 'Saldo da ATA', path: '/saldo-ata', icon: '▥', disabled: true, hint: 'Painel reservado para movimentações e disponibilidade.' },
       ],
     },

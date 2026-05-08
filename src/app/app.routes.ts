@@ -119,8 +119,8 @@ export const routes: Routes = [
       },
       {
         path: 'itens-ata',
-        component: UnderConstructionComponent,
-        data: { title: 'Itens da ATA' },
+        loadComponent: () =>
+          import('./features/ata-items/ata-items-page.component').then((m) => m.AtaItemsPageComponent),
       },
       {
         path: 'saldo-ata',
