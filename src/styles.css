@@ -1064,6 +1064,46 @@ textarea:focus-visible {
   gap: 16px;
 }
 
+.dashboard-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboard-switch,
+.executive-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-switch button,
+.executive-filters button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dashboard-switch button.active,
+.executive-filters button.active {
+  border-color: var(--eb-green);
+  background: var(--eb-green);
+  color: #fff;
+}
+
+.executive-filters .input {
+  min-height: 38px;
+  max-width: 150px;
+}
+
 .dashboard-workspace > .grid {
   margin-top: 0;
 }

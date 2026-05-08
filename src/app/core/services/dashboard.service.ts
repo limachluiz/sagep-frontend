@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
-import { DashboardSummary } from '../models/dashboard.model';
+import { DashboardSummary, ExecutiveDashboardSummary } from '../models/dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -21,5 +21,9 @@ export class DashboardService {
     }
 
     return this.http.get<DashboardSummary>(`${this.apiUrl}/dashboard/operational`, { params });
+  }
+
+  getExecutiveDashboard() {
+    return this.http.get<ExecutiveDashboardSummary>(`${this.apiUrl}/dashboard/executive`);
   }
 }
