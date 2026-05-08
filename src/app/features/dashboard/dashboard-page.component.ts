@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import {
   DashboardSummary,
@@ -26,6 +27,7 @@ type ChartEntry = { label: string; value: string; raw: unknown; percent: number 
   selector: 'app-dashboard-page',
   imports: [
     CommonModule,
+    RouterLink,
     AccessDeniedStateComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -36,11 +38,11 @@ type ChartEntry = { label: string; value: string; raw: unknown; percent: number 
   ],
   template: `
     <app-page-header
-      title="Painel de Comando"
+      [title]="viewMode() === 'executive' ? 'Painel de Comando' : 'Painel Operacional'"
       [eyebrow]="viewMode() === 'executive' ? 'Dashboard executivo' : 'Dashboard operacional'"
       [subtitle]="viewMode() === 'executive'
         ? 'Visão executiva para acompanhamento de projetos, valores, documentos emitidos e sinais de risco.'
-        : 'Visão institucional para acompanhamento do fluxo de projetos, pendências, estoque e próximas ações.'"
+        : 'Acompanhamento diário da fila de projetos, pendências, travas e próximos passos da equipe.'"
       [badge]="currentBadge()"
     />
 
@@ -105,6 +107,30 @@ type ChartEntry = { label: string; value: string; raw: unknown; percent: number 
             (change)="setExecutiveDate('asOfDate', $any($event.target).value)"
           />
           <button type="button" class="active" (click)="loadDashboard()">Aplicar</button>
+        </div>
+      } @else {
+        <div class="executive-filters tactical-filters" aria-label="Filtros operacionais">
+          <label>
+            <span>Parado há</span>
+            <input
+              type="number"
+              min="1"
+              class="input"
+              [value]="operationalStaleDays()"
+              (change)="setOperationalNumber('staleDays', $any($event.target).value)"
+            />
+          </label>
+          <label>
+            <span>Limite</span>
+            <input
+              type="number"
+              min="1"
+              class="input"
+              [value]="operationalLimit()"
+              (change)="setOperationalNumber('limit', $any($event.target).value)"
+            />
+          </label>
+          <button type="button" class="active" (click)="loadDashboard()">Atualizar</button>
         </div>
       }
     </div>
@@ -454,7 +480,150 @@ type ChartEntry = { label: string; value: string; raw: unknown; percent: number 
         />
       </div>
     } @else {
-      <div class="workspace dashboard-workspace">
+      <div class="workspace dashboard-workspace tactical-workspace">
+        <section class="tactical-hero">
+          <div>
+            <span class="badge b-neutral">4º CTA · Operacional</span>
+            <h2>Fila viva da equipe de projetos</h2>
+            <p>{{ operationalFilterSummary() }}</p>
+          </div>
+          <div class="tactical-clock">
+            <label>Atualização</label>
+            <b>{{ formatDateValue(dashboard()?.generatedAt) }}</b>
+            <span>{{ arrayCountLabel(dashboard()?.operationalQueue) }} na fila</span>
+          </div>
+        </section>
+
+        <section class="tactical-kpi-grid">
+          @for (card of tacticalCards(); track card.label) {
+            <article class="tactical-kpi" [class]="'tone-' + card.tone">
+              <span>{{ card.icon }}</span>
+              <b>{{ card.value }}</b>
+              <label>{{ card.label }}</label>
+            </article>
+          }
+        </section>
+
+        @if (tacticalQueueEntries().length) {
+          <article class="tactical-panel tactical-queue-panel">
+            <header>
+              <h3>Fila de ação</h3>
+              <span>{{ tacticalQueueEntries().length }} itens</span>
+            </header>
+            <div class="tactical-queue">
+              @for (item of tacticalQueueEntries(); track $index) {
+                <section class="tactical-queue-item" [class]="'severity-' + severityKey(item)">
+                  <div>
+                    <b>{{ tacticalText(item, ['title', 'label', 'projectTitle', 'projectName', 'code']) }}</b>
+                    <span>{{ operationalLocation(item) }}</span>
+                  </div>
+                  <div>
+                    <span class="phase-pill">{{ tacticalText(item, ['stage', 'phase', 'status', 'type']) }}</span>
+                    <small>{{ tacticalText(item, ['nextAction', 'action', 'pendingAction', 'nextStep']) }}</small>
+                  </div>
+                  <div>
+                    <strong>{{ tacticalText(item, ['staleDays', 'daysStopped', 'idleDays', 'ageDays']) }}</strong>
+                    <small>tempo parado</small>
+                  </div>
+                  <div>
+                    <span class="severity-pill">{{ severityLabel(item) }}</span>
+                    @if (projectRoute(item).length > 1) {
+                      <a class="btn btn-sm btn-ghost" [routerLink]="projectRoute(item)">Abrir projeto</a>
+                    }
+                  </div>
+                </section>
+              }
+            </div>
+          </article>
+        }
+
+        <section class="tactical-grid">
+          <article class="tactical-panel">
+            <header>
+              <h3>Projetos por fase</h3>
+              <span>{{ kanbanStageEntries().length }} fases</span>
+            </header>
+            <div class="phase-board">
+              @for (stage of kanbanStageEntries(); track stage.label) {
+                <div>
+                  <b>{{ stage.value }}</b>
+                  <span>{{ stage.label }}</span>
+                </div>
+              }
+            </div>
+          </article>
+
+          @if (operationalAlertEntries().length) {
+            <article class="tactical-panel">
+              <header>
+                <h3>Alertas operacionais</h3>
+                <span>{{ operationalAlertEntries().length }} sinais</span>
+              </header>
+              <div class="alert-stack">
+                @for (item of operationalAlertEntries(); track $index) {
+                  <div [class]="'severity-' + severityKey(item)">
+                    <b>{{ tacticalText(item, ['title', 'label', 'type', 'message']) }}</b>
+                    <span>{{ stringifyItem(item) }}</span>
+                    @if (projectRoute(item).length > 1) {
+                      <a [routerLink]="projectRoute(item)">Abrir projeto</a>
+                    }
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (pendingDocumentEntries().length) {
+            <article class="tactical-panel">
+              <header>
+                <h3>Documentos pendentes</h3>
+                <span>{{ pendingDocumentEntries().length }} tipos</span>
+              </header>
+              <div class="document-grid tactical-documents">
+                @for (item of pendingDocumentEntries(); track item.label) {
+                  <div>
+                    <span>{{ item.label }}</span>
+                    <b>{{ item.value }}</b>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (ataRiskEntries().length) {
+            <article class="tactical-panel">
+              <header>
+                <h3>Saldo ATA em risco</h3>
+                <span>{{ ataRiskEntries().length }} indicadores</span>
+              </header>
+              <div class="risk-list">
+                @for (item of ataRiskEntries(); track item.label) {
+                  <div>
+                    <b>{{ item.label }}</b>
+                    <span>{{ item.value }}</span>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+
+          @if (recentActivityEntries().length) {
+            <article class="tactical-panel">
+              <header>
+                <h3>Atividade recente</h3>
+                <span>{{ recentActivityEntries().length }} eventos</span>
+              </header>
+              <div class="timeline-list">
+                @for (item of recentActivityEntries(); track $index) {
+                  <div>
+                    <b>{{ tacticalText(item, ['title', 'label', 'type', 'action', 'code']) }}</b>
+                    <span>{{ stringifyItem(item) }}</span>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </section>
         <div class="hero-panel">
           <section class="card command-card">
             <div class="card-body">
@@ -613,6 +782,8 @@ export class DashboardPageComponent implements OnInit {
   readonly dashboard = signal<DashboardSummary | null>(null);
   readonly executiveDashboard = signal<ExecutiveDashboardSummary | null>(null);
   readonly viewMode = signal<DashboardMode>('operational');
+  readonly operationalStaleDays = signal(7);
+  readonly operationalLimit = signal(20);
   readonly executivePeriod = signal<ExecutivePeriod>('month');
   readonly executiveReferenceDate = signal('');
   readonly executiveStartDate = signal('');
@@ -676,6 +847,123 @@ export class DashboardPageComponent implements OnInit {
       label: formatLabel(key),
       value: key.toLowerCase().includes('amount') ? formatCurrency(value) : this.displayValue(value),
     })),
+  );
+
+  readonly tacticalCards = computed<Array<{ label: string; value: string; icon: string; tone: SummaryTone }>>(() => {
+    const cards: Array<{ label: string; value: string; icon: string; tone: SummaryTone }> = [
+      {
+        label: 'Em andamento',
+        value: this.operationalMetric(['projectsInProgress', 'inProgressProjects', 'activeProjects']),
+        icon: '▶',
+        tone: 'default',
+      },
+      {
+        label: 'Aguardando NC',
+        value: this.stageMetric(['awaitingCreditNote', 'waitingCreditNote', 'aguardandoNc']),
+        icon: 'NC',
+        tone: 'warning',
+      },
+      {
+        label: 'Aguardando DIEx',
+        value: this.stageMetric(['awaitingDiex', 'waitingDiex', 'diexPending']),
+        icon: 'DX',
+        tone: 'warning',
+      },
+      {
+        label: 'Aguardando NE',
+        value: this.stageMetric(['awaitingCommitmentNote', 'awaitingNe', 'nePending']),
+        icon: 'NE',
+        tone: 'warning',
+      },
+      {
+        label: 'OS liberada',
+        value: this.stageMetric(['serviceOrderReleased', 'osReleased', 'releasedServiceOrders']),
+        icon: 'OS',
+        tone: 'success',
+      },
+      {
+        label: 'Em execução',
+        value: this.stageMetric(['execution', 'inExecution', 'executingProjects']),
+        icon: 'EX',
+        tone: 'accent',
+      },
+      {
+        label: 'As-Built pendente',
+        value: this.stageMetric(['asBuiltPending', 'pendingAsBuilt']),
+        icon: 'AB',
+        tone: 'danger',
+      },
+      {
+        label: 'NF pendente',
+        value: this.stageMetric(['invoicePending', 'nfPending', 'pendingInvoice']),
+        icon: 'NF',
+        tone: 'danger',
+      },
+      {
+        label: 'Alertas críticos',
+        value: this.operationalMetric(['criticalAlerts', 'criticalAlertCount', 'alertsCritical']),
+        icon: '!',
+        tone: 'danger',
+      },
+      {
+        label: 'Saldo crítico ATA',
+        value: this.operationalMetric(['criticalAtaItems', 'lowStockItems', 'itemsAtRisk']),
+        icon: 'ATA',
+        tone: 'warning',
+      },
+    ];
+
+    return cards.filter((card) => this.hasDisplayValue(card.value));
+  });
+
+  readonly tacticalQueueEntries = computed(() => this.asArray(this.dashboard()?.operationalQueue));
+
+  readonly operationalAlertEntries = computed(() => [
+    ...this.recordsFromUnknown(this.dashboard()?.alerts),
+    ...this.tacticalQueueEntries().filter((item) => this.severityKey(item) !== 'info'),
+  ].slice(0, 8));
+
+  readonly pendingDocumentEntries = computed(() =>
+    [
+      { label: 'NC pendente', keys: ['ncPending', 'creditNotePending', 'pendingCreditNotes'] },
+      { label: 'DIEx pendente', keys: ['diexPending', 'pendingDiex'] },
+      { label: 'NE pendente', keys: ['nePending', 'commitmentNotePending', 'pendingCommitmentNotes'] },
+      { label: 'OS pendente', keys: ['osPending', 'serviceOrderPending', 'pendingServiceOrders'] },
+      { label: 'As-Built pendente', keys: ['asBuiltPending', 'pendingAsBuilt'] },
+      { label: 'NF pendente', keys: ['nfPending', 'invoicePending', 'pendingInvoices'] },
+    ]
+      .map((entry) => ({ label: entry.label, value: this.operationalMetric(entry.keys) }))
+      .filter((entry) => entry.value !== 'Não informado'),
+  );
+
+  readonly ataRiskEntries = computed(() =>
+    this.chartEntriesFromRecords([
+      this.asRecord(this.dashboard()?.inventory?.summary),
+      ...this.recordsFromUnknown(this.dashboard()?.inventory?.criticalItems),
+      ...this.recordsFromUnknown(this.dashboard()?.inventory?.staleReservations),
+      ...this.recordsFromUnknown(this.dashboard()?.inventory?.recentReversals),
+    ]).slice(0, 10),
+  );
+
+  readonly recentActivityEntries = computed(() => [
+    ...this.asArray(this.dashboard()?.latestMovements),
+    ...this.recordsFromUnknown(this.dashboard()?.frequentNextActions),
+  ].slice(0, 8));
+
+  readonly kanbanStageEntries = computed(() =>
+    [
+      { label: 'Estimativa', keys: ['estimate', 'estimation', 'estimativa'] },
+      { label: 'Aguardando NC', keys: ['awaitingCreditNote', 'waitingCreditNote', 'aguardandoNc'] },
+      { label: 'DIEx', keys: ['diex', 'diexPending', 'awaitingDiex'] },
+      { label: 'Aguardando NE', keys: ['awaitingCommitmentNote', 'awaitingNe', 'nePending'] },
+      { label: 'OS Liberada', keys: ['serviceOrderReleased', 'osReleased'] },
+      { label: 'Execução', keys: ['execution', 'inExecution'] },
+      { label: 'As-Built', keys: ['asBuilt', 'asBuiltPending'] },
+      { label: 'Atestar NF', keys: ['invoiceAttestation', 'nfPending', 'invoicePending'] },
+      { label: 'Concluído', keys: ['completed', 'concluded', 'done'] },
+    ]
+      .map((entry) => ({ label: entry.label, value: this.stageMetric(entry.keys) }))
+      .filter((entry) => this.hasDisplayValue(entry.value)),
   );
 
   readonly executiveCards = computed<Array<{ label: string; value: string; description: string; icon: string; tone: SummaryTone }>>(() => [
@@ -869,7 +1157,12 @@ export class DashboardPageComponent implements OnInit {
       return;
     }
 
-    this.dashboardService.getOperationalDashboard().subscribe({
+    this.dashboardService
+      .getOperationalDashboard({
+        staleDays: this.operationalStaleDays(),
+        limit: this.operationalLimit(),
+      })
+      .subscribe({
       next: (response) => {
         this.dashboard.set(response);
         this.loading.set(false);
@@ -909,6 +1202,17 @@ export class DashboardPageComponent implements OnInit {
     if (field === 'asOfDate') this.executiveAsOfDate.set(value);
   }
 
+  setOperationalNumber(field: 'staleDays' | 'limit', value: string): void {
+    const parsed = Number(value);
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return;
+    }
+
+    if (field === 'staleDays') this.operationalStaleDays.set(parsed);
+    if (field === 'limit') this.operationalLimit.set(parsed);
+  }
+
   currentBadge(): string {
     if (this.viewMode() === 'executive') {
       return this.executiveDashboard()?.generatedAt
@@ -943,6 +1247,82 @@ export class DashboardPageComponent implements OnInit {
     return count ? `${count} sinais executivos` : 'Dados consolidados';
   }
 
+  operationalFilterSummary(): string {
+    return `Parados há ${this.operationalStaleDays()} dia(s) · limite ${this.operationalLimit()} item(ns)`;
+  }
+
+  operationalMetric(keys: string[]): string {
+    const value = this.firstOperationalValue(keys);
+    return value === undefined ? 'Não informado' : this.displayValue(value);
+  }
+
+  stageMetric(keys: string[]): string {
+    const value = this.firstOperationalValue(keys, [this.asRecord(this.dashboard()?.pendingByStage)]);
+    return value === undefined ? 'Não informado' : this.displayValue(value);
+  }
+
+  tacticalText(source: Record<string, unknown>, keys: string[]): string {
+    const value = this.getFirstString(source, keys);
+    return this.hasDisplayValue(value) ? value : '—';
+  }
+
+  operationalLocation(item: Record<string, unknown>): string {
+    const om = this.getFirstString(item, ['om', 'omName', 'omSigla', 'militaryOrganizationName']);
+    const city = this.getFirstString(item, ['city', 'cityName', 'destinationCityName']);
+    const state = this.getFirstString(item, ['state', 'stateUf', 'destinationStateUf']);
+    const location = [city === 'Não informado' ? '' : city, state === 'Não informado' ? '' : state]
+      .filter(Boolean)
+      .join('/');
+
+    return [om === 'Não informado' ? '' : om, location].filter(Boolean).join(' · ') || 'Não informado';
+  }
+
+  severityKey(item: Record<string, unknown>): 'critical' | 'warning' | 'info' {
+    const value = this.getFirstString(item, ['severity', 'priority', 'riskLevel', 'status'])
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (['critical', 'critico', 'alta', 'high', 'danger', 'risco'].some((entry) => value.includes(entry))) {
+      return 'critical';
+    }
+
+    if (['warning', 'atencao', 'media', 'medium', 'pendente', 'stale'].some((entry) => value.includes(entry))) {
+      return 'warning';
+    }
+
+    return 'info';
+  }
+
+  severityLabel(item: Record<string, unknown>): string {
+    const value = this.getFirstString(item, ['severity', 'priority', 'riskLevel']);
+
+    if (this.hasDisplayValue(value)) {
+      return value;
+    }
+
+    const key = this.severityKey(item);
+    if (key === 'critical') return 'Crítico';
+    if (key === 'warning') return 'Atenção';
+    return 'Info';
+  }
+
+  projectRoute(item: Record<string, unknown>): string[] {
+    const code = this.getFirstString(item, ['projectHumanCode', 'projectCodeFormatted', 'projectIdentifier']);
+    const numericCode = this.getFirstString(item, ['projectCode', 'code']);
+    const id = this.getFirstString(item, ['projectId', 'id']);
+
+    if (code !== 'Não informado') {
+      return ['/projects', code];
+    }
+
+    if (numericCode !== 'Não informado' && /^\d+$/.test(numericCode)) {
+      return ['/projects', `PRJ-2026-${numericCode.padStart(4, '0')}`];
+    }
+
+    return id !== 'Não informado' ? ['/projects', id] : [];
+  }
+
   readMetric(source: Record<string, unknown>, keys: string[], currency = false, fallbackObject?: Record<string, unknown>): string {
     const key = keys.find((item) => source[item] !== undefined && source[item] !== null);
     const value = key ? source[key] : null;
@@ -973,7 +1353,7 @@ export class DashboardPageComponent implements OnInit {
     }
 
     return entries
-      .map(([key, value]) => `${formatLabel(key)}: ${typeof value === 'object' ? JSON.stringify(value) : this.displayValue(value)}`)
+      .map(([key, value]) => `${formatLabel(key)}: ${this.compactValue(value)}`)
       .join(' | ');
   }
 
@@ -1070,6 +1450,32 @@ export class DashboardPageComponent implements OnInit {
     return filters;
   }
 
+  private firstOperationalValue(keys: string[], extraSources: Record<string, unknown>[] = []): unknown {
+    const dashboard = this.dashboard();
+
+    if (!dashboard) {
+      return undefined;
+    }
+
+    const sources = [
+      dashboard.summary,
+      dashboard.alerts,
+      dashboard.pendingByStage,
+      dashboard.inventory?.summary,
+      ...extraSources,
+    ].map((source) => this.asRecord(source));
+
+    for (const source of sources) {
+      const key = keys.find((item) => source[item] !== undefined && source[item] !== null && source[item] !== '');
+
+      if (key) {
+        return source[key];
+      }
+    }
+
+    return undefined;
+  }
+
   private firstExecutiveValue(keys: string[]): unknown {
     const dashboard = this.executiveDashboard();
 
@@ -1141,6 +1547,15 @@ export class DashboardPageComponent implements OnInit {
     return this.chartEntriesFromRecords([this.asRecord(value)]);
   }
 
+  private recordsFromUnknown(value: unknown): Record<string, unknown>[] {
+    if (Array.isArray(value)) {
+      return this.asArray(value);
+    }
+
+    const record = this.asRecord(value);
+    return Object.keys(record).length ? [record] : [];
+  }
+
   private withPercent(entries: Array<{ label: string; value: string; raw: unknown }>): ChartEntry[] {
     const max = Math.max(
       ...entries.map((entry) => {
@@ -1170,13 +1585,37 @@ export class DashboardPageComponent implements OnInit {
     return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
   }
 
+  private hasDisplayValue(value: unknown): boolean {
+    return value !== undefined && value !== null && value !== '' && value !== 'Não informado' && value !== '[]' && value !== '{}';
+  }
+
+  private compactValue(value: unknown): string {
+    if (Array.isArray(value)) {
+      return value.length ? `${value.length} item(ns)` : '—';
+    }
+
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      const readable = this.getFirstString(record, ['title', 'label', 'name', 'code', 'status', 'stage']);
+      return this.hasDisplayValue(readable) ? readable : `${Object.keys(record).length} campo(s)`;
+    }
+
+    return this.displayValue(value);
+  }
+
   private displayValue(value: unknown): string {
     if (value === null || value === undefined || value === '') {
       return 'Não informado';
     }
 
+    if (Array.isArray(value)) {
+      return value.length ? String(value.length) : 'Não informado';
+    }
+
     if (typeof value === 'object') {
-      return JSON.stringify(value);
+      const record = value as Record<string, unknown>;
+      const readable = this.getFirstString(record, ['title', 'label', 'name', 'code', 'status', 'stage']);
+      return this.hasDisplayValue(readable) ? readable : `${Object.keys(record).length} campo(s)`;
     }
 
     return String(value);
