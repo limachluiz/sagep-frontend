@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -14,7 +16,7 @@ import { SummaryCardComponent } from '../../shared/components/summary-card.compo
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
 import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { Ata, AtaCoverageGroup, AtaItem } from './ata.model';
+import { Ata, AtaCoverageGroup, AtaItem, AtaPayload } from './ata.model';
 import { AtasService } from './atas.service';
 
 @Component({
@@ -22,6 +24,7 @@ import { AtasService } from './atas.service';
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     EmptyValuePipe,
     AccessDeniedStateComponent,
     EmptyStateComponent,
@@ -40,11 +43,25 @@ import { AtasService } from './atas.service';
       badge="Catálogo operacional"
       backLabel="Voltar para ATAs"
       backLink="/atas"
-    />
+    >
+      @if (canManageAtas() && ata()) {
+        <button page-header-actions type="button" class="btn btn-gold" (click)="toggleEditForm()">
+          {{ editingAta() ? 'Fechar' : 'Editar' }}
+        </button>
+      }
+    </app-page-header>
 
     <div class="workspace">
       @if (itemsError()) {
         <div class="form-alert">{{ itemsError() }}</div>
+      }
+
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (editError()) {
+        <div class="form-alert">{{ editError() }}</div>
       }
 
       @if (loading()) {
@@ -76,6 +93,58 @@ import { AtasService } from './atas.service';
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
+        @if (editingAta()) {
+          <section class="card">
+            <div class="card-body">
+              <form [formGroup]="ataForm" class="ata-form" (ngSubmit)="updateAta()">
+                <div class="grid grid-2">
+                  <label class="field">
+                    <span>Número da ATA</span>
+                    <input formControlName="number" />
+                  </label>
+                  <label class="field">
+                    <span>Tipo</span>
+                    <select formControlName="type">
+                      <option value="CFTV">CFTV</option>
+                      <option value="FIBRA_OPTICA">Fibra Óptica</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Fornecedor</span>
+                    <input formControlName="vendorName" />
+                  </label>
+                  <label class="field">
+                    <span>Orgão gerenciador</span>
+                    <input formControlName="managingAgency" />
+                  </label>
+                  <label class="field">
+                    <span>Vigência início</span>
+                    <input type="date" formControlName="startDate" />
+                  </label>
+                  <label class="field">
+                    <span>Vigência fim</span>
+                    <input type="date" formControlName="endDate" />
+                  </label>
+                </div>
+                <label class="field">
+                  <span>Observações</span>
+                  <textarea formControlName="observations" rows="3"></textarea>
+                </label>
+                <label class="field-checkbox">
+                  <input type="checkbox" formControlName="isActive" />
+                  <span>ATA ativa</span>
+                </label>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-ghost" (click)="toggleEditForm()">Cancelar</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="savingAta() || ataForm.invalid">
+                    {{ savingAta() ? 'Salvando...' : 'Salvar alteraÃ§Ãµes' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+        }
+
         <section class="card">
           <div class="card-body">
             <div class="detail-grid">
@@ -151,11 +220,11 @@ import { AtasService } from './atas.service';
                   @for (item of ataItems(); track item.id) {
                     <tr>
                       <td>
-                        <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode || item.ataItemCode || 'Item' }} - {{ item.description | emptyValue:'Descrição não informada' }}</p>
-                        <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.coverageGroup ? coverageGroupLabel(item.coverageGroup) : 'Grupo não informado' }}</p>
+                        <p class="font-semibold text-(--sagep-brand-deep)">{{ item.referenceCode || item.ataItemCode || 'Item' }} - {{ item.description | emptyValue:'Descrição não informada' }}</p>
+                        <p class="mt-1 text-sm text-(--sagep-muted)">{{ item.coverageGroup ? coverageGroupLabel(item.coverageGroup) : 'Grupo não informado' }}</p>
                       </td>
                       <td>{{ item.unit | emptyValue:'N/I' }}</td>
-                      <td class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(item.unitPrice) }}</td>
+                      <td class="font-semibold text-(--sagep-brand-deep)">{{ formatCurrency(item.unitPrice) }}</td>
                       <td>{{ item.initialQuantity ?? item.balance?.initialQuantity ?? 'Não informado' }}</td>
                       <td>
                         <span class="badge" [class]="item.balance?.lowStock || item.balance?.insufficient ? 'b-warn' : 'b-ok'">
@@ -173,8 +242,8 @@ import { AtasService } from './atas.service';
               @for (item of ataItems(); track item.id) {
                 <article class="estimate-item-card">
                   <div>
-                    <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ item.referenceCode || item.ataItemCode || 'Item' }} - {{ item.description | emptyValue:'Descrição não informada' }}</p>
-                    <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.coverageGroup ? coverageGroupLabel(item.coverageGroup) : 'Grupo não informado' }}</p>
+                    <p class="font-semibold text-(--sagep-brand-deep)">{{ item.referenceCode || item.ataItemCode || 'Item' }} - {{ item.description | emptyValue:'Descrição não informada' }}</p>
+                    <p class="mt-1 text-sm text-(--sagep-muted)">{{ item.coverageGroup ? coverageGroupLabel(item.coverageGroup) : 'Grupo não informado' }}</p>
                   </div>
                   <app-metadata-grid [items]="itemFacts(item)" gridClass="sm:grid-cols-2" />
                 </article>
@@ -191,14 +260,31 @@ import { AtasService } from './atas.service';
 export class AtaDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly atasService = inject(AtasService);
+  private readonly authService = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
   readonly itemsError = signal('');
+  readonly editError = signal('');
+  readonly successMessage = signal('');
+  readonly editingAta = signal(false);
+  readonly savingAta = signal(false);
   readonly ata = signal<Ata | null>(null);
   readonly ataItems = signal<AtaItem[]>([]);
   private ataIdentifier: string | null = null;
+
+  readonly ataForm = this.fb.nonNullable.group({
+    number: ['', Validators.required],
+    type: ['CFTV' as 'CFTV' | 'FIBRA_OPTICA', Validators.required],
+    vendorName: ['', Validators.required],
+    managingAgency: [''],
+    startDate: [''],
+    endDate: [''],
+    observations: [''],
+    isActive: [true],
+  });
 
   readonly coverageGroups = computed(() => {
     const groups = new Map<string, AtaCoverageGroup>();
@@ -283,6 +369,7 @@ export class AtaDetailPageComponent implements OnInit {
         }
 
         this.ata.set(ata);
+        this.patchAtaForm(ata);
         this.loadAtaItems(ata.id);
       },
       error: (error) => {
@@ -290,6 +377,42 @@ export class AtaDetailPageComponent implements OnInit {
         this.errorMessage.set(getErrorMessage(error, 'ATA não encontrada ou sem permissão de acesso.'));
         this.ata.set(null);
         this.loading.set(false);
+      },
+    });
+  }
+
+  toggleEditForm(): void {
+    this.editingAta.update((visible) => !visible);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    if (this.editingAta() && this.ata()) {
+      this.patchAtaForm(this.ata() as Ata);
+    }
+  }
+
+  updateAta(): void {
+    const ata = this.ata();
+
+    if (!ata || !this.canManageAtas() || this.ataForm.invalid || this.savingAta()) {
+      this.ataForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingAta.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.atasService.update(ata.id, this.ataPayload()).subscribe({
+      next: () => {
+        this.successMessage.set('ATA atualizada com sucesso.');
+        this.savingAta.set(false);
+        this.editingAta.set(false);
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'NÃ£o foi possÃ­vel atualizar a ATA.'));
+        this.savingAta.set(false);
       },
     });
   }
@@ -341,6 +464,10 @@ export class AtaDetailPageComponent implements OnInit {
     return ata.isActive !== false && !['INATIVA', 'INACTIVE', 'CANCELADA', 'CANCELADO'].includes(String(ata.status ?? '').toUpperCase());
   }
 
+  canManageAtas(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   dateRange(start: string | null | undefined, end: string | null | undefined): string {
     const formattedStart = formatDate(start);
     const formattedEnd = formatDate(end);
@@ -386,5 +513,36 @@ export class AtaDetailPageComponent implements OnInit {
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];
+  }
+
+  private patchAtaForm(ata: Ata): void {
+    this.ataForm.reset({
+      number: ata.number ?? '',
+      type: ata.type === 'FIBRA_OPTICA' ? 'FIBRA_OPTICA' : 'CFTV',
+      vendorName: ata.vendorName ?? '',
+      managingAgency: ata.managingAgency ?? ata.managerAgency ?? '',
+      startDate: this.dateInputValue(ata.validFrom || ata.startDate),
+      endDate: this.dateInputValue(ata.validUntil || ata.endDate),
+      observations: ata.observations ?? ata.notes ?? '',
+      isActive: this.isActive(ata),
+    });
+  }
+
+  private ataPayload(): Partial<AtaPayload> {
+    const value = this.ataForm.getRawValue();
+    return {
+      number: value.number.trim(),
+      type: value.type,
+      vendorName: value.vendorName.trim(),
+      managingAgency: value.managingAgency.trim() || undefined,
+      startDate: value.startDate || undefined,
+      endDate: value.endDate || undefined,
+      observations: value.observations.trim() || undefined,
+      isActive: value.isActive,
+    };
+  }
+
+  private dateInputValue(value: string | null | undefined): string {
+    return value ? value.slice(0, 10) : '';
   }
 }

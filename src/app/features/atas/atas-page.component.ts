@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -17,7 +18,7 @@ import {
 } from '../../shared/components/responsive-table.component';
 import { formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { Ata, AtaListResponse } from './ata.model';
+import { Ata, AtaListResponse, AtaPayload } from './ata.model';
 import { AtasService } from './atas.service';
 
 @Component({
@@ -43,7 +44,73 @@ import { AtasService } from './atas.service';
         eyebrow="Catálogo"
         subtitle="Consulta de atas, fornecedores, vigência, cobertura e disponibilidade para estimativas."
         badge="Catálogo operacional"
-      />
+      >
+        @if (canManageAtas()) {
+          <button page-header-actions type="button" class="btn btn-gold" (click)="toggleCreateForm()">
+            {{ creatingAta() ? 'Fechar' : 'Nova ATA' }}
+          </button>
+        }
+      </app-page-header>
+
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (createError()) {
+        <div class="form-alert">{{ createError() }}</div>
+      }
+
+      @if (creatingAta()) {
+        <section class="card">
+          <div class="card-body">
+            <form [formGroup]="ataForm" class="ata-form" (ngSubmit)="createAta()">
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>NÃºmero da ATA</span>
+                  <input formControlName="number" placeholder="Ex.: 001/2026" />
+                </label>
+                <label class="field">
+                  <span>Tipo</span>
+                  <select formControlName="type">
+                    <option value="CFTV">CFTV</option>
+                    <option value="FIBRA_OPTICA">Fibra Ã³ptica</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Fornecedor</span>
+                  <input formControlName="vendorName" placeholder="Nome do fornecedor" />
+                </label>
+                <label class="field">
+                  <span>Ã“rgÃ£o gerenciador</span>
+                  <input formControlName="managingAgency" placeholder="Ã“rgÃ£o gerenciador" />
+                </label>
+                <label class="field">
+                  <span>VigÃªncia inÃ­cio</span>
+                  <input type="date" formControlName="startDate" />
+                </label>
+                <label class="field">
+                  <span>VigÃªncia fim</span>
+                  <input type="date" formControlName="endDate" />
+                </label>
+              </div>
+              <label class="field">
+                <span>ObservaÃ§Ãµes</span>
+                <textarea formControlName="observations" rows="3" placeholder="ObservaÃ§Ãµes da ATA"></textarea>
+              </label>
+              <label class="field-checkbox">
+                <input type="checkbox" formControlName="isActive" />
+                <span>ATA ativa</span>
+              </label>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" (click)="toggleCreateForm()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingAta() || ataForm.invalid">
+                  {{ savingAta() ? 'Salvando...' : 'Salvar ATA' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      }
 
       <section class="card">
         <form [formGroup]="filtersForm" class="filters atas-filters">
@@ -154,11 +221,17 @@ import { AtasService } from './atas.service';
 })
 export class AtasPageComponent implements OnInit {
   private readonly atasService = inject(AtasService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly createError = signal('');
+  readonly successMessage = signal('');
+  readonly creatingAta = signal(false);
+  readonly savingAta = signal(false);
   readonly atas = signal<Ata[]>([]);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
@@ -176,6 +249,17 @@ export class AtasPageComponent implements OnInit {
     search: [''],
     status: [''],
     type: [''],
+  });
+
+  readonly ataForm = this.fb.nonNullable.group({
+    number: ['', Validators.required],
+    type: ['CFTV' as 'CFTV' | 'FIBRA_OPTICA', Validators.required],
+    vendorName: ['', Validators.required],
+    managingAgency: [''],
+    startDate: [''],
+    endDate: [''],
+    observations: [''],
+    isActive: [true],
   });
 
   readonly filteredAtas = computed(() => {
@@ -245,6 +329,41 @@ export class AtasPageComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  toggleCreateForm(): void {
+    this.creatingAta.update((visible) => !visible);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    if (!this.creatingAta()) {
+      this.resetAtaForm();
+    }
+  }
+
+  createAta(): void {
+    if (!this.canManageAtas() || this.ataForm.invalid || this.savingAta()) {
+      this.ataForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingAta.set(true);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    this.atasService.create(this.ataPayload()).subscribe({
+      next: (ata) => {
+        this.successMessage.set('ATA criada com sucesso.');
+        this.savingAta.set(false);
+        this.creatingAta.set(false);
+        this.resetAtaForm();
+        void this.router.navigate(['/atas', ata.id]);
+      },
+      error: (error) => {
+        this.createError.set(getErrorMessage(error, 'NÃ£o foi possÃ­vel criar a ATA.'));
+        this.savingAta.set(false);
+      },
+    });
+  }
+
   changePage(page: number): void {
     this.currentPage.set(Math.min(Math.max(page, 1), this.totalPages()));
   }
@@ -268,6 +387,10 @@ export class AtasPageComponent implements OnInit {
     return ata.isActive !== false && !['INATIVA', 'INACTIVE', 'CANCELADA', 'CANCELADO'].includes(String(ata.status ?? '').toUpperCase());
   }
 
+  canManageAtas(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   dateRange(start: string | null | undefined, end: string | null | undefined): string {
     const formattedStart = formatDate(start);
     const formattedEnd = formatDate(end);
@@ -281,5 +404,32 @@ export class AtasPageComponent implements OnInit {
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];
+  }
+
+  private ataPayload(): AtaPayload {
+    const value = this.ataForm.getRawValue();
+    return {
+      number: value.number.trim(),
+      type: value.type,
+      vendorName: value.vendorName.trim(),
+      managingAgency: value.managingAgency.trim() || undefined,
+      startDate: value.startDate || undefined,
+      endDate: value.endDate || undefined,
+      observations: value.observations.trim() || undefined,
+      isActive: value.isActive,
+    };
+  }
+
+  private resetAtaForm(): void {
+    this.ataForm.reset({
+      number: '',
+      type: 'CFTV',
+      vendorName: '',
+      managingAgency: '',
+      startDate: '',
+      endDate: '',
+      observations: '',
+      isActive: true,
+    });
   }
 }

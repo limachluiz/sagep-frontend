@@ -11,6 +11,10 @@ export interface Ata {
   number?: string | null;
   type?: string | null;
   vendorName?: string | null;
+  managingAgency?: string | null;
+  managerAgency?: string | null;
+  observations?: string | null;
+  notes?: string | null;
   isActive?: boolean | null;
   status?: string | null;
   startDate?: string | null;
@@ -20,6 +24,17 @@ export interface Ata {
   coverageGroups?: AtaCoverageGroup[];
   createdAt?: string | null;
   updatedAt?: string | null;
+}
+
+export interface AtaPayload {
+  number: string;
+  type: 'CFTV' | 'FIBRA_OPTICA';
+  vendorName: string;
+  managingAgency?: string;
+  startDate?: string;
+  endDate?: string;
+  observations?: string;
+  isActive?: boolean;
 }
 
 export interface AtaItemBalance {
