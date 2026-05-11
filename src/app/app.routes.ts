@@ -157,6 +157,18 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'compras-gov/importar-ata',
+        canActivate: [permissionGuard],
+        data: {
+          roles: ['ADMIN'],
+          permissions: ['atas.manage'],
+        },
+        loadComponent: () =>
+          import('./features/compras-gov/compras-gov-import-page.component').then(
+            (m) => m.ComprasGovImportPageComponent,
+          ),
+      },
+      {
         path: 'itens-ata',
         loadComponent: () =>
           import('./features/ata-items/ata-items-page.component').then(

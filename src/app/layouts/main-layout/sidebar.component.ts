@@ -124,6 +124,13 @@ export class SidebarComponent {
           permissions: ['atas.view', 'atas.view_all'],
         },
         {
+          label: 'Importar ATA Compras.gov.br',
+          path: '/compras-gov/importar-ata',
+          icon: '⇥',
+          roles: ['ADMIN'],
+          permissions: ['atas.manage'],
+        },
+        {
           label: 'Itens da ATA',
           path: '/itens-ata',
           icon: '▦',
