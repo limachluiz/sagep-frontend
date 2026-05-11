@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { UserRole } from '../../core/models/auth.model';
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -17,7 +19,7 @@ import {
 } from '../../shared/components/responsive-table.component';
 import { formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { AppUser } from './user.model';
+import { AppUser, UserCreatePayload } from './user.model';
 import { UsersFeatureService } from './users.service';
 
 @Component({
@@ -43,7 +45,66 @@ import { UsersFeatureService } from './users.service';
         eyebrow="Governança"
         subtitle="Consulta administrativa de usuários, perfis e situação de acesso."
         badge="Acesso administrativo"
-      />
+      >
+        @if (canManageUsers()) {
+          <button page-header-actions type="button" class="btn btn-gold" (click)="toggleCreateForm()">
+            {{ creatingUser() ? 'Fechar' : 'Novo usuário' }}
+          </button>
+        }
+      </app-page-header>
+
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (createError()) {
+        <div class="form-alert">{{ createError() }}</div>
+      }
+
+      @if (creatingUser()) {
+        <section class="card">
+          <div class="card-body">
+            <form [formGroup]="userForm" class="ata-form" (ngSubmit)="createUser()">
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>Nome</span>
+                  <input formControlName="name" />
+                </label>
+                <label class="field">
+                  <span>Email</span>
+                  <input type="email" formControlName="email" />
+                </label>
+                <label class="field">
+                  <span>Senha</span>
+                  <input type="password" formControlName="password" autocomplete="new-password" />
+                </label>
+                <label class="field">
+                  <span>Perfil</span>
+                  <select formControlName="role">
+                    @for (role of roleOptions; track role) {
+                      <option [value]="role">{{ role }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Posto/Graduação</span>
+                  <input formControlName="rank" />
+                </label>
+                <label class="field">
+                  <span>CPF</span>
+                  <input formControlName="cpf" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" (click)="toggleCreateForm()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingUser() || userForm.invalid">
+                  {{ savingUser() ? 'Salvando...' : 'Criar usuário' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      }
 
       <section class="card">
         <form [formGroup]="filtersForm" class="filters projects-filters">
@@ -159,15 +220,22 @@ import { UsersFeatureService } from './users.service';
 })
 export class UsersPageComponent implements OnInit {
   private readonly usersService = inject(UsersFeatureService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly createError = signal('');
+  readonly successMessage = signal('');
+  readonly creatingUser = signal(false);
+  readonly savingUser = signal(false);
   readonly users = signal<AppUser[]>([]);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly pageSizeOptions = [10, 20, 50];
+  readonly roleOptions: UserRole[] = ['ADMIN', 'GESTOR', 'PROJETISTA', 'CONSULTA'];
 
   readonly columns: ResponsiveTableColumn[] = [
     { key: 'code', label: 'Código' },
@@ -181,6 +249,15 @@ export class UsersPageComponent implements OnInit {
     search: [''],
     role: [''],
     status: [''],
+  });
+
+  readonly userForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    role: ['CONSULTA' as UserRole, Validators.required],
+    rank: [''],
+    cpf: [''],
   });
 
   readonly filteredUsers = computed(() => {
@@ -250,6 +327,47 @@ export class UsersPageComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  toggleCreateForm(): void {
+    this.creatingUser.update((visible) => !visible);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    if (this.creatingUser()) {
+      this.userForm.reset({
+        name: '',
+        email: '',
+        password: '',
+        role: 'CONSULTA',
+        rank: '',
+        cpf: '',
+      });
+    }
+  }
+
+  createUser(): void {
+    if (!this.canManageUsers() || this.userForm.invalid || this.savingUser()) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingUser.set(true);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    this.usersService.create(this.userPayload()).subscribe({
+      next: (user) => {
+        this.successMessage.set('Usuário criado com sucesso.');
+        this.savingUser.set(false);
+        this.creatingUser.set(false);
+        this.router.navigate(['/users', user.id]);
+      },
+      error: (error) => {
+        this.createError.set(getErrorMessage(error, 'Não foi possível criar o usuário.'));
+        this.savingUser.set(false);
+      },
+    });
+  }
+
   changePage(page: number): void {
     this.currentPage.set(Math.min(Math.max(page, 1), this.totalPages()));
   }
@@ -283,7 +401,23 @@ export class UsersPageComponent implements OnInit {
       !['INATIVO', 'INACTIVE', 'INATIVA', 'DISABLED'].includes(String(user.status ?? '').toUpperCase());
   }
 
+  canManageUsers(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   trackUser = (item: AppUser) => item.id;
+
+  private userPayload(): UserCreatePayload {
+    const value = this.userForm.getRawValue();
+    return {
+      name: value.name.trim(),
+      email: value.email.trim(),
+      password: value.password,
+      role: value.role,
+      rank: value.rank.trim() || undefined,
+      cpf: value.cpf.trim() || undefined,
+    };
+  }
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];

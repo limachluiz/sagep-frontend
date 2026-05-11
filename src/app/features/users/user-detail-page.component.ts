@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
+import { UserRole } from '../../core/models/auth.model';
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -12,7 +16,7 @@ import { SectionCardComponent } from '../../shared/components/section-card.compo
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { AppUser } from './user.model';
+import { AppUser, UserRoleUpdatePayload, UserUpdatePayload } from './user.model';
 import { UsersFeatureService } from './users.service';
 
 @Component({
@@ -20,6 +24,7 @@ import { UsersFeatureService } from './users.service';
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     AccessDeniedStateComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -37,9 +42,34 @@ import { UsersFeatureService } from './users.service';
       badge="Acesso administrativo"
       backLabel="Voltar para Usuários"
       backLink="/users"
-    />
+    >
+      @if (canManageUsers() && user()) {
+        <button page-header-actions type="button" class="btn btn-gold" (click)="toggleEditForm()">
+          {{ editingUser() ? 'Fechar' : 'Editar' }}
+        </button>
+      }
+      @if (canManageUsers() && user()) {
+        <button
+          page-header-actions
+          type="button"
+          class="btn btn-ghost"
+          [disabled]="updatingStatus()"
+          (click)="toggleUserStatus()"
+        >
+          {{ updatingStatus() ? 'Atualizando...' : isActive(user()) ? 'Inativar' : 'Ativar' }}
+        </button>
+      }
+    </app-page-header>
 
     <div class="workspace">
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (editError()) {
+        <div class="form-alert">{{ editError() }}</div>
+      }
+
       @if (loading()) {
         <div class="card">
           <div class="card-body">
@@ -69,6 +99,47 @@ import { UsersFeatureService } from './users.service';
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
+        @if (editingUser()) {
+          <section class="card">
+            <div class="card-body">
+              <form [formGroup]="userForm" class="ata-form" (ngSubmit)="updateUser()">
+                <div class="grid grid-2">
+                  <label class="field">
+                    <span>Nome</span>
+                    <input formControlName="name" />
+                  </label>
+                  <label class="field">
+                    <span>Email</span>
+                    <input type="email" formControlName="email" />
+                  </label>
+                  <label class="field">
+                    <span>Perfil</span>
+                    <select formControlName="role">
+                      @for (role of roleOptions; track role) {
+                        <option [value]="role">{{ role }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Posto/Graduação</span>
+                    <input formControlName="rank" />
+                  </label>
+                  <label class="field">
+                    <span>CPF</span>
+                    <input formControlName="cpf" />
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-ghost" (click)="toggleEditForm()">Cancelar</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="savingUser() || userForm.invalid">
+                    {{ savingUser() ? 'Salvando...' : 'Salvar alterações' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+        }
+
         <section class="card">
           <div class="card-body">
             <div class="detail-grid">
@@ -131,12 +202,28 @@ import { UsersFeatureService } from './users.service';
 export class UserDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly usersService = inject(UsersFeatureService);
+  private readonly authService = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly editError = signal('');
+  readonly successMessage = signal('');
+  readonly editingUser = signal(false);
+  readonly savingUser = signal(false);
+  readonly updatingStatus = signal(false);
   readonly user = signal<AppUser | null>(null);
+  readonly roleOptions: UserRole[] = ['ADMIN', 'GESTOR', 'PROJETISTA', 'CONSULTA'];
   private userIdentifier: string | null = null;
+
+  readonly userForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    role: ['CONSULTA' as UserRole, Validators.required],
+    rank: [''],
+    cpf: [''],
+  });
 
   readonly permissions = computed(() => this.user()?.access?.permissions ?? this.user()?.permissions ?? this.profilePermissions());
   readonly heroFacts = computed<MetadataItem[]>(() => [
@@ -187,12 +274,15 @@ export class UserDetailPageComponent implements OnInit {
     this.loading.set(true);
     this.forbidden.set(false);
     this.errorMessage.set('');
+    this.editError.set('');
 
-    this.usersService.list().subscribe({
-      next: (response) => {
-        const user = this.findUser(this.listItems(response), this.userIdentifier as string);
+    this.usersService.getById(this.userIdentifier).subscribe({
+      next: (user) => {
         this.user.set(user);
         this.errorMessage.set(user ? '' : 'Usuário não encontrado.');
+        if (user) {
+          this.patchUserForm(user);
+        }
         this.loading.set(false);
       },
       error: (error) => {
@@ -200,6 +290,71 @@ export class UserDetailPageComponent implements OnInit {
         this.errorMessage.set(getErrorMessage(error, 'Usuário não encontrado ou sem permissão de acesso.'));
         this.user.set(null);
         this.loading.set(false);
+      },
+    });
+  }
+
+  toggleEditForm(): void {
+    this.editingUser.update((visible) => !visible);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    if (this.editingUser() && this.user()) {
+      this.patchUserForm(this.user() as AppUser);
+    }
+  }
+
+  updateUser(): void {
+    const user = this.user();
+
+    if (!user || !this.canManageUsers() || this.userForm.invalid || this.savingUser()) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingUser.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    const roleChanged = this.userForm.controls.role.value !== this.userRoleValue(user);
+    const requests = [
+      this.usersService.update(user.id, this.userPayload()),
+      ...(roleChanged ? [this.usersService.updateRole(user.id, this.userRolePayload())] : []),
+    ];
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.successMessage.set('Usuário atualizado com sucesso.');
+        this.savingUser.set(false);
+        this.editingUser.set(false);
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível atualizar o usuário.'));
+        this.savingUser.set(false);
+      },
+    });
+  }
+
+  toggleUserStatus(): void {
+    const user = this.user();
+
+    if (!user || !this.canManageUsers() || this.updatingStatus()) return;
+
+    const nextActive = !this.isActive(user);
+    this.updatingStatus.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.usersService.updateStatus(user.id, { active: nextActive }).subscribe({
+      next: () => {
+        this.successMessage.set(nextActive ? 'Usuário ativado com sucesso.' : 'Usuário inativado com sucesso.');
+        this.updatingStatus.set(false);
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível atualizar o status do usuário.'));
+        this.updatingStatus.set(false);
       },
     });
   }
@@ -248,9 +403,47 @@ export class UserDetailPageComponent implements OnInit {
       !['INATIVO', 'INACTIVE', 'INATIVA', 'DISABLED'].includes(String(user.status ?? '').toUpperCase());
   }
 
+  canManageUsers(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   private profilePermissions(): string[] {
     const profile = this.user()?.profile;
     return typeof profile === 'object' && profile?.permissions ? profile.permissions : [];
+  }
+
+  private patchUserForm(user: AppUser): void {
+    this.userForm.reset({
+      name: user.name ?? '',
+      email: user.email ?? '',
+      role: this.userRoleValue(user),
+      rank: user.rank ?? '',
+      cpf: user.cpf ?? '',
+    });
+  }
+
+  private userPayload(): UserUpdatePayload {
+    const value = this.userForm.getRawValue();
+    return {
+      name: value.name.trim(),
+      email: value.email.trim(),
+      rank: value.rank.trim() || undefined,
+      cpf: value.cpf.trim() || undefined,
+    };
+  }
+
+  private userRolePayload(): UserRoleUpdatePayload {
+    const value = this.userForm.getRawValue();
+    return {
+      role: value.role,
+      rank: value.rank.trim() || undefined,
+      cpf: value.cpf.trim() || undefined,
+    };
+  }
+
+  private userRoleValue(user: AppUser): UserRole {
+    const role = user.access?.role ?? user.role;
+    return this.roleOptions.includes(role as UserRole) ? (role as UserRole) : 'CONSULTA';
   }
 
   private findUser(items: AppUser[], identifier: string): AppUser | null {

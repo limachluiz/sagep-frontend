@@ -45,3 +45,29 @@ export interface UserListResponse {
     hasPreviousPage: boolean;
   };
 }
+
+export interface UserCreatePayload {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  rank?: string;
+  cpf?: string;
+}
+
+export interface UserRoleUpdatePayload {
+  role: UserRole;
+  rank?: string;
+  cpf?: string;
+}
+
+export interface UserUpdatePayload {
+  name?: string;
+  email?: string;
+  rank?: string;
+  cpf?: string;
+}
+
+export interface UserStatusUpdatePayload {
+  active: boolean;
+}
