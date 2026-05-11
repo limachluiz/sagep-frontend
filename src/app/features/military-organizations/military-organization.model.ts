@@ -25,6 +25,23 @@ export interface MilitaryOrganization {
   estimates?: MilitaryOrganizationEstimateSummary[] | null;
 }
 
+export type MilitaryOrganizationStateUf = 'AM' | 'RO' | 'RR' | 'AC';
+
+export interface MilitaryOrganizationPayload {
+  sigla: string;
+  name: string;
+  cityName: string;
+  stateUf: MilitaryOrganizationStateUf;
+}
+
+export interface MilitaryOrganizationUpdatePayload {
+  sigla?: string;
+  name?: string;
+  cityName?: string;
+  stateUf?: MilitaryOrganizationStateUf;
+  isActive?: boolean;
+}
+
 export interface MilitaryOrganizationListResponse {
   items: MilitaryOrganization[];
   meta?: {

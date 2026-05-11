@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -16,7 +17,7 @@ import {
   ResponsiveTableComponent,
 } from '../../shared/components/responsive-table.component';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { MilitaryOrganization } from './military-organization.model';
+import { MilitaryOrganization, MilitaryOrganizationPayload, MilitaryOrganizationStateUf } from './military-organization.model';
 import { MilitaryOrganizationsFeatureService } from './military-organizations.service';
 
 @Component({
@@ -42,7 +43,58 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
         eyebrow="Governança"
         subtitle="Consulta de organizações militares apoiadas, localização e situação cadastral."
         badge="Catálogo institucional"
-      />
+      >
+        @if (canManageOrganizations()) {
+          <button page-header-actions type="button" class="btn btn-gold" (click)="toggleCreateForm()">
+            {{ creatingOrganization() ? 'Fechar' : 'Nova OM' }}
+          </button>
+        }
+      </app-page-header>
+
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (createError()) {
+        <div class="form-alert">{{ createError() }}</div>
+      }
+
+      @if (creatingOrganization()) {
+        <section class="card">
+          <div class="card-body">
+            <form [formGroup]="organizationForm" class="ata-form" (ngSubmit)="createOrganization()">
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>Sigla</span>
+                  <input formControlName="sigla" placeholder="Ex.: 4CTA" />
+                </label>
+                <label class="field">
+                  <span>Nome</span>
+                  <input formControlName="name" placeholder="Nome da OM" />
+                </label>
+                <label class="field">
+                  <span>Cidade</span>
+                  <input formControlName="cityName" placeholder="Ex.: Manaus" />
+                </label>
+                <label class="field">
+                  <span>UF</span>
+                  <select formControlName="stateUf">
+                    @for (uf of stateOptions; track uf) {
+                      <option [value]="uf">{{ uf }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" (click)="toggleCreateForm()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingOrganization() || organizationForm.invalid">
+                  {{ savingOrganization() ? 'Salvando...' : 'Criar OM' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      }
 
       <section class="card">
         <form [formGroup]="filtersForm" class="filters projects-filters">
@@ -152,15 +204,22 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
 })
 export class MilitaryOrganizationsPageComponent implements OnInit {
   private readonly organizationsService = inject(MilitaryOrganizationsFeatureService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly createError = signal('');
+  readonly successMessage = signal('');
+  readonly creatingOrganization = signal(false);
+  readonly savingOrganization = signal(false);
   readonly organizations = signal<MilitaryOrganization[]>([]);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly pageSizeOptions = [10, 20, 50];
+  readonly stateOptions: MilitaryOrganizationStateUf[] = ['AM', 'RO', 'RR', 'AC'];
 
   readonly columns: ResponsiveTableColumn[] = [
     { key: 'code', label: 'Código' },
@@ -174,6 +233,13 @@ export class MilitaryOrganizationsPageComponent implements OnInit {
     search: [''],
     status: [''],
     stateUf: [''],
+  });
+
+  readonly organizationForm = this.fb.nonNullable.group({
+    sigla: ['', [Validators.required, Validators.minLength(2)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    cityName: ['', [Validators.required, Validators.minLength(2)]],
+    stateUf: ['AM' as MilitaryOrganizationStateUf, Validators.required],
   });
 
   readonly filteredOrganizations = computed(() => {
@@ -243,6 +309,45 @@ export class MilitaryOrganizationsPageComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  toggleCreateForm(): void {
+    this.creatingOrganization.update((visible) => !visible);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    if (this.creatingOrganization()) {
+      this.organizationForm.reset({
+        sigla: '',
+        name: '',
+        cityName: '',
+        stateUf: 'AM',
+      });
+    }
+  }
+
+  createOrganization(): void {
+    if (!this.canManageOrganizations() || this.organizationForm.invalid || this.savingOrganization()) {
+      this.organizationForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingOrganization.set(true);
+    this.createError.set('');
+    this.successMessage.set('');
+
+    this.organizationsService.create(this.organizationPayload()).subscribe({
+      next: (organization) => {
+        this.successMessage.set('OM criada com sucesso.');
+        this.savingOrganization.set(false);
+        this.creatingOrganization.set(false);
+        this.router.navigate(['/oms', organization.id]);
+      },
+      error: (error) => {
+        this.createError.set(getErrorMessage(error, 'Não foi possível criar a OM.'));
+        this.savingOrganization.set(false);
+      },
+    });
+  }
+
   changePage(page: number): void {
     this.currentPage.set(Math.min(Math.max(page, 1), this.totalPages()));
   }
@@ -260,7 +365,21 @@ export class MilitaryOrganizationsPageComponent implements OnInit {
     return organization.isActive !== false && !['INATIVA', 'INACTIVE'].includes(String(organization.status ?? '').toUpperCase());
   }
 
+  canManageOrganizations(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   trackOrganization = (item: MilitaryOrganization) => item.id;
+
+  private organizationPayload(): MilitaryOrganizationPayload {
+    const value = this.organizationForm.getRawValue();
+    return {
+      sigla: value.sigla.trim(),
+      name: value.name.trim(),
+      cityName: value.cityName.trim(),
+      stateUf: value.stateUf,
+    };
+  }
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];

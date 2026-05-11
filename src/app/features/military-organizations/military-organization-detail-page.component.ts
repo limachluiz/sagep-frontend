@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
@@ -12,7 +15,12 @@ import { SectionCardComponent } from '../../shared/components/section-card.compo
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { MilitaryOrganization, MilitaryOrganizationEstimateSummary } from './military-organization.model';
+import {
+  MilitaryOrganization,
+  MilitaryOrganizationEstimateSummary,
+  MilitaryOrganizationStateUf,
+  MilitaryOrganizationUpdatePayload,
+} from './military-organization.model';
 import { MilitaryOrganizationsFeatureService } from './military-organizations.service';
 
 @Component({
@@ -20,6 +28,7 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     RouterLink,
     AccessDeniedStateComponent,
     EmptyStateComponent,
@@ -38,9 +47,34 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
       badge="Catálogo institucional"
       backLabel="Voltar para OMs"
       backLink="/oms"
-    />
+    >
+      @if (canManageOrganizations() && organization()) {
+        <button page-header-actions type="button" class="btn btn-gold" (click)="toggleEditForm()">
+          {{ editingOrganization() ? 'Fechar' : 'Editar' }}
+        </button>
+      }
+      @if (canManageOrganizations() && organization()) {
+        <button
+          page-header-actions
+          type="button"
+          class="btn btn-ghost danger-action"
+          [disabled]="deletingOrganization()"
+          (click)="deleteOrganization()"
+        >
+          {{ deletingOrganization() ? 'Excluindo...' : 'Excluir' }}
+        </button>
+      }
+    </app-page-header>
 
     <div class="workspace">
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (editError()) {
+        <div class="form-alert">{{ editError() }}</div>
+      }
+
       @if (loading()) {
         <div class="card">
           <div class="card-body">
@@ -70,6 +104,47 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
           description="Retorne para a listagem e selecione outro registro."
         />
       } @else {
+        @if (editingOrganization()) {
+          <section class="card">
+            <div class="card-body">
+              <form [formGroup]="organizationForm" class="ata-form" (ngSubmit)="updateOrganization()">
+                <div class="grid grid-2">
+                  <label class="field">
+                    <span>Sigla</span>
+                    <input formControlName="sigla" />
+                  </label>
+                  <label class="field">
+                    <span>Nome</span>
+                    <input formControlName="name" />
+                  </label>
+                  <label class="field">
+                    <span>Cidade</span>
+                    <input formControlName="cityName" />
+                  </label>
+                  <label class="field">
+                    <span>UF</span>
+                    <select formControlName="stateUf">
+                      @for (uf of stateOptions; track uf) {
+                        <option [value]="uf">{{ uf }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <label class="field-checkbox">
+                  <input type="checkbox" formControlName="isActive" />
+                  <span>OM ativa</span>
+                </label>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-ghost" (click)="toggleEditForm()">Cancelar</button>
+                  <button type="submit" class="btn btn-primary" [disabled]="savingOrganization() || organizationForm.invalid">
+                    {{ savingOrganization() ? 'Salvando...' : 'Salvar alterações' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+        }
+
         <section class="card">
           <div class="card-body">
             <div class="detail-grid">
@@ -164,13 +239,30 @@ import { MilitaryOrganizationsFeatureService } from './military-organizations.se
 })
 export class MilitaryOrganizationDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly organizationsService = inject(MilitaryOrganizationsFeatureService);
+  private readonly authService = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly editError = signal('');
+  readonly successMessage = signal('');
+  readonly editingOrganization = signal(false);
+  readonly savingOrganization = signal(false);
+  readonly deletingOrganization = signal(false);
   readonly organization = signal<MilitaryOrganization | null>(null);
+  readonly stateOptions: MilitaryOrganizationStateUf[] = ['AM', 'RO', 'RR', 'AC'];
   private organizationIdentifier: string | null = null;
+
+  readonly organizationForm = this.fb.nonNullable.group({
+    sigla: ['', [Validators.required, Validators.minLength(2)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    cityName: ['', [Validators.required, Validators.minLength(2)]],
+    stateUf: ['AM' as MilitaryOrganizationStateUf, Validators.required],
+    isActive: [true],
+  });
 
   readonly estimates = computed(() => this.organization()?.estimates ?? []);
   readonly heroFacts = computed<MetadataItem[]>(() => [
@@ -221,12 +313,15 @@ export class MilitaryOrganizationDetailPageComponent implements OnInit {
     this.loading.set(true);
     this.forbidden.set(false);
     this.errorMessage.set('');
+    this.editError.set('');
 
-    this.organizationsService.list().subscribe({
-      next: (response) => {
-        const organization = this.findOrganization(this.listItems(response), this.organizationIdentifier as string);
+    this.resolveOrganization(this.organizationIdentifier).subscribe({
+      next: (organization) => {
         this.organization.set(organization);
         this.errorMessage.set(organization ? '' : 'OM não encontrada.');
+        if (organization) {
+          this.patchOrganizationForm(organization);
+        }
         this.loading.set(false);
       },
       error: (error) => {
@@ -234,6 +329,64 @@ export class MilitaryOrganizationDetailPageComponent implements OnInit {
         this.errorMessage.set(getErrorMessage(error, 'OM não encontrada ou sem permissão de acesso.'));
         this.organization.set(null);
         this.loading.set(false);
+      },
+    });
+  }
+
+  toggleEditForm(): void {
+    this.editingOrganization.update((visible) => !visible);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    if (this.editingOrganization() && this.organization()) {
+      this.patchOrganizationForm(this.organization() as MilitaryOrganization);
+    }
+  }
+
+  updateOrganization(): void {
+    const organization = this.organization();
+
+    if (!organization || !this.canManageOrganizations() || this.organizationForm.invalid || this.savingOrganization()) {
+      this.organizationForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingOrganization.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.organizationsService.update(organization.id, this.organizationPayload()).subscribe({
+      next: () => {
+        this.successMessage.set('OM atualizada com sucesso.');
+        this.savingOrganization.set(false);
+        this.editingOrganization.set(false);
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível atualizar a OM.'));
+        this.savingOrganization.set(false);
+      },
+    });
+  }
+
+  deleteOrganization(): void {
+    const organization = this.organization();
+
+    if (!organization || !this.canManageOrganizations() || this.deletingOrganization()) return;
+
+    this.deletingOrganization.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.organizationsService.delete(organization.id).subscribe({
+      next: () => {
+        this.successMessage.set('OM excluída com sucesso.');
+        this.deletingOrganization.set(false);
+        this.router.navigate(['/oms']);
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível excluir a OM. Verifique se há vínculos ativos.'));
+        this.deletingOrganization.set(false);
       },
     });
   }
@@ -292,9 +445,49 @@ export class MilitaryOrganizationDetailPageComponent implements OnInit {
     return organization.isActive !== false && !['INATIVA', 'INACTIVE'].includes(String(organization.status ?? '').toUpperCase());
   }
 
+  canManageOrganizations(): boolean {
+    return this.authService.getUserRole() === 'ADMIN';
+  }
+
   readonly formatDate = formatDate;
   readonly formatCurrency = formatCurrency;
   readonly formatLabel = formatLabel;
+
+  private resolveOrganization(identifier: string) {
+    return this.organizationsService.getById(identifier).pipe(
+      catchError(() =>
+        this.organizationsService.list().pipe(
+          catchError(() => of([] as MilitaryOrganization[])),
+          map((items) => this.findOrganization(this.listItems(items), identifier)),
+        ),
+      ),
+    );
+  }
+
+  private patchOrganizationForm(organization: MilitaryOrganization): void {
+    this.organizationForm.reset({
+      sigla: organization.sigla ?? '',
+      name: organization.name ?? '',
+      cityName: organization.cityName ?? '',
+      stateUf: this.isStateUf(organization.stateUf) ? organization.stateUf : 'AM',
+      isActive: this.isActive(organization),
+    });
+  }
+
+  private organizationPayload(): MilitaryOrganizationUpdatePayload {
+    const value = this.organizationForm.getRawValue();
+    return {
+      sigla: value.sigla.trim(),
+      name: value.name.trim(),
+      cityName: value.cityName.trim(),
+      stateUf: value.stateUf,
+      isActive: value.isActive,
+    };
+  }
+
+  private isStateUf(value: unknown): value is MilitaryOrganizationStateUf {
+    return ['AM', 'RO', 'RR', 'AC'].includes(value as MilitaryOrganizationStateUf);
+  }
 
   private findOrganization(items: MilitaryOrganization[], identifier: string): MilitaryOrganization | null {
     const normalized = identifier.trim().toLowerCase();
