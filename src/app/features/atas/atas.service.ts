@@ -8,6 +8,8 @@ import {
   AtaCoverageGroupPayload,
   AtaCoverageGroupUpdatePayload,
   AtaItem,
+  AtaItemPayload,
+  AtaItemUpdatePayload,
   AtaListResponse,
   AtaPayload,
 } from './ata.model';
@@ -35,6 +37,18 @@ export class AtasService {
 
   listItems(ataId: string) {
     return this.http.get<{ items: AtaItem[] } | AtaItem[]>(`${this.apiUrl}/atas/${encodeURIComponent(ataId)}/items`);
+  }
+
+  createItem(ataId: string, payload: AtaItemPayload) {
+    return this.http.post<AtaItem>(`${this.apiUrl}/atas/${encodeURIComponent(ataId)}/items`, payload);
+  }
+
+  updateItem(itemId: string, payload: AtaItemUpdatePayload) {
+    return this.http.patch<AtaItem>(`${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}`, payload);
+  }
+
+  deleteItem(itemId: string) {
+    return this.http.delete(`${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}`);
   }
 
   createCoverageGroup(ataId: string, payload: AtaCoverageGroupPayload) {

@@ -25,6 +25,8 @@ import {
   AtaCoverageLocalityPayload,
   AtaCoverageStateUf,
   AtaItem,
+  AtaItemPayload,
+  AtaItemUpdatePayload,
   AtaPayload,
 } from './ata.model';
 import { AtasService } from './atas.service';
@@ -271,7 +273,63 @@ import { AtasService } from './atas.service';
         </app-section-card>
 
         <app-section-card title="Itens da ATA" subtitle="Itens precificados, saldo e grupo de cobertura.">
-          <span section-card-actions class="badge b-neutral">{{ ataItems().length }} item(ns)</span>
+          <div section-card-actions class="coverage-actions">
+            <span class="badge b-neutral">{{ ataItems().length }} item(ns)</span>
+            @if (canManageAtas()) {
+              <button type="button" class="btn btn-sm btn-gold" (click)="openAtaItemForm()">
+                Novo item
+              </button>
+            }
+          </div>
+
+          @if (ataItemFormVisible()) {
+            <form [formGroup]="ataItemForm" class="coverage-group-form ata-item-form" (ngSubmit)="saveAtaItem()">
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>Código do item</span>
+                  <input formControlName="referenceCode" placeholder="Ex.: CAM-001" />
+                </label>
+                <label class="field">
+                  <span>Grupo de cobertura</span>
+                  <select formControlName="coverageGroupCode">
+                    <option value="">Selecione</option>
+                    @for (group of coverageGroups(); track group.id) {
+                      <option [value]="group.code || group.id">{{ coverageGroupLabel(group) }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Unidade</span>
+                  <input formControlName="unit" placeholder="Ex.: UN" />
+                </label>
+                <label class="field">
+                  <span>Valor unitário</span>
+                  <input type="number" min="0.01" step="0.01" formControlName="unitPrice" />
+                </label>
+                <label class="field">
+                  <span>Quantidade inicial</span>
+                  <input type="number" min="0.01" step="0.01" formControlName="initialQuantity" />
+                </label>
+                @if (editingAtaItemId()) {
+                  <label class="field-checkbox">
+                    <input type="checkbox" formControlName="isActive" />
+                    <span>Item ativo</span>
+                  </label>
+                }
+              </div>
+              <label class="field">
+                <span>Descrição</span>
+                <textarea formControlName="description" rows="3"></textarea>
+              </label>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" (click)="closeAtaItemForm()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingAtaItem() || ataItemForm.invalid">
+                  {{ savingAtaItem() ? 'Salvando...' : editingAtaItemId() ? 'Salvar item' : 'Criar item' }}
+                </button>
+              </div>
+            </form>
+          }
+
           @if (ataItems().length) {
             <div class="table-wrap hidden lg:block">
               <table class="table">
@@ -283,6 +341,7 @@ import { AtasService } from './atas.service';
                     <th>Qtd. inicial</th>
                     <th>Disponível</th>
                     <th>Status</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -301,6 +360,23 @@ import { AtasService } from './atas.service';
                         </span>
                       </td>
                       <td>{{ item.isActive === false ? 'Inativo' : 'Ativo' }}</td>
+                      <td>
+                        @if (canManageAtas()) {
+                          <div class="coverage-group-actions">
+                            <button type="button" class="btn btn-sm btn-ghost" (click)="openAtaItemForm(item)">
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-ghost danger-action"
+                              [disabled]="deletingAtaItemId() === item.id"
+                              (click)="deleteAtaItem(item)"
+                            >
+                              {{ deletingAtaItemId() === item.id ? 'Excluindo...' : 'Excluir' }}
+                            </button>
+                          </div>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -315,6 +391,21 @@ import { AtasService } from './atas.service';
                     <p class="mt-1 text-sm text-(--sagep-muted)">{{ item.coverageGroup ? coverageGroupLabel(item.coverageGroup) : 'Grupo não informado' }}</p>
                   </div>
                   <app-metadata-grid [items]="itemFacts(item)" gridClass="sm:grid-cols-2" />
+                  @if (canManageAtas()) {
+                    <div class="coverage-group-actions">
+                      <button type="button" class="btn btn-sm btn-ghost" (click)="openAtaItemForm(item)">
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-ghost danger-action"
+                        [disabled]="deletingAtaItemId() === item.id"
+                        (click)="deleteAtaItem(item)"
+                      >
+                        {{ deletingAtaItemId() === item.id ? 'Excluindo...' : 'Excluir' }}
+                      </button>
+                    </div>
+                  }
                 </article>
               }
             </div>
@@ -344,6 +435,10 @@ export class AtaDetailPageComponent implements OnInit {
   readonly editingCoverageGroupId = signal<string | null>(null);
   readonly savingCoverageGroup = signal(false);
   readonly deletingCoverageGroupId = signal<string | null>(null);
+  readonly ataItemFormVisible = signal(false);
+  readonly editingAtaItemId = signal<string | null>(null);
+  readonly savingAtaItem = signal(false);
+  readonly deletingAtaItemId = signal<string | null>(null);
   readonly ata = signal<Ata | null>(null);
   readonly ataItems = signal<AtaItem[]>([]);
   readonly coverageStates: AtaCoverageStateUf[] = ['AM', 'RO', 'RR', 'AC'];
@@ -364,6 +459,16 @@ export class AtaDetailPageComponent implements OnInit {
     name: ['', Validators.required],
     stateUf: ['AM' as AtaCoverageStateUf, Validators.required],
     localitiesText: ['', Validators.required],
+  });
+
+  readonly ataItemForm = this.fb.nonNullable.group({
+    referenceCode: ['', Validators.required],
+    coverageGroupCode: ['', Validators.required],
+    description: ['', Validators.required],
+    unit: ['', Validators.required],
+    unitPrice: [0, [Validators.required, Validators.min(0.01)]],
+    initialQuantity: [0, [Validators.required, Validators.min(0.01)]],
+    isActive: [true],
   });
 
   readonly coverageGroups = computed(() => {
@@ -585,6 +690,92 @@ export class AtaDetailPageComponent implements OnInit {
     });
   }
 
+  openAtaItemForm(item?: AtaItem): void {
+    if (!this.canManageAtas()) return;
+
+    this.ataItemForm.reset({
+      referenceCode: item?.referenceCode ?? '',
+      coverageGroupCode: this.itemCoverageGroupCode(item),
+      description: item?.description ?? '',
+      unit: item?.unit ?? '',
+      unitPrice: this.numberValue(item?.unitPrice),
+      initialQuantity: this.numberValue(item?.initialQuantity ?? item?.balance?.initialQuantity),
+      isActive: item?.isActive !== false,
+    });
+    this.editingAtaItemId.set(item?.id ?? null);
+    this.ataItemFormVisible.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+  }
+
+  closeAtaItemForm(): void {
+    this.ataItemFormVisible.set(false);
+    this.editingAtaItemId.set(null);
+    this.ataItemForm.reset({
+      referenceCode: '',
+      coverageGroupCode: '',
+      description: '',
+      unit: '',
+      unitPrice: 0,
+      initialQuantity: 0,
+      isActive: true,
+    });
+  }
+
+  saveAtaItem(): void {
+    const ata = this.ata();
+    const editingId = this.editingAtaItemId();
+
+    if (!ata || !this.canManageAtas() || this.ataItemForm.invalid || this.savingAtaItem()) {
+      this.ataItemForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingAtaItem.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    const request = editingId
+      ? this.atasService.updateItem(editingId, this.ataItemUpdatePayload())
+      : this.atasService.createItem(ata.id, this.ataItemCreatePayload());
+
+    request.subscribe({
+      next: () => {
+        this.successMessage.set(editingId ? 'Item da ATA atualizado com sucesso.' : 'Item da ATA criado com sucesso.');
+        this.savingAtaItem.set(false);
+        this.closeAtaItemForm();
+        this.loadAtaItems(ata.id);
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível salvar o item da ATA.'));
+        this.savingAtaItem.set(false);
+      },
+    });
+  }
+
+  deleteAtaItem(item: AtaItem): void {
+    const ata = this.ata();
+
+    if (!ata || !this.canManageAtas() || this.deletingAtaItemId()) return;
+
+    this.deletingAtaItemId.set(item.id);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.atasService.deleteItem(item.id).subscribe({
+      next: () => {
+        this.successMessage.set('Item da ATA excluído com sucesso.');
+        this.deletingAtaItemId.set(null);
+        this.closeAtaItemForm();
+        this.loadAtaItems(ata.id);
+      },
+      error: (error) => {
+        this.editError.set(this.ataItemDeleteError(error));
+        this.deletingAtaItemId.set(null);
+      },
+    });
+  }
+
   ataFacts(): MetadataItem[] {
     const ata = this.ata();
     return [
@@ -772,6 +963,50 @@ export class AtaDetailPageComponent implements OnInit {
     }
 
     return getErrorMessage(error, 'Não foi possível excluir o grupo de cobertura.');
+  }
+
+  private ataItemCreatePayload(): AtaItemPayload {
+    const value = this.ataItemForm.getRawValue();
+    return {
+      coverageGroupCode: value.coverageGroupCode,
+      referenceCode: value.referenceCode.trim(),
+      description: value.description.trim(),
+      unit: value.unit.trim(),
+      unitPrice: Number(value.unitPrice),
+      initialQuantity: Number(value.initialQuantity),
+    };
+  }
+
+  private ataItemUpdatePayload(): AtaItemUpdatePayload {
+    const value = this.ataItemForm.getRawValue();
+    return {
+      coverageGroupCode: value.coverageGroupCode,
+      referenceCode: value.referenceCode.trim(),
+      description: value.description.trim(),
+      unit: value.unit.trim(),
+      unitPrice: Number(value.unitPrice),
+      initialQuantity: Number(value.initialQuantity),
+      isActive: value.isActive,
+    };
+  }
+
+  private itemCoverageGroupCode(item: AtaItem | undefined): string {
+    if (!item) return this.coverageGroups()[0]?.code || '';
+    return item.coverageGroup?.code || this.coverageGroups().find((group) => group.id === item.coverageGroupId)?.code || '';
+  }
+
+  private numberValue(value: string | number | null | undefined): number {
+    if (value === null || value === undefined || value === '') return 0;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private ataItemDeleteError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      return 'Não foi possível excluir este item porque ele possui vínculo com estimativas, saldo ou movimentações.';
+    }
+
+    return getErrorMessage(error, 'Não foi possível excluir o item da ATA.');
   }
 
   private dateInputValue(value: string | null | undefined): string {

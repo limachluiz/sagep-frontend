@@ -53,3 +53,13 @@ export interface AtaItemListResponse {
     hasPreviousPage: boolean;
   };
 }
+
+export interface AtaItemUpdatePayload {
+  coverageGroupCode?: string;
+  referenceCode?: string;
+  description?: string;
+  unit?: string;
+  unitPrice?: number;
+  initialQuantity?: number;
+  isActive?: boolean;
+}

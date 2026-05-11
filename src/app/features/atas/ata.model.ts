@@ -95,6 +95,25 @@ export interface AtaItem {
   balance?: AtaItemBalance | null;
 }
 
+export interface AtaItemPayload {
+  coverageGroupCode: string;
+  referenceCode: string;
+  description: string;
+  unit: string;
+  unitPrice: number;
+  initialQuantity: number;
+}
+
+export interface AtaItemUpdatePayload {
+  coverageGroupCode?: string;
+  referenceCode?: string;
+  description?: string;
+  unit?: string;
+  unitPrice?: number;
+  initialQuantity?: number;
+  isActive?: boolean;
+}
+
 export interface AtaListResponse {
   items: Ata[];
   meta?: {
