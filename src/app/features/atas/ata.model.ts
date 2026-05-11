@@ -3,6 +3,35 @@ export interface AtaCoverageGroup {
   code?: string | null;
   name?: string | null;
   description?: string | null;
+  localities?: AtaCoverageLocality[];
+}
+
+export interface AtaCoverageLocality {
+  id?: string | null;
+  cityName?: string | null;
+  stateUf?: AtaCoverageStateUf | null;
+  createdAt?: string | null;
+}
+
+export type AtaCoverageStateUf = 'AM' | 'RO' | 'RR' | 'AC';
+
+export interface AtaCoverageGroupPayload {
+  code?: string;
+  name: string;
+  description?: string;
+  localities: AtaCoverageLocalityPayload[];
+}
+
+export interface AtaCoverageGroupUpdatePayload {
+  code?: string;
+  name?: string;
+  description?: string;
+  localities?: AtaCoverageLocalityPayload[];
+}
+
+export interface AtaCoverageLocalityPayload {
+  cityName: string;
+  stateUf: AtaCoverageStateUf;
 }
 
 export interface Ata {

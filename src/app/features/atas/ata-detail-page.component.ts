@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -16,7 +17,16 @@ import { SummaryCardComponent } from '../../shared/components/summary-card.compo
 import { EmptyValuePipe } from '../../shared/pipes/empty-value.pipe';
 import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { Ata, AtaCoverageGroup, AtaItem, AtaPayload } from './ata.model';
+import {
+  Ata,
+  AtaCoverageGroup,
+  AtaCoverageGroupPayload,
+  AtaCoverageGroupUpdatePayload,
+  AtaCoverageLocalityPayload,
+  AtaCoverageStateUf,
+  AtaItem,
+  AtaPayload,
+} from './ata.model';
 import { AtasService } from './atas.service';
 
 @Component({
@@ -186,13 +196,72 @@ import { AtasService } from './atas.service';
         </div>
 
         <app-section-card title="Grupos de cobertura" subtitle="Áreas ou grupos atendidos por esta ATA.">
-          <span section-card-actions class="badge b-neutral">{{ coverageGroups().length }} grupo(s)</span>
+          <div section-card-actions class="coverage-actions">
+            <span class="badge b-neutral">{{ coverageGroups().length }} grupo(s)</span>
+            @if (canManageAtas()) {
+              <button type="button" class="btn btn-sm btn-gold" (click)="openCoverageGroupForm()">
+                Novo grupo
+              </button>
+            }
+          </div>
+
+          @if (coverageGroupFormVisible()) {
+            <form [formGroup]="coverageGroupForm" class="coverage-group-form" (ngSubmit)="saveCoverageGroup()">
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>Nome do grupo</span>
+                  <input formControlName="name" placeholder="Ex.: Manaus e entorno" />
+                </label>
+                <label class="field">
+                  <span>UF</span>
+                  <select formControlName="stateUf">
+                    @for (uf of coverageStates; track uf) {
+                      <option [value]="uf">{{ uf }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                <span>Cidades/localidades</span>
+                <textarea formControlName="localitiesText" rows="3" placeholder="Uma cidade por linha"></textarea>
+              </label>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost" (click)="closeCoverageGroupForm()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="savingCoverageGroup() || coverageGroupForm.invalid">
+                  {{ savingCoverageGroup() ? 'Salvando...' : editingCoverageGroupId() ? 'Salvar grupo' : 'Criar grupo' }}
+                </button>
+              </div>
+            </form>
+          }
+
           @if (coverageGroups().length) {
             <div class="document-list">
               @for (group of coverageGroups(); track group.id) {
                 <div class="document-item">
-                  <b>{{ coverageGroupLabel(group) }}</b>
-                  <span>{{ group.description || 'Sem descrição adicional.' }}</span>
+                  <div class="coverage-group-head">
+                    <div>
+                      <b>{{ coverageGroupLabel(group) }}</b>
+                      <span>{{ coverageGroupLocalitiesLabel(group) }}</span>
+                    </div>
+                    @if (canManageAtas()) {
+                      <div class="coverage-group-actions">
+                        <button type="button" class="btn btn-sm btn-ghost" (click)="openCoverageGroupForm(group)">
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-ghost danger-action"
+                          [disabled]="deletingCoverageGroupId() === group.id"
+                          (click)="deleteCoverageGroup(group)"
+                        >
+                          {{ deletingCoverageGroupId() === group.id ? 'Excluindo...' : 'Excluir' }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                  @if (group.description) {
+                    <span>{{ group.description }}</span>
+                  }
                 </div>
               }
             </div>
@@ -271,8 +340,13 @@ export class AtaDetailPageComponent implements OnInit {
   readonly successMessage = signal('');
   readonly editingAta = signal(false);
   readonly savingAta = signal(false);
+  readonly coverageGroupFormVisible = signal(false);
+  readonly editingCoverageGroupId = signal<string | null>(null);
+  readonly savingCoverageGroup = signal(false);
+  readonly deletingCoverageGroupId = signal<string | null>(null);
   readonly ata = signal<Ata | null>(null);
   readonly ataItems = signal<AtaItem[]>([]);
+  readonly coverageStates: AtaCoverageStateUf[] = ['AM', 'RO', 'RR', 'AC'];
   private ataIdentifier: string | null = null;
 
   readonly ataForm = this.fb.nonNullable.group({
@@ -286,6 +360,12 @@ export class AtaDetailPageComponent implements OnInit {
     isActive: [true],
   });
 
+  readonly coverageGroupForm = this.fb.nonNullable.group({
+    name: ['', Validators.required],
+    stateUf: ['AM' as AtaCoverageStateUf, Validators.required],
+    localitiesText: ['', Validators.required],
+  });
+
   readonly coverageGroups = computed(() => {
     const groups = new Map<string, AtaCoverageGroup>();
 
@@ -293,7 +373,11 @@ export class AtaDetailPageComponent implements OnInit {
     this.ataItems()
       .map((item) => item.coverageGroup)
       .filter((group): group is AtaCoverageGroup => Boolean(group?.id))
-      .forEach((group) => groups.set(group.id, group));
+      .forEach((group) => {
+        if (!groups.has(group.id)) {
+          groups.set(group.id, group);
+        }
+      });
 
     return Array.from(groups.values());
   });
@@ -417,6 +501,90 @@ export class AtaDetailPageComponent implements OnInit {
     });
   }
 
+  openCoverageGroupForm(group?: AtaCoverageGroup): void {
+    if (!this.canManageAtas()) return;
+
+    const stateUf = this.groupStateUf(group);
+    const localitiesText = group?.localities
+      ?.map((locality) => locality.cityName?.trim())
+      .filter(Boolean)
+      .join('\n') ?? '';
+
+    this.coverageGroupForm.reset({
+      name: group?.name ?? '',
+      stateUf,
+      localitiesText,
+    });
+    this.editingCoverageGroupId.set(group?.id ?? null);
+    this.coverageGroupFormVisible.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+  }
+
+  closeCoverageGroupForm(): void {
+    this.coverageGroupFormVisible.set(false);
+    this.editingCoverageGroupId.set(null);
+    this.coverageGroupForm.reset({
+      name: '',
+      stateUf: 'AM',
+      localitiesText: '',
+    });
+  }
+
+  saveCoverageGroup(): void {
+    const ata = this.ata();
+    const editingId = this.editingCoverageGroupId();
+
+    if (!ata || !this.canManageAtas() || this.coverageGroupForm.invalid || this.savingCoverageGroup()) {
+      this.coverageGroupForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingCoverageGroup.set(true);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    const request = editingId
+      ? this.atasService.updateCoverageGroup(ata.id, editingId, this.coverageGroupUpdatePayload())
+      : this.atasService.createCoverageGroup(ata.id, this.coverageGroupCreatePayload());
+
+    request.subscribe({
+      next: () => {
+        this.successMessage.set(editingId ? 'Grupo de cobertura atualizado com sucesso.' : 'Grupo de cobertura criado com sucesso.');
+        this.savingCoverageGroup.set(false);
+        this.closeCoverageGroupForm();
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(getErrorMessage(error, 'Não foi possível salvar o grupo de cobertura.'));
+        this.savingCoverageGroup.set(false);
+      },
+    });
+  }
+
+  deleteCoverageGroup(group: AtaCoverageGroup): void {
+    const ata = this.ata();
+
+    if (!ata || !this.canManageAtas() || this.deletingCoverageGroupId()) return;
+
+    this.deletingCoverageGroupId.set(group.id);
+    this.editError.set('');
+    this.successMessage.set('');
+
+    this.atasService.deleteCoverageGroup(ata.id, group.id).subscribe({
+      next: () => {
+        this.successMessage.set('Grupo de cobertura excluído com sucesso.');
+        this.deletingCoverageGroupId.set(null);
+        this.closeCoverageGroupForm();
+        this.reload();
+      },
+      error: (error) => {
+        this.editError.set(this.coverageGroupDeleteError(error));
+        this.deletingCoverageGroupId.set(null);
+      },
+    });
+  }
+
   ataFacts(): MetadataItem[] {
     const ata = this.ata();
     return [
@@ -457,6 +625,19 @@ export class AtaDetailPageComponent implements OnInit {
 
   coverageGroupLabel(group: AtaCoverageGroup): string {
     return [group.code, group.name].filter(Boolean).join(' - ') || group.id;
+  }
+
+  coverageGroupLocalitiesLabel(group: AtaCoverageGroup): string {
+    const localities = group.localities ?? [];
+
+    if (!localities.length) {
+      return 'Localidades não informadas.';
+    }
+
+    return localities
+      .map((locality) => [locality.cityName, locality.stateUf].filter(Boolean).join('/'))
+      .filter(Boolean)
+      .join(', ') || 'Localidades não informadas.';
   }
 
   isActive(ata: Ata | null): boolean {
@@ -540,6 +721,57 @@ export class AtaDetailPageComponent implements OnInit {
       observations: value.observations.trim() || undefined,
       isActive: value.isActive,
     };
+  }
+
+  private coverageGroupCreatePayload(): AtaCoverageGroupPayload {
+    const value = this.coverageGroupForm.getRawValue();
+    return {
+      code: value.stateUf,
+      name: value.name.trim(),
+      localities: this.coverageGroupLocalitiesPayload(),
+    };
+  }
+
+  private coverageGroupUpdatePayload(): AtaCoverageGroupUpdatePayload {
+    const value = this.coverageGroupForm.getRawValue();
+    const group = this.coverageGroups().find((candidate) => candidate.id === this.editingCoverageGroupId());
+
+    return {
+      code: group?.code || value.stateUf,
+      name: value.name.trim(),
+      localities: this.coverageGroupLocalitiesPayload(),
+    };
+  }
+
+  private coverageGroupLocalitiesPayload(): AtaCoverageLocalityPayload[] {
+    const value = this.coverageGroupForm.getRawValue();
+    return value.localitiesText
+      .split(/\r?\n/)
+      .map((cityName) => cityName.trim())
+      .filter(Boolean)
+      .map((cityName) => ({
+        cityName,
+        stateUf: value.stateUf,
+      }));
+  }
+
+  private groupStateUf(group: AtaCoverageGroup | undefined): AtaCoverageStateUf {
+    const fromLocality = group?.localities?.find((locality) => this.isCoverageStateUf(locality.stateUf))?.stateUf;
+    const fromCode = this.isCoverageStateUf(group?.code) ? group?.code : null;
+
+    return (fromLocality || fromCode || 'AM') as AtaCoverageStateUf;
+  }
+
+  private isCoverageStateUf(value: unknown): value is AtaCoverageStateUf {
+    return this.coverageStates.includes(value as AtaCoverageStateUf);
+  }
+
+  private coverageGroupDeleteError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      return 'Não foi possível excluir este grupo porque ele possui itens da ATA ou estimativas vinculadas.';
+    }
+
+    return getErrorMessage(error, 'Não foi possível excluir o grupo de cobertura.');
   }
 
   private dateInputValue(value: string | null | undefined): string {

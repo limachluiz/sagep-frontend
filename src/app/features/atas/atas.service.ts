@@ -2,7 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
-import { Ata, AtaItem, AtaListResponse, AtaPayload } from './ata.model';
+import {
+  Ata,
+  AtaCoverageGroup,
+  AtaCoverageGroupPayload,
+  AtaCoverageGroupUpdatePayload,
+  AtaItem,
+  AtaListResponse,
+  AtaPayload,
+} from './ata.model';
 
 @Injectable({ providedIn: 'root' })
 export class AtasService {
@@ -27,5 +35,23 @@ export class AtasService {
 
   listItems(ataId: string) {
     return this.http.get<{ items: AtaItem[] } | AtaItem[]>(`${this.apiUrl}/atas/${encodeURIComponent(ataId)}/items`);
+  }
+
+  createCoverageGroup(ataId: string, payload: AtaCoverageGroupPayload) {
+    return this.http.post<AtaCoverageGroup>(
+      `${this.apiUrl}/atas/${encodeURIComponent(ataId)}/coverage-groups`,
+      payload,
+    );
+  }
+
+  updateCoverageGroup(ataId: string, groupId: string, payload: AtaCoverageGroupUpdatePayload) {
+    return this.http.patch<AtaCoverageGroup>(
+      `${this.apiUrl}/atas/${encodeURIComponent(ataId)}/coverage-groups/${encodeURIComponent(groupId)}`,
+      payload,
+    );
+  }
+
+  deleteCoverageGroup(ataId: string, groupId: string) {
+    return this.http.delete(`${this.apiUrl}/atas/${encodeURIComponent(ataId)}/coverage-groups/${encodeURIComponent(groupId)}`);
   }
 }
