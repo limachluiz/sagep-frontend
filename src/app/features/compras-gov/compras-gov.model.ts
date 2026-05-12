@@ -12,6 +12,8 @@ export interface ComprasGovAtaImportPayload extends ComprasGovAtaPreviewParams {
   coverageGroupId?: string;
   coverageGroupCode?: string;
   coverageGroupName?: string;
+  coverageGroupStateUf?: string;
+  coverageGroupCityName?: string;
   dryRun?: boolean;
 }
 

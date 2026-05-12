@@ -2701,6 +2701,33 @@ textarea:focus-visible {
   margin-bottom: 0;
 }
 
+.form-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-section-head h3 {
+  margin: 0;
+  color: var(--eb-night);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.form-section-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .coverage-group-head {
   display: flex;
   align-items: flex-start;

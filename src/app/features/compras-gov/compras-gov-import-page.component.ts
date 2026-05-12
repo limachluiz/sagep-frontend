@@ -20,6 +20,15 @@ import {
 } from './compras-gov.model';
 import { ComprasGovService } from './compras-gov.service';
 
+interface CoverageGroupSuggestion {
+  label: string;
+  code: string;
+  name: string;
+  stateUf: string;
+  cityName: string;
+  type: ComprasGovAtaType;
+}
+
 @Component({
   selector: 'app-compras-gov-import-page',
   standalone: true,
@@ -73,20 +82,55 @@ import { ComprasGovService } from './compras-gov.service';
               </label>
               <label class="field">
                 <span>Tipo da ATA</span>
-                <select formControlName="ataType">
+                <select formControlName="ataType" (change)="applyAtaTypeDefaults()">
                   <option value="CFTV">CFTV</option>
                   <option value="FIBRA_OPTICA">Fibra optica</option>
                 </select>
               </label>
-              <label class="field">
-                <span>Codigo do grupo padrao</span>
-                <input formControlName="coverageGroupCode" placeholder="Ex.: CGOV" />
-              </label>
             </div>
-            <label class="field">
-              <span>Nome do grupo padrao</span>
-              <input formControlName="coverageGroupName" placeholder="Ex.: Compras.gov.br" />
-            </label>
+
+            <section class="coverage-group-form">
+              <div class="form-section-head">
+                <div>
+                  <h3>Grupo de cobertura</h3>
+                  <p>Escolha ou crie o grupo que recebera os itens importados.</p>
+                </div>
+              </div>
+
+              <div class="quick-actions">
+                @for (suggestion of coverageGroupSuggestions; track suggestion.code) {
+                  <button type="button" class="btn btn-sm btn-ghost" (click)="applyCoverageGroupSuggestion(suggestion)">
+                    {{ suggestion.label }}
+                  </button>
+                }
+              </div>
+
+              <div class="grid grid-2">
+                <label class="field">
+                  <span>Codigo do grupo</span>
+                  <input formControlName="coverageGroupCode" placeholder="Ex.: CFTV-MAO" />
+                </label>
+                <label class="field">
+                  <span>Nome do grupo</span>
+                  <input formControlName="coverageGroupName" placeholder="Ex.: CFTV Manaus" />
+                </label>
+                <label class="field">
+                  <span>UF</span>
+                  <select formControlName="coverageGroupStateUf">
+                    <option value="">Selecione</option>
+                    <option value="AC">AC</option>
+                    <option value="AM">AM</option>
+                    <option value="RO">RO</option>
+                    <option value="RR">RR</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Cidade/localidade</span>
+                  <input formControlName="coverageGroupCityName" placeholder="Ex.: Manaus" />
+                </label>
+              </div>
+            </section>
+
             <div class="form-actions">
               <button type="button" class="btn btn-ghost" (click)="clearPreview()" [disabled]="loadingPreview() || importing()">
                 Limpar
@@ -226,6 +270,7 @@ export class ComprasGovImportPageComponent {
   readonly successMessage = signal('');
   readonly preview = signal<ComprasGovAtaPreview | null>(null);
   readonly selectedAtaNumber = signal('');
+  readonly formVersion = signal(0);
 
   readonly form = this.fb.nonNullable.group({
     uasg: ['', Validators.required],
@@ -233,17 +278,31 @@ export class ComprasGovImportPageComponent {
     anoPregao: ['', [Validators.required, Validators.pattern(/^\d{4}$/)]],
     numeroAta: [''],
     ataType: ['CFTV' as ComprasGovAtaType, Validators.required],
-    coverageGroupCode: ['CGOV'],
-    coverageGroupName: ['Compras.gov.br'],
+    coverageGroupCode: ['CFTV-MAO'],
+    coverageGroupName: ['CFTV Manaus'],
+    coverageGroupStateUf: ['AM'],
+    coverageGroupCityName: ['Manaus'],
   });
+
+  readonly coverageGroupSuggestions: CoverageGroupSuggestion[] = [
+    { label: 'CFTV Manaus', code: 'CFTV-MAO', name: 'CFTV Manaus', stateUf: 'AM', cityName: 'Manaus', type: 'CFTV' },
+    { label: 'Fibra AM', code: 'FIBRA-AM', name: 'Fibra AM', stateUf: 'AM', cityName: 'Amazonas', type: 'FIBRA_OPTICA' },
+    { label: 'Fibra RO', code: 'FIBRA-RO', name: 'Fibra RO', stateUf: 'RO', cityName: 'Rondonia', type: 'FIBRA_OPTICA' },
+    { label: 'Fibra RR', code: 'FIBRA-RR', name: 'Fibra RR', stateUf: 'RR', cityName: 'Roraima', type: 'FIBRA_OPTICA' },
+    { label: 'Fibra AC', code: 'FIBRA-AC', name: 'Fibra AC', stateUf: 'AC', cityName: 'Acre', type: 'FIBRA_OPTICA' },
+  ];
 
   readonly previewItems = computed(() => this.preview()?.items ?? []);
   readonly atasFound = computed(() => this.preview()?.atasFound ?? []);
   readonly hasMultipleAtasFound = computed(() => this.atasFound().length > 1);
   readonly canShowItems = computed(() => !this.hasMultipleAtasFound() || !!this.selectedAtaNumber());
-  readonly canImport = computed(() => !!this.preview() && this.canShowItems());
+  readonly canImport = computed(() => {
+    this.formVersion();
+    return !!this.preview() && this.canShowItems() && this.hasCoverageGroup();
+  });
   readonly warnings = computed(() => this.preview()?.warnings ?? []);
   readonly ataFacts = computed<MetadataItem[]>(() => {
+    this.formVersion();
     const preview = this.preview();
     const ata = preview?.ata;
 
@@ -257,8 +316,13 @@ export class ComprasGovImportPageComponent {
       { label: 'Orgao gerenciador', value: ata?.managingAgency || 'Nao informado' },
       { label: 'Vigencia', value: this.dateRange(ata?.validFrom, ata?.validUntil) },
       { label: 'Itens', value: String(this.previewItems().length) },
+      { label: 'Grupo de cobertura', value: this.coverageGroupLabel(), highlight: true },
     ];
   });
+
+  constructor() {
+    this.form.valueChanges.subscribe(() => this.formVersion.update((version) => version + 1));
+  }
 
   loadPreview(): void {
     if (this.form.invalid || this.loadingPreview()) {
@@ -323,8 +387,26 @@ export class ComprasGovImportPageComponent {
       anoPregao: '',
       numeroAta: '',
       ataType: 'CFTV',
-      coverageGroupCode: 'CGOV',
-      coverageGroupName: 'Compras.gov.br',
+      coverageGroupCode: 'CFTV-MAO',
+      coverageGroupName: 'CFTV Manaus',
+      coverageGroupStateUf: 'AM',
+      coverageGroupCityName: 'Manaus',
+    });
+  }
+
+  applyAtaTypeDefaults(): void {
+    if (this.form.controls.ataType.value === 'CFTV') {
+      this.applyCoverageGroupSuggestion(this.coverageGroupSuggestions[0]);
+    }
+  }
+
+  applyCoverageGroupSuggestion(suggestion: CoverageGroupSuggestion): void {
+    this.form.patchValue({
+      ataType: suggestion.type,
+      coverageGroupCode: suggestion.code,
+      coverageGroupName: suggestion.name,
+      coverageGroupStateUf: suggestion.stateUf,
+      coverageGroupCityName: suggestion.cityName,
     });
   }
 
@@ -384,9 +466,29 @@ export class ComprasGovImportPageComponent {
     return {
       ...this.previewParams(),
       ataType: value.ataType,
-      coverageGroupCode: value.coverageGroupCode.trim() || undefined,
-      coverageGroupName: value.coverageGroupName.trim() || undefined,
+      coverageGroupCode: value.coverageGroupCode.trim(),
+      coverageGroupName: value.coverageGroupName.trim(),
+      coverageGroupStateUf: value.coverageGroupStateUf.trim(),
+      coverageGroupCityName: value.coverageGroupCityName.trim(),
     };
+  }
+
+  private hasCoverageGroup(): boolean {
+    const value = this.form.getRawValue();
+
+    return Boolean(
+      value.coverageGroupCode.trim() &&
+        value.coverageGroupName.trim() &&
+        value.coverageGroupStateUf.trim() &&
+        value.coverageGroupCityName.trim(),
+    );
+  }
+
+  private coverageGroupLabel(): string {
+    const value = this.form.getRawValue();
+    const location = [value.coverageGroupCityName.trim(), value.coverageGroupStateUf.trim()].filter(Boolean).join('/');
+
+    return [value.coverageGroupCode.trim(), value.coverageGroupName.trim(), location].filter(Boolean).join(' - ') || 'Nao informado';
   }
 
   private biddingLabel(preview: ComprasGovAtaPreview | null): string {
