@@ -25,6 +25,16 @@ export interface ComprasGovAtaPreviewItem {
   externalItemNumber?: string | null;
 }
 
+export interface ComprasGovAtaFound {
+  ataNumber?: string | null;
+  fornecedor?: string | null;
+  vendorName?: string | null;
+  itens?: number | string | null;
+  items?: number | string | unknown[] | null;
+  valor?: number | string | null;
+  totalValue?: number | string | null;
+}
+
 export interface ComprasGovAtaPreview {
   source?: 'COMPRAS_GOV' | string;
   uasg?: string | null;
@@ -40,6 +50,7 @@ export interface ComprasGovAtaPreview {
   } | null;
   coverageGroups?: unknown[];
   items?: ComprasGovAtaPreviewItem[];
+  atasFound?: ComprasGovAtaFound[];
   warnings?: string[];
 }
 
