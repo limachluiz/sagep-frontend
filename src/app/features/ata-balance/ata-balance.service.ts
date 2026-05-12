@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
-import { AtaBalanceItem, AtaBalanceListResponse, AtaBalanceMovement, AtaBalanceMovementListResponse } from './ata-balance.model';
+import {
+  AtaBalanceItem,
+  AtaBalanceListResponse,
+  AtaBalanceMovement,
+  AtaBalanceMovementListResponse,
+  AtaExternalBalanceComparison,
+  AtaExternalBalanceListResponse,
+} from './ata-balance.model';
 
 @Injectable({ providedIn: 'root' })
 export class AtaBalanceService {
@@ -16,6 +23,25 @@ export class AtaBalanceService {
   getItemMovements(itemId: string) {
     return this.http.get<AtaBalanceMovementListResponse | AtaBalanceMovement[]>(
       `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/movements`,
+    );
+  }
+
+  getAtaExternalBalance(ataId: string) {
+    return this.http.get<AtaExternalBalanceListResponse | AtaExternalBalanceComparison[]>(
+      `${this.apiUrl}/atas/${encodeURIComponent(ataId)}/external-balance`,
+    );
+  }
+
+  syncAtaExternalBalance(ataId: string) {
+    return this.http.post<AtaExternalBalanceListResponse | AtaExternalBalanceComparison[]>(
+      `${this.apiUrl}/atas/${encodeURIComponent(ataId)}/sync-external-balance`,
+      {},
+    );
+  }
+
+  getItemBalanceComparison(itemId: string) {
+    return this.http.get<AtaExternalBalanceComparison>(
+      `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/balance-comparison`,
     );
   }
 }

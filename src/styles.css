@@ -2400,6 +2400,15 @@ textarea:focus-visible {
   box-shadow: var(--shadow-sm);
 }
 
+.ata-external-comparison {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+  padding: 14px;
+}
+
 .ata-movement-panel__head {
   display: flex;
   align-items: flex-start;

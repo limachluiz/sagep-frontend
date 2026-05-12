@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, finalize } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -18,7 +18,15 @@ import {
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
-import { AtaBalanceItem, AtaBalanceListResponse, AtaBalanceMovement } from './ata-balance.model';
+import { Ata } from '../atas/ata.model';
+import { AtasService } from '../atas/atas.service';
+import {
+  AtaBalanceItem,
+  AtaBalanceListResponse,
+  AtaBalanceMovement,
+  AtaExternalBalanceComparison,
+  AtaExternalBalanceListResponse,
+} from './ata-balance.model';
 import { AtaBalanceService } from './ata-balance.service';
 
 type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
@@ -63,8 +71,27 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
         </div>
       }
 
+      @if (successMessage()) {
+        <div class="form-alert success">{{ successMessage() }}</div>
+      }
+
+      @if (syncError()) {
+        <div class="form-alert">{{ syncError() }}</div>
+      }
+
       <section class="card">
         <form [formGroup]="filtersForm" class="filters ata-balance-filters">
+          <select
+            [value]="selectedAtaId()"
+            (change)="selectAta($any($event.target).value)"
+            class="select"
+            [disabled]="atasLoading()"
+          >
+            <option value="">Todas as ATAs</option>
+            @for (ata of sortedAtas(); track ata.id) {
+              <option [value]="ata.id">{{ ataOptionLabel(ata) }}</option>
+            }
+          </select>
           <input type="search" formControlName="search" class="input" placeholder="Buscar por ATA, item ou descrição" />
           <select formControlName="status" class="select">
             <option value="">Todos os saldos</option>
@@ -75,7 +102,20 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
           <button type="button" (click)="clearFilters()" class="btn btn-ghost">
             Limpar filtros
           </button>
+          <button
+            type="button"
+            (click)="syncSelectedAta()"
+            class="btn btn-gold"
+            [disabled]="!selectedAtaId() || syncingAtaId() === selectedAtaId()"
+          >
+            {{ syncingAtaId() === selectedAtaId() ? 'Sincronizando...' : 'Sincronizar saldo da ATA' }}
+          </button>
         </form>
+        @if (atasLoading()) {
+          <div class="mt-3 text-sm text-[var(--sagep-muted)]">Carregando ATAs...</div>
+        } @else if (atasError()) {
+          <div class="form-alert">{{ atasError() }}</div>
+        }
       </section>
 
       @if (loading()) {
@@ -110,7 +150,7 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                 <span class="badge b-neutral">{{ activeFilterSummary() }}</span>
               }
             </div>
-            <span>Dados atualizados</span>
+            <span>{{ externalLoading() ? 'Comparando saldo externo...' : 'Dados atualizados' }}</span>
           </div>
 
           <app-responsive-table
@@ -143,6 +183,12 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
             <ng-template appResponsiveTableCell="availableQuantity" let-item>
               <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ quantityLabel(availableQuantity(item), item.unit) }}</span>
             </ng-template>
+            <ng-template appResponsiveTableCell="externalBalance" let-item>
+              {{ externalQuantityLabel(item) }}
+            </ng-template>
+            <ng-template appResponsiveTableCell="balanceDifference" let-item>
+              <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ externalDifferenceLabel(item) }}</span>
+            </ng-template>
             <ng-template appResponsiveTableCell="availableAmount" let-item>
               <span class="font-semibold text-[var(--sagep-brand-deep)]">{{ formatCurrency(availableAmount(item)) }}</span>
             </ng-template>
@@ -151,7 +197,25 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                 {{ statusLabel(balanceStatus(item)) }}
               </span>
             </ng-template>
+            <ng-template appResponsiveTableCell="externalStatus" let-item>
+              <span class="badge" [class]="externalStatusClass(externalStatus(item))">
+                {{ externalStatusLabel(externalStatus(item)) }}
+              </span>
+            </ng-template>
+            <ng-template appResponsiveTableCell="lastSyncedAt" let-item>
+              {{ externalLastSyncedLabel(item) }}
+            </ng-template>
             <ng-template appResponsiveTableActions let-item>
+              @if (ataId(item)) {
+                <button
+                  type="button"
+                  (click)="syncExternalBalance(item)"
+                  class="btn btn-sm btn-gold"
+                  [disabled]="syncingAtaId() === ataId(item)"
+                >
+                  {{ syncingAtaId() === ataId(item) ? 'Sincronizando...' : 'Sincronizar item' }}
+                </button>
+              }
               <button type="button" (click)="openMovements(item)" class="btn btn-sm btn-ghost">
                 Ver movimentações
               </button>
@@ -201,6 +265,59 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                   <label>Status</label>
                   <b>{{ statusLabel(balanceStatus(selectedItem()!)) }}</b>
                 </div>
+              </div>
+
+              <div class="ata-external-comparison">
+                <div class="ata-movement-panel__head">
+                  <div>
+                    <p class="document-action-label">Comparacao externa</p>
+                    <h3>Saldo Compras.gov.br</h3>
+                    <p>Dados consultados pelo backend do SAGEP.</p>
+                  </div>
+                  @if (ataId(selectedItem()!)) {
+                    <button
+                      type="button"
+                      (click)="syncExternalBalance(selectedItem()!)"
+                      class="btn btn-sm btn-gold"
+                      [disabled]="syncingAtaId() === ataId(selectedItem()!)"
+                    >
+                      {{ syncingAtaId() === ataId(selectedItem()!) ? 'Sincronizando...' : 'Sincronizar item' }}
+                    </button>
+                  }
+                </div>
+                @if (comparisonLoading(selectedItem()!)) {
+                  <app-loading-state variant="list" [count]="1" />
+                } @else if (comparisonError(selectedItem()!)) {
+                  <div class="form-alert">{{ comparisonError(selectedItem()!) }}</div>
+                } @else {
+                  <div class="detail-grid">
+                    <div class="detail-item">
+                      <label>Saldo local</label>
+                      <b>{{ localComparisonLabel(selectedItem()!) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Saldo externo</label>
+                      <b>{{ externalQuantityLabel(selectedItem()!) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Diferenca</label>
+                      <b>{{ externalDifferenceLabel(selectedItem()!) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Status</label>
+                      <b>{{ externalStatusLabel(externalStatus(selectedItem()!)) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Ultima sincronizacao</label>
+                      <b>{{ externalLastSyncedLabel(selectedItem()!) }}</b>
+                    </div>
+                  </div>
+                  @if (isNoCommitmentStatus(selectedItem()!)) {
+                    <div class="form-alert success">
+                      Saldo baseado na quantidade registrada importada. Nenhum empenho externo encontrado.
+                    </div>
+                  }
+                }
               </div>
 
               @if (movementsLoading()) {
@@ -265,16 +382,27 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
 })
 export class AtaBalancePageComponent implements OnInit {
   private readonly ataBalanceService = inject(AtaBalanceService);
+  private readonly atasService = inject(AtasService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly forbidden = signal(false);
   readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly syncError = signal('');
+  readonly atasLoading = signal(false);
+  readonly atasError = signal('');
+  readonly atas = signal<Ata[]>([]);
+  readonly selectedAtaId = signal('');
   readonly items = signal<AtaBalanceItem[]>([]);
   readonly selectedItem = signal<AtaBalanceItem | null>(null);
   readonly movements = signal<AtaBalanceMovement[]>([]);
   readonly movementsLoading = signal(false);
   readonly movementsError = signal('');
+  readonly externalComparisons = signal<Record<string, AtaExternalBalanceComparison | null>>({});
+  readonly externalComparisonErrors = signal<Record<string, string>>({});
+  readonly externalLoading = signal(false);
+  readonly syncingAtaId = signal('');
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly pageSizeOptions = [10, 20, 50];
@@ -287,8 +415,12 @@ export class AtaBalancePageComponent implements OnInit {
     { key: 'reservedQuantity', label: 'Reservado' },
     { key: 'consumedQuantity', label: 'Consumido' },
     { key: 'availableQuantity', label: 'Disponível' },
+    { key: 'externalBalance', label: 'Saldo externo' },
+    { key: 'balanceDifference', label: 'Diferença' },
     { key: 'availableAmount', label: 'Valor disponível', align: 'right' },
     { key: 'status', label: 'Status' },
+    { key: 'externalStatus', label: 'Status externo' },
+    { key: 'lastSyncedAt', label: 'Última sync' },
   ];
 
   readonly filtersForm = this.fb.nonNullable.group({
@@ -296,11 +428,18 @@ export class AtaBalancePageComponent implements OnInit {
     status: [''],
   });
 
+  readonly sortedAtas = computed(() =>
+    [...this.atas()].sort((left, right) => Number(this.isComprasGovAta(right)) - Number(this.isComprasGovAta(left))),
+  );
+  readonly selectedAtaItems = computed(() => {
+    const selectedAtaId = this.selectedAtaId();
+    return selectedAtaId ? this.items().filter((item) => this.ataId(item) === selectedAtaId) : this.items();
+  });
   readonly filteredItems = computed(() => {
     const { search, status } = this.filtersForm.getRawValue();
     const term = search.trim().toLowerCase();
 
-    return this.items().filter((item) => {
+    return this.selectedAtaItems().filter((item) => {
       const matchesSearch = !term ||
         [
           this.ataLabel(item),
@@ -337,9 +476,10 @@ export class AtaBalancePageComponent implements OnInit {
     ].filter(Boolean).join(' • ');
   });
   readonly summaryCards = computed(() => {
-    const items = this.items();
+    const items = this.selectedAtaItems();
     const critical = items.filter((item) => this.balanceStatus(item) === 'insuficiente').length;
     const lowStock = items.filter((item) => this.balanceStatus(item) === 'baixo').length;
+    const noCommitment = items.filter((item) => this.isNoCommitmentStatus(item)).length;
 
     return [
       {
@@ -355,6 +495,13 @@ export class AtaBalancePageComponent implements OnInit {
         description: 'Itens em atenção',
         icon: 'BX',
         tone: lowStock ? ('warning' as const) : ('success' as const),
+      },
+      {
+        title: 'Sem empenho registrado',
+        value: String(noCommitment),
+        description: 'Sem empenho externo',
+        icon: 'SE',
+        tone: noCommitment ? ('success' as const) : ('soft' as const),
       },
       {
         title: 'Total reservado',
@@ -381,6 +528,7 @@ export class AtaBalancePageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadAtas();
     this.loadBalance();
     this.filtersForm.valueChanges.pipe(debounceTime(250), distinctUntilChanged()).subscribe(() => {
       this.currentPage.set(1);
@@ -394,17 +542,71 @@ export class AtaBalancePageComponent implements OnInit {
 
     this.ataBalanceService.list().subscribe({
       next: (response) => {
-        this.items.set(this.listItems(response));
+        const items = this.listItems(response);
+        this.items.set(items);
         this.currentPage.set(1);
         this.loading.set(false);
+        if (this.selectedAtaId()) {
+          this.loadAtaExternalBalance(this.selectedAtaId());
+        } else {
+          this.loadExternalComparisons(items);
+        }
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
         this.errorMessage.set(getErrorMessage(error, 'Falha ao consultar o saldo da ATA.'));
         this.items.set([]);
+        this.externalComparisons.set({});
+        this.externalComparisonErrors.set({});
         this.loading.set(false);
       },
     });
+  }
+
+  loadAtas(): void {
+    this.atasLoading.set(true);
+    this.atasError.set('');
+
+    this.atasService
+      .list()
+      .pipe(finalize(() => this.atasLoading.set(false)))
+      .subscribe({
+        next: (response) => this.atas.set(this.listItems(response)),
+        error: (error) => {
+          this.atas.set([]);
+          this.atasError.set(getErrorMessage(error, 'Nao foi possivel carregar as ATAs para selecao.'));
+        },
+      });
+  }
+
+  selectAta(ataId: string): void {
+    this.selectedAtaId.set(ataId);
+    this.currentPage.set(1);
+    this.closeMovements();
+    this.syncError.set('');
+    this.successMessage.set('');
+
+    if (ataId) {
+      this.loadAtaExternalBalance(ataId);
+    } else {
+      this.loadExternalComparisons(this.items());
+    }
+  }
+
+  syncSelectedAta(): void {
+    const ataId = this.selectedAtaId();
+
+    if (!ataId) {
+      return;
+    }
+
+    this.syncAtaExternalBalance(ataId);
+  }
+
+  syncExternalBalance(item: AtaBalanceItem): void {
+    const ataId = this.ataId(item);
+
+    this.syncAtaExternalBalance(ataId, item.id);
   }
 
   clearFilters(): void {
@@ -426,6 +628,7 @@ export class AtaBalancePageComponent implements OnInit {
     this.movements.set([]);
     this.movementsError.set('');
     this.movementsLoading.set(true);
+    this.loadExternalComparisons([item]);
 
     this.ataBalanceService
       .getItemMovements(item.id)
@@ -459,6 +662,27 @@ export class AtaBalancePageComponent implements OnInit {
     return [ata?.type ? formatLabel(ata.type) : 'ATA', number].filter(Boolean).join(' ');
   }
 
+  ataOptionLabel(ata: Ata): string {
+    const number = ata.number || (ata.ataCode ? `#${ata.ataCode}` : 'ATA sem numero');
+    const vendor = ata.vendorName || 'Fornecedor nao informado';
+    const bidding = [this.ataStringField(ata, ['uasg', 'uAsg']), this.biddingLabel(ata)].filter(Boolean).join(' - ');
+
+    return [number, vendor, bidding].filter(Boolean).join(' | ');
+  }
+
+  isComprasGovAta(ata: Ata): boolean {
+    const values = [
+      this.ataStringField(ata, ['source', 'origin', 'externalSource', 'integrationSource']),
+      ata.observations,
+      ata.notes,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toUpperCase();
+
+    return values.includes('COMPRAS') || values.includes('COMPRAS_GOV');
+  }
+
   balanceStatus(item: AtaBalanceItem): BalanceStatus {
     if (item.balance?.insufficient) return 'insuficiente';
     if (item.balance?.lowStock) return 'baixo';
@@ -479,6 +703,95 @@ export class AtaBalancePageComponent implements OnInit {
       baixo: 'b-warn',
       insuficiente: 'b-danger',
     }[status];
+  }
+
+  comparison(item: AtaBalanceItem): AtaExternalBalanceComparison | null {
+    return this.externalComparisons()[item.id] ?? null;
+  }
+
+  comparisonLoading(item: AtaBalanceItem): boolean {
+    return this.externalLoading() && !(item.id in this.externalComparisons());
+  }
+
+  comparisonError(item: AtaBalanceItem): string {
+    return this.externalComparisonErrors()[item.id] || '';
+  }
+
+  localComparisonLabel(item: AtaBalanceItem): string {
+    const comparison = this.comparison(item);
+    const value = comparison?.localBalance ?? comparison?.localAvailableQuantity ?? comparison?.availableQuantity;
+    return this.quantityLabel(value == null ? this.availableQuantity(item) : this.numberValue(value), item.unit);
+  }
+
+  externalQuantityLabel(item: AtaBalanceItem): string {
+    const value = this.externalQuantityValue(item);
+
+    return value == null ? 'Nao sincronizado' : this.quantityLabel(this.numberValue(value), item.unit);
+  }
+
+  externalDifferenceLabel(item: AtaBalanceItem): string {
+    const comparison = this.comparison(item);
+    const value = comparison?.difference ?? comparison?.balanceDifference;
+
+    if (value == null) {
+      return 'Nao informado';
+    }
+
+    return this.quantityLabel(this.numberValue(value), item.unit);
+  }
+
+  externalStatus(item: AtaBalanceItem): string {
+    return this.comparison(item)?.status || 'NOT_SYNCED';
+  }
+
+  externalStatusLabel(status: string): string {
+    const normalized = status.toUpperCase();
+    return {
+      OK: 'OK',
+      DIVERGENT: 'Divergente',
+      DIVERGENTE: 'Divergente',
+      EXTERNAL_CONSUMPTION_DETECTED: 'Consumo externo detectado',
+      CONSUMO_EXTERNO_DETECTADO: 'Consumo externo detectado',
+      SEM_EMPENHO_REGISTRADO: 'Sem empenho registrado',
+      NOT_FOUND: 'Nao encontrado',
+      NAO_ENCONTRADO: 'Nao encontrado',
+      NOT_SYNCED: 'Nao sincronizado',
+    }[normalized] ?? formatLabel(status);
+  }
+
+  externalStatusClass(status: string): string {
+    const normalized = status.toUpperCase();
+
+    if (normalized === 'OK') return 'b-ok';
+    if (normalized === 'SEM_EMPENHO_REGISTRADO') return 'b-ok';
+    if (normalized === 'NOT_FOUND' || normalized === 'NAO_ENCONTRADO') return 'b-neutral';
+    if (normalized === 'NOT_SYNCED') return 'b-info';
+    if (normalized === 'EXTERNAL_CONSUMPTION_DETECTED' || normalized === 'CONSUMO_EXTERNO_DETECTADO') return 'b-warn';
+    return 'b-danger';
+  }
+
+  externalLastSyncedLabel(item: AtaBalanceItem): string {
+    const comparison = this.comparison(item);
+    return formatDate(comparison?.lastSyncedAt || comparison?.syncedAt || comparison?.updatedAt || item.balance?.lastMovementAt);
+  }
+
+  isNoCommitmentStatus(item: AtaBalanceItem): boolean {
+    return this.externalStatus(item).toUpperCase() === 'SEM_EMPENHO_REGISTRADO';
+  }
+
+  private externalQuantityValue(item: AtaBalanceItem): string | number | null | undefined {
+    const comparison = this.comparison(item);
+
+    return (
+      comparison?.externalBalance ??
+      comparison?.externalAvailableQuantity ??
+      comparison?.comprasGovAvailableQuantity ??
+      comparison?.fallbackBalance ??
+      comparison?.fallbackAvailableQuantity ??
+      comparison?.importedQuantity ??
+      comparison?.importedAvailableQuantity ??
+      (this.isNoCommitmentStatus(item) ? this.availableQuantity(item) : null)
+    );
   }
 
   initialQuantity(item: AtaBalanceItem): number {
@@ -560,5 +873,146 @@ export class AtaBalancePageComponent implements OnInit {
 
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];
+  }
+
+  private syncAtaExternalBalance(ataId: string, itemId?: string): void {
+    if (!ataId || this.syncingAtaId()) {
+      return;
+    }
+
+    this.syncingAtaId.set(ataId);
+    this.syncError.set('');
+    this.successMessage.set('');
+    this.ataBalanceService
+      .syncAtaExternalBalance(ataId)
+      .pipe(finalize(() => this.syncingAtaId.set('')))
+      .subscribe({
+        next: () => {
+          this.successMessage.set('Saldo externo da ATA sincronizado com sucesso.');
+          this.loadAtaExternalBalance(ataId);
+          this.loadBalance();
+        },
+        error: (error) => {
+          const message = getErrorMessage(error, 'Nao foi possivel sincronizar o saldo externo desta ATA.');
+          this.syncError.set(message);
+
+          if (itemId) {
+            this.externalComparisonErrors.update((errors) => ({
+              ...errors,
+              [itemId]: message,
+            }));
+          }
+        },
+      });
+  }
+
+  private loadAtaExternalBalance(ataId: string): void {
+    const ataItems = this.items().filter((item) => this.ataId(item) === ataId);
+
+    if (!ataId || !ataItems.length) {
+      return;
+    }
+
+    this.externalLoading.set(true);
+    this.ataBalanceService
+      .getAtaExternalBalance(ataId)
+      .pipe(finalize(() => this.externalLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          const comparisons = this.externalComparisonItems(response);
+          const nextComparisons = { ...this.externalComparisons() };
+          const nextErrors = { ...this.externalComparisonErrors() };
+
+          ataItems.forEach((item, index) => {
+            const comparison =
+              comparisons.find((entry) => (entry.itemId || entry.ataItemId) === item.id) ??
+              comparisons[index] ??
+              null;
+
+            nextComparisons[item.id] = comparison;
+
+            if (comparison) {
+              delete nextErrors[item.id];
+            }
+          });
+
+          this.externalComparisons.set(nextComparisons);
+          this.externalComparisonErrors.set(nextErrors);
+        },
+        error: (error) => {
+          const message = getErrorMessage(error, 'Nao foi possivel carregar a comparacao externa desta ATA.');
+          this.externalComparisonErrors.update((errors) => {
+            const nextErrors = { ...errors };
+            ataItems.forEach((item) => {
+              nextErrors[item.id] = message;
+            });
+            return nextErrors;
+          });
+        },
+      });
+  }
+
+  private loadExternalComparisons(items: AtaBalanceItem[]): void {
+    const uniqueItems = items.filter((item, index, source) => source.findIndex((entry) => entry.id === item.id) === index);
+
+    if (!uniqueItems.length) {
+      return;
+    }
+
+    this.externalLoading.set(true);
+
+    forkJoin(
+      uniqueItems.map((item) =>
+        this.ataBalanceService.getItemBalanceComparison(item.id).pipe(
+          catchError((error) => {
+            this.externalComparisonErrors.update((errors) => ({
+              ...errors,
+              [item.id]: getErrorMessage(error, 'Nao foi possivel carregar a comparacao externa deste item.'),
+            }));
+            return of(null);
+          }),
+        ),
+      ),
+    )
+      .pipe(finalize(() => this.externalLoading.set(false)))
+      .subscribe((comparisons) => {
+        const nextComparisons = { ...this.externalComparisons() };
+        const nextErrors = { ...this.externalComparisonErrors() };
+
+        comparisons.forEach((comparison, index) => {
+          const item = uniqueItems[index];
+          nextComparisons[item.id] = comparison;
+
+          if (comparison) {
+            delete nextErrors[item.id];
+          }
+        });
+
+        this.externalComparisons.set(nextComparisons);
+        this.externalComparisonErrors.set(nextErrors);
+      });
+  }
+
+  private externalComparisonItems(
+    response: AtaExternalBalanceListResponse | AtaExternalBalanceComparison[],
+  ): AtaExternalBalanceComparison[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    return response.items ?? response.comparisons ?? [];
+  }
+
+  private ataStringField(ata: Ata, keys: string[]): string {
+    const record = ata as unknown as Record<string, unknown>;
+    const value = keys.map((key) => record[key]).find((entry) => typeof entry === 'string' || typeof entry === 'number');
+    return value == null ? '' : String(value);
+  }
+
+  private biddingLabel(ata: Ata): string {
+    const number = this.ataStringField(ata, ['numeroPregao', 'biddingNumber', 'pregaoNumber', 'auctionNumber']);
+    const year = this.ataStringField(ata, ['anoPregao', 'biddingYear', 'pregaoYear', 'auctionYear']);
+
+    return [number, year].filter(Boolean).join('/');
   }
 }

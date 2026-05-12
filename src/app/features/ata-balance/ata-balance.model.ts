@@ -79,6 +79,41 @@ export interface AtaBalanceMovementListResponse {
   items: AtaBalanceMovement[];
 }
 
+export type ExternalBalanceStatus =
+  | 'OK'
+  | 'DIVERGENT'
+  | 'EXTERNAL_CONSUMPTION_DETECTED'
+  | 'NOT_FOUND'
+  | 'SEM_EMPENHO_REGISTRADO'
+  | string;
+
+export interface AtaExternalBalanceComparison {
+  itemId?: string | null;
+  ataItemId?: string | null;
+  localBalance?: string | number | null;
+  localAvailableQuantity?: string | number | null;
+  availableQuantity?: string | number | null;
+  externalBalance?: string | number | null;
+  externalAvailableQuantity?: string | number | null;
+  comprasGovAvailableQuantity?: string | number | null;
+  fallbackBalance?: string | number | null;
+  fallbackAvailableQuantity?: string | number | null;
+  importedQuantity?: string | number | null;
+  importedAvailableQuantity?: string | number | null;
+  difference?: string | number | null;
+  balanceDifference?: string | number | null;
+  status?: ExternalBalanceStatus | null;
+  lastSyncedAt?: string | null;
+  syncedAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface AtaExternalBalanceListResponse {
+  items?: AtaExternalBalanceComparison[];
+  comparisons?: AtaExternalBalanceComparison[];
+  lastSyncedAt?: string | null;
+}
+
 export interface AtaBalanceItem {
   id: string;
   ataItemCode?: number | null;
