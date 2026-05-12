@@ -2099,6 +2099,14 @@ textarea:focus-visible {
   border-collapse: collapse;
 }
 
+.ata-items-table {
+  display: block;
+}
+
+.ata-items-cards {
+  display: none;
+}
+
 .table th {
   position: sticky;
   top: 0;
@@ -2925,6 +2933,17 @@ textarea:focus-visible {
   .grid-3,
   .command-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .ata-items-table {
+    display: none;
+  }
+
+  .ata-items-cards {
+    display: grid;
+    gap: 1rem;
   }
 }
 

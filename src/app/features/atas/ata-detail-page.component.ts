@@ -331,7 +331,7 @@ import { AtasService } from './atas.service';
           }
 
           @if (ataItems().length) {
-            <div class="table-wrap hidden lg:block">
+            <div class="table-wrap ata-items-table">
               <table class="table">
                 <thead>
                   <tr>
@@ -383,7 +383,7 @@ import { AtasService } from './atas.service';
               </table>
             </div>
 
-            <div class="grid gap-4 lg:hidden">
+            <div class="ata-items-cards">
               @for (item of ataItems(); track item.id) {
                 <article class="estimate-item-card">
                   <div>
