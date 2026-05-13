@@ -4,6 +4,7 @@ export interface AtaBalanceAtaSummary {
   number?: string | null;
   type?: string | null;
   vendorName?: string | null;
+  externalLastSyncAt?: string | null;
 }
 
 export interface AtaBalanceCoverageGroup {
@@ -81,19 +82,41 @@ export interface AtaBalanceMovementListResponse {
 
 export type ExternalBalanceStatus =
   | 'OK'
+  | 'DIVERGENTE'
+  | 'CONSUMO_EXTERNO_DETECTADO'
+  | 'NAO_ENCONTRADO'
+  | 'SEM_EMPENHO_REGISTRADO'
+  | 'ERRO_CONSULTA_EXTERNA'
   | 'DIVERGENT'
   | 'EXTERNAL_CONSUMPTION_DETECTED'
   | 'NOT_FOUND'
-  | 'SEM_EMPENHO_REGISTRADO'
   | string;
 
+export interface AtaExternalBalanceValues {
+  registeredQuantity?: string | number | null;
+  committedQuantity?: string | number | null;
+  availableQuantity?: string | number | null;
+}
+
 export interface AtaExternalBalanceComparison {
+  id?: string | null;
   itemId?: string | null;
   ataItemId?: string | null;
+  item?: {
+    id?: string | null;
+    lastSyncAt?: string | null;
+  } | null;
+  itemComparison?: {
+    lastSyncAt?: string | null;
+  } | null;
+  ata?: {
+    id?: string | null;
+    externalLastSyncAt?: string | null;
+  } | null;
   localBalance?: string | number | null;
   localAvailableQuantity?: string | number | null;
   availableQuantity?: string | number | null;
-  externalBalance?: string | number | null;
+  externalBalance?: AtaExternalBalanceValues | string | number | null;
   externalAvailableQuantity?: string | number | null;
   comprasGovAvailableQuantity?: string | number | null;
   fallbackBalance?: string | number | null;
@@ -103,6 +126,9 @@ export interface AtaExternalBalanceComparison {
   difference?: string | number | null;
   balanceDifference?: string | number | null;
   status?: ExternalBalanceStatus | null;
+  lastSyncAt?: string | null;
+  comparedAt?: string | null;
+  externalLastSyncAt?: string | null;
   lastSyncedAt?: string | null;
   syncedAt?: string | null;
   updatedAt?: string | null;
@@ -111,7 +137,13 @@ export interface AtaExternalBalanceComparison {
 export interface AtaExternalBalanceListResponse {
   items?: AtaExternalBalanceComparison[];
   comparisons?: AtaExternalBalanceComparison[];
+  comparedAt?: string | null;
+  externalLastSyncAt?: string | null;
   lastSyncedAt?: string | null;
+  lastSyncAt?: string | null;
+  warnings?: Array<string | { message?: string | null; detail?: string | null }> | null;
+  errors?: Array<string | { message?: string | null; detail?: string | null }> | null;
+  message?: string | null;
 }
 
 export interface AtaBalanceItem {
@@ -128,6 +160,7 @@ export interface AtaBalanceItem {
   ataCode?: number | null;
   ataNumber?: string | null;
   ata?: AtaBalanceAtaSummary | null;
+  lastSyncAt?: string | null;
   coverageGroupId?: string | null;
   coverageGroup?: AtaBalanceCoverageGroup | null;
   balance?: AtaBalanceValues | null;

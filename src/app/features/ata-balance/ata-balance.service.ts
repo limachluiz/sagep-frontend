@@ -33,7 +33,7 @@ export class AtaBalanceService {
   }
 
   syncAtaExternalBalance(ataId: string) {
-    return this.http.post<AtaExternalBalanceListResponse | AtaExternalBalanceComparison[]>(
+    return this.http.post<AtaExternalBalanceListResponse>(
       `${this.apiUrl}/atas/${encodeURIComponent(ataId)}/sync-external-balance`,
       {},
     );
