@@ -39,6 +39,13 @@ export class AtaBalanceService {
     );
   }
 
+  syncItemExternalBalance(itemId: string) {
+    return this.http.post<AtaExternalBalanceComparison>(
+      `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/sync-external-balance`,
+      {},
+    );
+  }
+
   getItemBalanceComparison(itemId: string) {
     return this.http.get<AtaExternalBalanceComparison>(
       `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/balance-comparison`,

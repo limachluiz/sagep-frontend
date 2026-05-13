@@ -87,6 +87,7 @@ export type ExternalBalanceStatus =
   | 'NAO_ENCONTRADO'
   | 'SEM_EMPENHO_REGISTRADO'
   | 'ERRO_CONSULTA_EXTERNA'
+  | 'RATE_LIMIT_COMPRAS_GOV'
   | 'DIVERGENT'
   | 'EXTERNAL_CONSUMPTION_DETECTED'
   | 'NOT_FOUND'
@@ -96,6 +97,34 @@ export interface AtaExternalBalanceValues {
   registeredQuantity?: string | number | null;
   committedQuantity?: string | number | null;
   availableQuantity?: string | number | null;
+  commitments?: AtaExternalBalanceCommitment[] | null;
+  nonParticipantCommitments?: AtaExternalBalanceCommitment[] | null;
+  adhesions?: AtaExternalBalanceCommitment[] | null;
+}
+
+export interface AtaExternalBalanceCommitment {
+  commitmentNumber?: string | number | null;
+  number?: string | number | null;
+  empenhoNumber?: string | number | null;
+  numeroEmpenho?: string | number | null;
+  affectsManagedBalance?: boolean | null;
+  unit?: string | null;
+  unitName?: string | null;
+  unidade?: string | null;
+  supplier?: string | null;
+  supplierName?: string | null;
+  vendor?: string | null;
+  vendorName?: string | null;
+  commitmentDate?: string | null;
+  date?: string | null;
+  empenhoDate?: string | null;
+  includedQuantity?: string | number | null;
+  quantityIncluded?: string | number | null;
+  committedQuantity?: string | number | null;
+  quantityCommitted?: string | number | null;
+  value?: string | number | null;
+  amount?: string | number | null;
+  totalValue?: string | number | null;
 }
 
 export interface AtaExternalBalanceComparison {
@@ -126,6 +155,8 @@ export interface AtaExternalBalanceComparison {
   difference?: string | number | null;
   balanceDifference?: string | number | null;
   status?: ExternalBalanceStatus | null;
+  retryAfterSeconds?: number | null;
+  warnings?: Array<string | { message?: string | null; detail?: string | null }> | null;
   lastSyncAt?: string | null;
   comparedAt?: string | null;
   externalLastSyncAt?: string | null;
@@ -141,6 +172,8 @@ export interface AtaExternalBalanceListResponse {
   externalLastSyncAt?: string | null;
   lastSyncedAt?: string | null;
   lastSyncAt?: string | null;
+  status?: ExternalBalanceStatus | null;
+  retryAfterSeconds?: number | null;
   warnings?: Array<string | { message?: string | null; detail?: string | null }> | null;
   errors?: Array<string | { message?: string | null; detail?: string | null }> | null;
   message?: string | null;

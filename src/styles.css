@@ -332,6 +332,12 @@ textarea:focus-visible {
   color: var(--success);
 }
 
+.form-alert.warning {
+  background: var(--warning-soft);
+  border-color: rgba(183, 119, 20, 0.24);
+  color: var(--warning);
+}
+
 .field {
   margin-bottom: 15px;
 }
@@ -2387,10 +2393,25 @@ textarea:focus-visible {
   color: var(--eb-night);
 }
 
+.ata-movement-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(2px);
+}
+
 .ata-movement-panel {
   display: grid;
   gap: 16px;
-  margin: 16px 18px 0;
+  width: min(1120px, 100%);
+  max-height: min(86vh, 920px);
+  overflow: auto;
+  margin: 0;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -2407,6 +2428,19 @@ textarea:focus-visible {
   border-radius: 14px;
   background: var(--surface-2);
   padding: 14px;
+}
+
+.ata-commitments {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .ata-movement-panel__head {
@@ -2448,6 +2482,27 @@ textarea:focus-visible {
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+@media (max-width: 767.98px) {
+  .ata-movement-modal {
+    align-items: stretch;
+    padding: 10px;
+  }
+
+  .ata-movement-panel {
+    max-height: calc(100vh - 20px);
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .ata-movement-panel__head {
+    flex-direction: column;
+  }
+
+  .ata-movement-panel__head .btn {
+    width: 100%;
+  }
 }
 
 .estimate-action-button {
