@@ -111,9 +111,9 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
             type="button"
             (click)="syncSelectedAta()"
             class="btn btn-gold"
-            [disabled]="!selectedAtaId() || syncingAtaId() === selectedAtaId() || isAtaSyncCoolingDown(selectedAtaId())"
+            [disabled]="!selectedAtaId() || isSelectedAtaSyncing() || isAtaSyncCoolingDown(selectedAtaId())"
           >
-            {{ syncingAtaId() === selectedAtaId() ? 'Sincronizando...' : 'Sincronizar saldo da ATA' }}
+            {{ isSelectedAtaSyncing() ? 'Sincronizando...' : 'Sincronizar saldo da ATA' }}
           </button>
         </form>
         @if (atasLoading()) {
@@ -689,6 +689,11 @@ export class AtaBalancePageComponent implements OnInit {
     }
 
     this.syncAtaExternalBalance(ataId);
+  }
+
+  isSelectedAtaSyncing(): boolean {
+    const ataId = this.selectedAtaId();
+    return Boolean(ataId) && this.syncingAtaId() === ataId;
   }
 
   syncExternalBalance(item: AtaBalanceItem): void {
