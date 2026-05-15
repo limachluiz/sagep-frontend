@@ -241,6 +241,17 @@ export interface AtaExternalBalanceListResponse {
   message?: string | null;
 }
 
+export interface AtaRegisterExternalConsumptionPayload {
+  quantity: number;
+  reason: string;
+  source: 'COMPRAS_GOV';
+  externalStatus?: string | null;
+  externalReference?: string | null;
+  commitmentNumber?: string | number | null;
+  unit?: string | null;
+  notes?: string | null;
+}
+
 export interface AtaBalanceItem {
   id: string;
   ataItemCode?: number | null;
@@ -259,6 +270,10 @@ export interface AtaBalanceItem {
   coverageGroupId?: string | null;
   coverageGroup?: AtaBalanceCoverageGroup | null;
   balance?: AtaBalanceValues | null;
+  latestExternalBalanceSnapshot?: AtaExternalBalanceComparison | null;
+  externalBalanceSnapshot?: AtaExternalBalanceComparison | null;
+  balanceComparison?: AtaExternalBalanceComparison | null;
+  externalComparison?: AtaExternalBalanceComparison | null;
 }
 
 export interface AtaBalanceListResponse {

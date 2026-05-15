@@ -2446,6 +2446,54 @@ textarea:focus-visible {
   padding: 14px;
 }
 
+.ata-register-action {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.ata-register-confirmation {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+}
+
+.ata-register-form {
+  display: grid;
+  gap: 12px;
+}
+
+.ata-register-field {
+  display: grid;
+  gap: 6px;
+}
+
+.ata-register-field span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ata-register-field textarea {
+  width: 100%;
+  min-height: 86px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  resize: vertical;
+}
+
+.ata-register-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .ata-commitment-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);

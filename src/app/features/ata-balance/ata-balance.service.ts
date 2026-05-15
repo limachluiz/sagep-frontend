@@ -9,6 +9,7 @@ import {
   AtaBalanceMovementListResponse,
   AtaExternalBalanceComparison,
   AtaExternalBalanceListResponse,
+  AtaRegisterExternalConsumptionPayload,
 } from './ata-balance.model';
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +50,13 @@ export class AtaBalanceService {
   getItemBalanceComparison(itemId: string) {
     return this.http.get<AtaExternalBalanceComparison>(
       `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/balance-comparison`,
+    );
+  }
+
+  registerExternalConsumption(itemId: string, payload: AtaRegisterExternalConsumptionPayload) {
+    return this.http.post<AtaBalanceItem | { item?: AtaBalanceItem | null; message?: string | null }>(
+      `${this.apiUrl}/ata-items/${encodeURIComponent(itemId)}/register-external-consumption`,
+      payload,
     );
   }
 }

@@ -18,6 +18,7 @@ import {
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
 import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
+import { AuthService } from '../../core/services/auth.service';
 import { Ata } from '../atas/ata.model';
 import { AtasService } from '../atas/atas.service';
 import {
@@ -30,6 +31,7 @@ import {
   AtaExternalBalanceListResponse,
   AtaExternalBalancePayload,
   AtaExternalManagedBalance,
+  AtaRegisterExternalConsumptionPayload,
 } from './ata-balance.model';
 import { AtaBalanceService } from './ata-balance.service';
 
@@ -373,6 +375,89 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                       {{ itemRateLimitMessage(selectedItem()!) }}
                     </div>
                   }
+                  @if (canRegisterDifferenceInSagep(selectedItem()!)) {
+                    <div class="ata-register-action">
+                      <button
+                        type="button"
+                        class="btn btn-gold"
+                        (click)="openRegisterDifferenceConfirmation(selectedItem()!)"
+                        [disabled]="registeringDifference()"
+                      >
+                        Registrar diferença no SAGEP
+                      </button>
+                    </div>
+                  }
+                  @if (confirmingRegisterItemId() === selectedItem()!.id) {
+                    <section class="ata-register-confirmation">
+                      <div class="ata-movement-panel__head">
+                        <div>
+                          <h3>Confirmar lançamento no SAGEP</h3>
+                          <p>Essa ação altera o controle interno do SAGEP e será auditada.</p>
+                        </div>
+                      </div>
+                      <div class="detail-grid">
+                        <div class="detail-item">
+                          <label>Item</label>
+                          <b>{{ itemCode(selectedItem()!) }} - {{ selectedItem()?.description || 'Descrição não informada' }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>ATA</label>
+                          <b>{{ ataLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Quantidade que será consumida</label>
+                          <b>{{ registerDifferenceQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Saldo atual no SAGEP</label>
+                          <b>{{ quantityLabel(availableQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Saldo após lançamento</label>
+                          <b>{{ registerDifferenceBalanceAfterLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Fonte</label>
+                          <b>Compras.gov.br</b>
+                        </div>
+                        <div class="detail-item detail-item--wide">
+                          <label>Situação externa</label>
+                          <b>{{ externalUsageStatusLabel(externalUsageStatus(selectedItem()!)) }}</b>
+                        </div>
+                      </div>
+                      <form [formGroup]="registerDifferenceForm" class="ata-register-form">
+                        <label class="ata-register-field">
+                          <span>Justificativa</span>
+                          <textarea formControlName="reason" rows="3" placeholder="Obrigatória"></textarea>
+                        </label>
+                        <label class="ata-register-field">
+                          <span>Observação</span>
+                          <textarea formControlName="notes" rows="3" placeholder="Opcional"></textarea>
+                        </label>
+                      </form>
+                      @if (registerDifferenceError()) {
+                        <div class="form-alert">{{ registerDifferenceError() }}</div>
+                      }
+                      <div class="ata-register-actions">
+                        <button
+                          type="button"
+                          class="btn btn-gold"
+                          (click)="confirmRegisterDifference(selectedItem()!)"
+                          [disabled]="registeringDifference()"
+                        >
+                          {{ registeringDifference() ? 'Registrando...' : 'Confirmar lançamento' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost"
+                          (click)="closeRegisterDifferenceConfirmation()"
+                          [disabled]="registeringDifference()"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </section>
+                  }
                   @if (hasManagedBalanceDetails(selectedItem()!)) {
                     <section class="ata-commitments ata-balance-block">
                       <div class="ata-movement-panel__head">
@@ -577,6 +662,7 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
 export class AtaBalancePageComponent implements OnInit {
   private readonly ataBalanceService = inject(AtaBalanceService);
   private readonly atasService = inject(AtasService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
@@ -602,6 +688,9 @@ export class AtaBalancePageComponent implements OnInit {
   readonly externalLoading = signal(false);
   readonly syncingAtaId = signal('');
   readonly syncingItemId = signal('');
+  readonly confirmingRegisterItemId = signal('');
+  readonly registeringDifference = signal(false);
+  readonly registerDifferenceError = signal('');
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly pageSizeOptions = [10, 20, 50];
@@ -623,6 +712,10 @@ export class AtaBalancePageComponent implements OnInit {
   readonly filtersForm = this.fb.nonNullable.group({
     search: [''],
     status: [''],
+  });
+  readonly registerDifferenceForm = this.fb.nonNullable.group({
+    reason: [''],
+    notes: [''],
   });
 
   readonly sortedAtas = computed(() =>
@@ -748,8 +841,13 @@ export class AtaBalancePageComponent implements OnInit {
       next: (response) => {
         const items = this.listItems(response);
         this.items.set(items);
+        this.applyEmbeddedExternalComparisons(items);
         this.currentPage.set(1);
         this.loading.set(false);
+
+        if (this.selectedAtaId()) {
+          this.loadAtaExternalBalanceSnapshot(this.selectedAtaId());
+        }
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
@@ -786,6 +884,10 @@ export class AtaBalancePageComponent implements OnInit {
     this.closeMovements();
     this.syncError.set('');
     this.successMessage.set('');
+
+    if (ataId) {
+      this.loadAtaExternalBalanceSnapshot(ataId);
+    }
   }
 
   syncSelectedAta(): void {
@@ -821,8 +923,62 @@ export class AtaBalancePageComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  openRegisterDifferenceConfirmation(item: AtaBalanceItem): void {
+    this.confirmingRegisterItemId.set(item.id);
+    this.registerDifferenceError.set('');
+    this.registerDifferenceForm.reset({ reason: '', notes: '' });
+  }
+
+  closeRegisterDifferenceConfirmation(): void {
+    this.confirmingRegisterItemId.set('');
+    this.registerDifferenceError.set('');
+    this.registeringDifference.set(false);
+    this.registerDifferenceForm.reset({ reason: '', notes: '' });
+  }
+
+  confirmRegisterDifference(item: AtaBalanceItem): void {
+    const formValue = this.registerDifferenceForm.getRawValue();
+    const reason = formValue.reason.trim();
+
+    if (!reason) {
+      this.registerDifferenceError.set('Informe a justificativa para registrar a diferença no SAGEP.');
+      return;
+    }
+
+    const payload = this.registerDifferencePayload(item, reason, formValue.notes.trim());
+
+    this.registeringDifference.set(true);
+    this.registerDifferenceError.set('');
+    this.syncError.set('');
+    this.successMessage.set('');
+
+    this.ataBalanceService
+      .registerExternalConsumption(item.id, payload)
+      .pipe(finalize(() => this.registeringDifference.set(false)))
+      .subscribe({
+        next: () => {
+          this.successMessage.set('Diferença registrada no controle interno do SAGEP com sucesso.');
+          this.closeRegisterDifferenceConfirmation();
+          this.reloadBalanceList(item.id);
+          this.reloadItemSnapshot(item.id);
+          this.reloadItemMovements(item.id);
+        },
+        error: (error) => {
+          if (isForbiddenError(error)) {
+            this.registerDifferenceError.set('Seu perfil atual não pode registrar diferença no saldo do SAGEP.');
+            return;
+          }
+
+          this.registerDifferenceError.set(
+            getErrorMessage(error, 'Não foi possível registrar a diferença no controle interno do SAGEP.'),
+          );
+        },
+      });
+  }
+
   openMovements(item: AtaBalanceItem): void {
     this.selectedItem.set(item);
+    this.closeRegisterDifferenceConfirmation();
     this.movements.set([]);
     this.movementsError.set('');
     this.movementsLoading.set(true);
@@ -841,6 +997,7 @@ export class AtaBalancePageComponent implements OnInit {
 
   closeMovements(): void {
     this.selectedItem.set(null);
+    this.closeRegisterDifferenceConfirmation();
     this.movements.set([]);
     this.movementsError.set('');
     this.movementsLoading.set(false);
@@ -987,6 +1144,7 @@ export class AtaBalancePageComponent implements OnInit {
       RATE_LIMIT_COMPRAS_GOV: 'Limite da API',
       NOT_FOUND: 'Não sincronizado',
       NAO_ENCONTRADO: 'Não sincronizado',
+      ADESAO_DETECTADA: 'Adesão detectada',
     }[normalized] ?? formatLabel(status);
   }
 
@@ -1057,6 +1215,31 @@ export class AtaBalancePageComponent implements OnInit {
 
     const legacyValue = comparison?.difference ?? comparison?.balanceDifference;
     return this.numberValue(legacyValue) > 0;
+  }
+
+  canRegisterDifferenceInSagep(item: AtaBalanceItem): boolean {
+    if (!this.canMutateAtaBalance()) {
+      return false;
+    }
+
+    const quantity = this.registerDifferenceQuantity(item);
+    const syncStatus = this.syncStatus(item).toUpperCase();
+
+    return Boolean(
+      this.comparison(item) &&
+      quantity > 0 &&
+      this.availableQuantity(item) >= quantity &&
+      syncStatus !== 'RATE_LIMIT_COMPRAS_GOV' &&
+      syncStatus !== 'ERRO_CONSULTA_EXTERNA',
+    );
+  }
+
+  registerDifferenceQuantityLabel(item: AtaBalanceItem): string {
+    return this.quantityLabel(this.registerDifferenceQuantity(item), item.unit);
+  }
+
+  registerDifferenceBalanceAfterLabel(item: AtaBalanceItem): string {
+    return this.quantityLabel(this.availableQuantity(item) - this.registerDifferenceQuantity(item), item.unit);
   }
 
   isAtaSyncCoolingDown(ataId: string): boolean {
@@ -1312,6 +1495,12 @@ export class AtaBalancePageComponent implements OnInit {
   getExternalDifferenceQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
     const totalCommitted = this.getTotalExternalCommittedQuantity(comparison);
     return totalCommitted == null ? null : totalCommitted;
+  }
+
+  private registerDifferenceQuantity(item: AtaBalanceItem): number {
+    const comparison = this.comparison(item);
+    const value = this.getExternalDifferenceQuantity(comparison);
+    return value == null ? this.numberValue(comparison?.difference ?? comparison?.balanceDifference) : value;
   }
 
   private externalQuantityFieldLabel(
@@ -1574,8 +1763,106 @@ export class AtaBalancePageComponent implements OnInit {
     return this.getManagedRegisteredQuantity(comparison) != null;
   }
 
+  private canMutateAtaBalance(): boolean {
+    return this.authService.canPerformMutation(['ata_balance.manage', 'ata_items.manage', 'atas.manage']);
+  }
+
+  private registerDifferencePayload(
+    item: AtaBalanceItem,
+    reason: string,
+    notes: string,
+  ): AtaRegisterExternalConsumptionPayload {
+    const comparison = this.comparison(item);
+    const commitmentNumber = this.firstExternalCommitmentNumber(item);
+
+    return {
+      quantity: this.registerDifferenceQuantity(item),
+      reason,
+      source: 'COMPRAS_GOV',
+      externalStatus: this.externalUsageStatus(item) || this.syncStatus(item),
+      externalReference: this.externalReference(item),
+      commitmentNumber,
+      unit: item.unit,
+      notes: notes || undefined,
+    };
+  }
+
+  private firstExternalCommitmentNumber(item: AtaBalanceItem): string | number | null {
+    const commitment = [
+      ...this.nonParticipantExternalCommitments(item),
+      ...this.managedExternalCommitments(item),
+    ].find((entry) => Boolean(entry.numeroEmpenho ?? entry.commitmentNumber ?? entry.number ?? entry.empenhoNumber));
+
+    return commitment?.numeroEmpenho ?? commitment?.commitmentNumber ?? commitment?.number ?? commitment?.empenhoNumber ?? null;
+  }
+
+  private externalReference(item: AtaBalanceItem): string {
+    return [
+      item.referenceCode,
+      item.ata?.number ?? item.ataNumber,
+      this.itemCode(item),
+    ].filter(Boolean).join(' | ');
+  }
+
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];
+  }
+
+  private loadAtaExternalBalanceSnapshot(ataId: string): void {
+    const ataItems = this.items().filter((item) => this.ataId(item) === ataId);
+
+    if (!ataId || !ataItems.length) {
+      return;
+    }
+
+    this.externalLoading.set(true);
+    this.ataBalanceService
+      .getAtaExternalBalance(ataId)
+      .pipe(finalize(() => this.externalLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          if (this.handleAtaRateLimitResponse(ataId, response)) {
+            return;
+          }
+
+          this.applyAtaExternalComparisons(ataId, this.externalComparisonItems(response), response);
+        },
+        error: (error) => {
+          if (this.handleAtaRateLimitResponse(ataId, error?.error)) {
+            return;
+          }
+
+          const message = getErrorMessage(error, 'Nao foi possivel carregar o snapshot externo desta ATA.');
+          this.externalComparisonErrors.update((errors) => {
+            const nextErrors = { ...errors };
+            ataItems.forEach((item) => {
+              nextErrors[item.id] = message;
+            });
+            return nextErrors;
+          });
+        },
+      });
+  }
+
+  private applyEmbeddedExternalComparisons(items: AtaBalanceItem[]): void {
+    const nextComparisons = { ...this.externalComparisons() };
+
+    items.forEach((item) => {
+      const embeddedComparison = this.embeddedExternalComparison(item);
+
+      if (!embeddedComparison) {
+        return;
+      }
+
+      const current = nextComparisons[item.id] ?? null;
+      if (this.shouldKeepExistingComparison(current, embeddedComparison)) {
+        return;
+      }
+
+      nextComparisons[item.id] = embeddedComparison;
+    });
+
+    this.externalComparisons.set(nextComparisons);
   }
 
   private syncAtaExternalBalance(ataId: string): void {
@@ -1694,6 +1981,52 @@ export class AtaBalancePageComponent implements OnInit {
       });
   }
 
+  private reloadBalanceList(selectedItemId?: string): void {
+    this.ataBalanceService.list().subscribe({
+      next: (response) => {
+        const items = this.listItems(response);
+        this.items.set(items);
+
+        if (selectedItemId) {
+          const refreshed = items.find((entry) => entry.id === selectedItemId);
+          if (refreshed && this.selectedItem()?.id === selectedItemId) {
+            this.selectedItem.set(refreshed);
+          }
+        }
+      },
+      error: () => {
+        this.syncError.set('O consumo foi registrado, mas não foi possível atualizar a lista local imediatamente.');
+      },
+    });
+  }
+
+  private reloadItemSnapshot(itemId: string): void {
+    const refreshed = this.items().find((entry) => entry.id === itemId) ?? this.selectedItem();
+
+    if (!refreshed || refreshed.id !== itemId) {
+      return;
+    }
+
+    this.loadItemBalanceComparison(refreshed);
+  }
+
+  private reloadItemMovements(itemId: string): void {
+    if (this.selectedItem()?.id !== itemId) {
+      return;
+    }
+
+    this.movementsLoading.set(true);
+    this.ataBalanceService
+      .getItemMovements(itemId)
+      .pipe(finalize(() => this.movementsLoading.set(false)))
+      .subscribe({
+        next: (response) => this.movements.set(this.listItems(response)),
+        error: (error) => {
+          this.movementsError.set(getErrorMessage(error, 'Não foi possível atualizar as movimentações deste item.'));
+        },
+      });
+  }
+
   private handleAtaRateLimitResponse(
     ataId: string,
     response: AtaExternalBalanceListResponse | AtaExternalBalanceComparison[] | null | undefined,
@@ -1778,10 +2111,15 @@ export class AtaBalancePageComponent implements OnInit {
 
   private applyItemExternalComparison(itemId: string, comparison: AtaExternalBalanceComparison): void {
     this.clearRateLimit(this.itemRateLimitKey(itemId));
-    this.externalComparisons.update((comparisons) => ({
-      ...comparisons,
-      [itemId]: comparison,
-    }));
+    this.externalComparisons.update((comparisons) => {
+      const current = comparisons[itemId] ?? null;
+      const next = this.shouldKeepExistingComparison(current, comparison) ? current : comparison;
+
+      return {
+        ...comparisons,
+        [itemId]: next,
+      };
+    });
     this.externalComparisonErrors.update((errors) => {
       const nextErrors = { ...errors };
       delete nextErrors[itemId];
@@ -1821,7 +2159,9 @@ export class AtaBalancePageComponent implements OnInit {
 
       if (comparison) {
         this.clearRateLimit(this.itemRateLimitKey(item.id));
-        nextComparisons[item.id] = this.withResponseLastSyncFallback(comparison, response);
+        const normalized = this.withResponseLastSyncFallback(comparison, response);
+        const current = nextComparisons[item.id] ?? null;
+        nextComparisons[item.id] = this.shouldKeepExistingComparison(current, normalized) ? current! : normalized;
         delete nextErrors[item.id];
       }
     });
@@ -1861,6 +2201,67 @@ export class AtaBalancePageComponent implements OnInit {
       comparisons[index] ??
       null
     );
+  }
+
+  private embeddedExternalComparison(item: AtaBalanceItem): AtaExternalBalanceComparison | null {
+    return item.latestExternalBalanceSnapshot ??
+      item.externalBalanceSnapshot ??
+      item.balanceComparison ??
+      item.externalComparison ??
+      null;
+  }
+
+  private shouldKeepExistingComparison(
+    current: AtaExternalBalanceComparison | null,
+    incoming: AtaExternalBalanceComparison | null,
+  ): boolean {
+    if (!current || !incoming) {
+      return false;
+    }
+
+    const incomingSyncStatus = this.comparisonSyncStatusValue(incoming);
+    const currentSyncStatus = this.comparisonSyncStatusValue(current);
+
+    return this.isNotSynchronizedStatus(incomingSyncStatus) && !this.isNotSynchronizedStatus(currentSyncStatus);
+  }
+
+  private comparisonSyncStatusValue(comparison: AtaExternalBalanceComparison | null): string {
+    if (!comparison) {
+      return '';
+    }
+
+    const payloadSyncStatus = comparison.externalBalance && typeof comparison.externalBalance === 'object'
+      ? (comparison.externalBalance as AtaExternalBalancePayload).syncStatus || ''
+      : '';
+    const explicitSyncStatus = String(comparison.syncStatus || payloadSyncStatus || '').toUpperCase();
+
+    if (explicitSyncStatus) {
+      return explicitSyncStatus;
+    }
+
+    const rawStatus = String(comparison.status || '').toUpperCase();
+
+    if (
+      rawStatus === 'ADESAO_DETECTADA' ||
+      rawStatus === 'CONSUMO_GERENCIADORA_DETECTADO' ||
+      rawStatus === 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS' ||
+      rawStatus === 'CONSUMO_EXTERNO_DETECTADO' ||
+      rawStatus === 'EXTERNAL_CONSUMPTION_DETECTED' ||
+      rawStatus === 'SEM_EMPENHO_REGISTRADO' ||
+      rawStatus === 'OK'
+    ) {
+      return 'SINCRONIZADO';
+    }
+
+    if (rawStatus === 'NOT_FOUND' || rawStatus === 'NAO_ENCONTRADO' || rawStatus === 'NOT_SYNCED' || rawStatus === 'NAO_SINCRONIZADO') {
+      return 'NAO_SINCRONIZADO';
+    }
+
+    return rawStatus;
+  }
+
+  private isNotSynchronizedStatus(status: string): boolean {
+    return status === 'NAO_SINCRONIZADO' || status === 'NOT_SYNCED' || status === 'NOT_FOUND' || status === 'NAO_ENCONTRADO';
   }
 
   private responseWarnings(response: AtaExternalBalanceListResponse): string[] {
