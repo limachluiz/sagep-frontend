@@ -2227,6 +2227,10 @@ textarea:focus-visible {
   background: var(--warning-soft);
 }
 
+.detail-item--wide {
+  grid-column: 1 / -1;
+}
+
 .detail-item p {
   color: var(--muted);
   font-size: 12px;
@@ -2433,6 +2437,52 @@ textarea:focus-visible {
 .ata-commitments {
   display: grid;
   gap: 12px;
+}
+
+.ata-balance-block {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+}
+
+.ata-commitment-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ata-commitment-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.ata-commitment-table th,
+.ata-commitment-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.ata-commitment-table th {
+  color: var(--eb-night);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+}
+
+.ata-commitment-table td {
+  color: var(--muted);
+}
+
+.ata-commitment-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .detail-note {

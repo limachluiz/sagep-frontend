@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -24,9 +24,12 @@ import {
   AtaBalanceItem,
   AtaBalanceListResponse,
   AtaBalanceMovement,
+  AtaExternalAdhesionBalance,
   AtaExternalBalanceCommitment,
   AtaExternalBalanceComparison,
   AtaExternalBalanceListResponse,
+  AtaExternalBalancePayload,
+  AtaExternalManagedBalance,
 } from './ata-balance.model';
 import { AtaBalanceService } from './ata-balance.service';
 
@@ -199,9 +202,14 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                 {{ statusLabel(balanceStatus(item)) }}
               </span>
             </ng-template>
-            <ng-template appResponsiveTableCell="externalStatus" let-item>
-              <span class="badge" [class]="externalStatusClass(externalStatus(item))">
-                {{ externalStatusLabel(externalStatus(item)) }}
+            <ng-template appResponsiveTableCell="syncStatus" let-item>
+              <span class="badge" [class]="syncStatusClass(syncStatus(item))">
+                {{ syncStatusLabel(syncStatus(item)) }}
+              </span>
+            </ng-template>
+            <ng-template appResponsiveTableCell="externalSituation" let-item>
+              <span class="badge" [class]="externalUsageStatusClass(externalUsageStatus(item))">
+                {{ externalUsageStatusLabel(externalUsageStatus(item)) }}
               </span>
             </ng-template>
             <ng-template appResponsiveTableCell="lastSyncedAt" let-item>
@@ -249,39 +257,46 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                 </button>
               </div>
 
-              <div class="detail-grid">
-                <div class="detail-item">
-                  <label>Quantidade inicial</label>
-                  <b>{{ quantityLabel(initialQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+              <section class="ata-balance-block">
+                <div class="ata-movement-panel__head">
+                  <div>
+                    <h3>Controle interno do SAGEP</h3>
+                    <p>Dados salvos no banco do SAGEP: reservas, consumos e saldo controlados pelo sistema.</p>
+                  </div>
                 </div>
-                <div class="detail-item">
-                  <label>Reservado</label>
-                  <b>{{ quantityLabel(reservedQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                <div class="detail-grid">
+                  <div class="detail-item">
+                    <label>Quantidade cadastrada no SAGEP</label>
+                    <b>{{ quantityLabel(initialQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                  </div>
+                  <div class="detail-item">
+                    <label>Reservado no SAGEP</label>
+                    <b>{{ quantityLabel(reservedQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                  </div>
+                  <div class="detail-item">
+                    <label>Consumido no SAGEP</label>
+                    <b>{{ quantityLabel(consumedQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                  </div>
+                  <div class="detail-item highlight">
+                    <label>Disponível no SAGEP</label>
+                    <b>{{ quantityLabel(availableQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
+                  </div>
+                  <div class="detail-item">
+                    <label>Valor disponível no SAGEP</label>
+                    <b>{{ formatCurrency(availableAmount(selectedItem()!)) }}</b>
+                  </div>
+                  <div class="detail-item">
+                    <label>Status interno</label>
+                    <b>{{ statusLabel(balanceStatus(selectedItem()!)) }}</b>
+                  </div>
                 </div>
-                <div class="detail-item">
-                  <label>Consumido</label>
-                  <b>{{ quantityLabel(consumedQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
-                </div>
-                <div class="detail-item highlight">
-                  <label>Disponível</label>
-                  <b>{{ quantityLabel(availableQuantity(selectedItem()!), selectedItem()?.unit) }}</b>
-                </div>
-                <div class="detail-item">
-                  <label>Valor disponível</label>
-                  <b>{{ formatCurrency(availableAmount(selectedItem()!)) }}</b>
-                </div>
-                <div class="detail-item">
-                  <label>Status</label>
-                  <b>{{ statusLabel(balanceStatus(selectedItem()!)) }}</b>
-                </div>
-              </div>
+              </section>
 
               <div class="ata-external-comparison">
                 <div class="ata-movement-panel__head">
                   <div>
-                    <p class="document-action-label">Comparacao externa</p>
-                    <h3>Saldo Compras.gov.br</h3>
-                    <p>Dados consultados pelo backend do SAGEP.</p>
+                    <h3>Consulta oficial Compras.gov.br</h3>
+                    <p>Dados consultados na fonte oficial. Servem para conferência e não alteram o banco do SAGEP automaticamente.</p>
                   </div>
                   @if (ataId(selectedItem()!)) {
                     <button
@@ -298,25 +313,27 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                   <app-loading-state variant="list" [count]="1" />
                 } @else if (comparisonError(selectedItem()!)) {
                   <div class="form-alert">{{ comparisonError(selectedItem()!) }}</div>
+                } @else if (!comparison(selectedItem()!)) {
+                  <div class="form-alert warning">Ainda não sincronizado com Compras.gov.br.</div>
                 } @else {
                   <div class="detail-grid">
                     <div class="detail-item">
-                      <label>Contratada externa</label>
+                      <label>Quantidade registrada na fonte oficial</label>
                       <b>{{ externalRegisteredQuantityLabel(selectedItem()!) }}</b>
                     </div>
                     <div class="detail-item">
-                      <label>Consumida externa</label>
+                      <label>Quantidade usada na fonte oficial</label>
                       <b>{{ externalCommittedQuantityLabel(selectedItem()!) }}</b>
                     </div>
                     <div class="detail-item">
-                      <label>Saldo externo</label>
+                      <label>Saldo informado pela fonte oficial</label>
                       <b>{{ externalQuantityLabel(selectedItem()!) }}</b>
                       @if (isNoCommitmentStatus(selectedItem()!)) {
                         <small class="detail-note">Sem empenho registrado</small>
                       }
                     </div>
                     <div class="detail-item">
-                      <label>Diferenca</label>
+                      <label>Diferença entre SAGEP e fonte oficial</label>
                       <b>{{ externalDifferenceLabel(selectedItem()!) }}</b>
                     </div>
                     <div class="detail-item">
@@ -324,8 +341,16 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                       <b>{{ externalLastSyncedLabel(selectedItem()!) }}</b>
                     </div>
                     <div class="detail-item">
-                      <label>Status externo</label>
-                      <b>{{ externalStatusLabel(externalStatus(selectedItem()!)) }}</b>
+                      <label>Status da consulta</label>
+                      <b>{{ syncStatusLabel(syncStatus(selectedItem()!)) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Situação na fonte oficial</label>
+                      <b>{{ externalUsageStatusLabel(externalUsageStatus(selectedItem()!)) }}</b>
+                    </div>
+                    <div class="detail-item">
+                      <label>Valor estimado</label>
+                      <b>{{ externalEstimatedAmountLabel(selectedItem()!) }}</b>
                     </div>
                   </div>
                   @if (isNoCommitmentStatus(selectedItem()!)) {
@@ -333,9 +358,14 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                       Saldo baseado na quantidade registrada importada. Nenhum empenho externo encontrado.
                     </div>
                   }
-                  @if (hasExternalConsumptionDetected(selectedItem()!)) {
-                    <div class="form-alert">
-                      Consumo externo detectado na fonte oficial.
+                  @if (hasExternalDifferenceAlert(selectedItem()!)) {
+                    <div class="form-alert warning">
+                      Há diferença entre o controle interno do SAGEP e a fonte oficial. Revise antes de lançar qualquer baixa no sistema.
+                    </div>
+                  }
+                  @if (externalUsageAlert(selectedItem()!); as usageAlert) {
+                    <div class="form-alert warning">
+                      {{ usageAlert }}
                     </div>
                   }
                   @if (itemRateLimitMessage(selectedItem()!)) {
@@ -343,28 +373,105 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                       {{ itemRateLimitMessage(selectedItem()!) }}
                     </div>
                   }
+                  @if (hasManagedBalanceDetails(selectedItem()!)) {
+                    <section class="ata-commitments ata-balance-block">
+                      <div class="ata-movement-panel__head">
+                        <div>
+                          <h3>Saldo da gerenciadora</h3>
+                        </div>
+                      </div>
+                      <div class="detail-grid">
+                        <div class="detail-item">
+                          <label>Unidade gerenciadora</label>
+                          <b>{{ managedBalanceUnitLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Quantidade contratada</label>
+                          <b>{{ managedBalanceRegisteredQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Quantidade empenhada</label>
+                          <b>{{ managedBalanceCommittedQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Saldo para empenho</label>
+                          <b>{{ managedBalanceAvailableQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Status de sincronização</label>
+                          <b>{{ syncStatusLabel(syncStatus(selectedItem()!)) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Situação externa</label>
+                          <b>{{ externalUsageStatusLabel(externalUsageStatus(selectedItem()!)) }}</b>
+                        </div>
+                      </div>
+                    </section>
+                  }
                   @if (managedExternalCommitments(selectedItem()!).length) {
                     <section class="ata-commitments">
                       <div class="ata-movement-panel__head">
                         <div>
-                          <p class="document-action-label">Empenhos externos</p>
-                          <h3>Empenhos que impactam esta ATA</h3>
+                          <h3>Empenhos da gerenciadora</h3>
                         </div>
                       </div>
-                      <div class="document-list">
+                      <div class="ata-commitment-table-wrap">
+                        <table class="ata-commitment-table">
+                          <thead>
+                            <tr>
+                              <th>NE</th>
+                              <th>Unidade</th>
+                              <th>Fornecedor</th>
+                              <th>Data</th>
+                              <th>Quantidade</th>
+                              <th>Valor</th>
+                            </tr>
+                          </thead>
+                          <tbody>
                         @for (commitment of managedExternalCommitments(selectedItem()!); track commitmentTrack(commitment, $index)) {
-                          <article class="document-item">
-                            <b>{{ commitmentNumberLabel(commitment) }}</b>
-                            <div class="ata-movement-grid">
-                              <span><strong>Unidade</strong>{{ commitmentUnitLabel(commitment) }}</span>
-                              <span><strong>Fornecedor</strong>{{ commitmentSupplierLabel(commitment) }}</span>
-                              <span><strong>Data do empenho</strong>{{ commitmentDateLabel(commitment) }}</span>
-                              <span><strong>Quantidade incluída</strong>{{ commitmentIncludedQuantityLabel(commitment, selectedItem()?.unit) }}</span>
-                              <span><strong>Quantidade empenhada</strong>{{ commitmentCommittedQuantityLabel(commitment, selectedItem()?.unit) }}</span>
-                              <span><strong>Valor</strong>{{ commitmentValueLabel(commitment) }}</span>
-                            </div>
-                          </article>
+                          <tr>
+                            <td>{{ commitmentNumberLabel(commitment) }}</td>
+                            <td>{{ commitmentUnitLabel(commitment) }}</td>
+                            <td>{{ commitmentSupplierLabel(commitment) }}</td>
+                            <td>{{ commitmentDateLabel(commitment) }}</td>
+                            <td>{{ commitmentQuantityLabel(commitment, selectedItem()?.unit) }}</td>
+                            <td>{{ commitmentValueLabel(commitment) }}</td>
+                          </tr>
                         }
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  }
+                  @if (hasAdhesionBalanceDetails(selectedItem()!)) {
+                    <section class="ata-commitments ata-balance-block">
+                      <div class="ata-movement-panel__head">
+                        <div>
+                          <h3>Adesões / caronas</h3>
+                        </div>
+                      </div>
+                      <div class="detail-grid">
+                        <div class="detail-item">
+                          <label>Limite para adesão</label>
+                          <b>{{ adhesionLimitQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Aprovado por adesão</label>
+                          <b>{{ adhesionApprovedQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Empenhado por adesão</label>
+                          <b>{{ adhesionCommittedQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item">
+                          <label>Saldo para adesão</label>
+                          <b>{{ adhesionAvailableQuantityLabel(selectedItem()!) }}</b>
+                        </div>
+                        <div class="detail-item detail-item--wide">
+                          <label>Órgãos que aderiram</label>
+                          <b>{{ adhesionOrganizationsCountLabel(selectedItem()!) }}</b>
+                          <p>{{ adhesionOrganizationsLabel(selectedItem()!) }}</p>
+                        </div>
                       </div>
                     </section>
                   }
@@ -372,24 +479,34 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                     <section class="ata-commitments">
                       <div class="ata-movement-panel__head">
                         <div>
-                          <p class="document-action-label">Empenhos externos</p>
-                          <h3>Adesões / órgãos não participantes</h3>
+                          <h3>Empenhos de adesões/caronas</h3>
                         </div>
                       </div>
-                      <div class="document-list">
+                      <div class="ata-commitment-table-wrap">
+                        <table class="ata-commitment-table">
+                          <thead>
+                            <tr>
+                              <th>NE</th>
+                              <th>Unidade</th>
+                              <th>Fornecedor</th>
+                              <th>Data</th>
+                              <th>Quantidade</th>
+                              <th>Valor</th>
+                            </tr>
+                          </thead>
+                          <tbody>
                         @for (commitment of nonParticipantExternalCommitments(selectedItem()!); track commitmentTrack(commitment, $index)) {
-                          <article class="document-item">
-                            <b>{{ commitmentNumberLabel(commitment) }}</b>
-                            <div class="ata-movement-grid">
-                              <span><strong>Unidade</strong>{{ commitmentUnitLabel(commitment) }}</span>
-                              <span><strong>Fornecedor</strong>{{ commitmentSupplierLabel(commitment) }}</span>
-                              <span><strong>Data do empenho</strong>{{ commitmentDateLabel(commitment) }}</span>
-                              <span><strong>Quantidade incluída</strong>{{ commitmentIncludedQuantityLabel(commitment, selectedItem()?.unit) }}</span>
-                              <span><strong>Quantidade empenhada</strong>{{ commitmentCommittedQuantityLabel(commitment, selectedItem()?.unit) }}</span>
-                              <span><strong>Valor</strong>{{ commitmentValueLabel(commitment) }}</span>
-                            </div>
-                          </article>
+                          <tr>
+                            <td>{{ commitmentNumberLabel(commitment) }}</td>
+                            <td>{{ commitmentUnitLabel(commitment) }}</td>
+                            <td>{{ commitmentSupplierLabel(commitment) }}</td>
+                            <td>{{ commitmentDateLabel(commitment) }}</td>
+                            <td>{{ commitmentQuantityLabel(commitment, selectedItem()?.unit) }}</td>
+                            <td>{{ commitmentValueLabel(commitment) }}</td>
+                          </tr>
                         }
+                          </tbody>
+                        </table>
                       </div>
                     </section>
                   }
@@ -495,10 +612,11 @@ export class AtaBalancePageComponent implements OnInit {
     { key: 'description', label: 'Descrição' },
     { key: 'localInitialQuantity', label: 'Qtd. inicial local' },
     { key: 'externalRegisteredQuantity', label: 'Contratada externa' },
-    { key: 'externalCommittedQuantity', label: 'Consumida externa' },
-    { key: 'externalBalance', label: 'Saldo externo' },
+    { key: 'externalCommittedQuantity', label: 'Consumida externa total' },
+    { key: 'externalBalance', label: 'Saldo externo informativo' },
     { key: 'balanceDifference', label: 'Diferença' },
-    { key: 'externalStatus', label: 'Status externo' },
+    { key: 'syncStatus', label: 'Sync' },
+    { key: 'externalSituation', label: 'Situação externa' },
     { key: 'lastSyncedAt', label: 'Última sync' },
   ];
 
@@ -632,11 +750,6 @@ export class AtaBalancePageComponent implements OnInit {
         this.items.set(items);
         this.currentPage.set(1);
         this.loading.set(false);
-        if (this.selectedAtaId()) {
-          this.loadAtaExternalBalance(this.selectedAtaId());
-        } else {
-          this.loadExternalComparisons(items);
-        }
       },
       error: (error) => {
         this.forbidden.set(isForbiddenError(error));
@@ -673,12 +786,6 @@ export class AtaBalancePageComponent implements OnInit {
     this.closeMovements();
     this.syncError.set('');
     this.successMessage.set('');
-
-    if (ataId) {
-      this.loadAtaExternalBalance(ataId);
-    } else {
-      this.loadExternalComparisons(this.items());
-    }
   }
 
   syncSelectedAta(): void {
@@ -824,22 +931,29 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   externalRegisteredQuantityLabel(item: AtaBalanceItem): string {
-    return this.externalQuantityFieldLabel(item, 'registeredQuantity');
+    const comparison = this.comparison(item);
+    const value = this.getManagedRegisteredQuantity(comparison);
+    return value == null ? this.externalQuantityFieldLabel(item, 'registeredQuantity') : this.quantityLabel(value, item.unit);
   }
 
   externalCommittedQuantityLabel(item: AtaBalanceItem): string {
-    return this.externalQuantityFieldLabel(item, 'committedQuantity');
+    const comparison = this.comparison(item);
+    const value = this.getTotalExternalCommittedQuantity(comparison);
+    return value == null ? this.externalQuantityFieldLabel(item, 'committedQuantity') : this.quantityLabel(value, item.unit);
   }
 
   externalQuantityLabel(item: AtaBalanceItem): string {
-    const value = this.externalAvailableQuantityValue(item);
+    const comparison = this.comparison(item);
+    const informativeValue = this.getInformativeExternalAvailableQuantity(comparison);
+    const value = informativeValue ?? this.externalAvailableQuantityValue(item);
 
     return value == null ? this.externalMissingLabel(item) : this.quantityLabel(this.numberValue(value), item.unit);
   }
 
   externalDifferenceLabel(item: AtaBalanceItem): string {
     const comparison = this.comparison(item);
-    const value = comparison?.difference ?? comparison?.balanceDifference;
+    const informativeValue = this.getExternalDifferenceQuantity(comparison);
+    const value = informativeValue ?? comparison?.difference ?? comparison?.balanceDifference;
 
     if (value == null) {
       return this.externalMissingLabel(item);
@@ -848,44 +962,70 @@ export class AtaBalancePageComponent implements OnInit {
     return this.quantityLabel(this.numberValue(value), item.unit);
   }
 
-  externalStatus(item: AtaBalanceItem): string {
+  externalAvailableLabel(item: AtaBalanceItem): string {
+    return this.usesTotalExternalView(this.comparison(item)) ? 'Saldo externo informativo' : 'Saldo externo';
+  }
+
+  syncStatus(item: AtaBalanceItem): string {
     const comparison = this.comparison(item);
 
     if (!comparison && this.itemRateLimitMessage(item)) {
       return 'RATE_LIMIT_COMPRAS_GOV';
     }
 
-    return comparison?.status || 'NOT_SYNCED';
+    return this.explicitSyncStatus(item) || this.legacySyncStatus(item) || 'NAO_SINCRONIZADO';
   }
 
-  externalStatusLabel(status: string): string {
+  syncStatusLabel(status: string): string {
     const normalized = status.toUpperCase();
     return {
-      OK: 'OK',
-      DIVERGENT: 'Divergente',
-      DIVERGENTE: 'Divergente',
-      EXTERNAL_CONSUMPTION_DETECTED: 'Consumo externo detectado',
-      CONSUMO_EXTERNO_DETECTADO: 'Consumo externo detectado',
-      SEM_EMPENHO_REGISTRADO: 'Sem empenho registrado',
-      NOT_FOUND: 'Nao encontrado',
-      NAO_ENCONTRADO: 'Nao encontrado',
+      SINCRONIZADO: 'Sincronizado',
+      OK: 'Sincronizado',
+      NAO_SINCRONIZADO: 'Não sincronizado',
+      NOT_SYNCED: 'Não sincronizado',
       ERRO_CONSULTA_EXTERNA: 'Erro na consulta externa',
       RATE_LIMIT_COMPRAS_GOV: 'Limite da API',
-      NOT_SYNCED: 'Nao sincronizado',
+      NOT_FOUND: 'Não sincronizado',
+      NAO_ENCONTRADO: 'Não sincronizado',
     }[normalized] ?? formatLabel(status);
   }
 
-  externalStatusClass(status: string): string {
+  syncStatusClass(status: string): string {
     const normalized = status.toUpperCase();
 
-    if (normalized === 'OK') return 'b-ok';
-    if (normalized === 'SEM_EMPENHO_REGISTRADO') return 'b-ok';
-    if (normalized === 'NOT_FOUND' || normalized === 'NAO_ENCONTRADO') return 'b-neutral';
-    if (normalized === 'NOT_SYNCED') return 'b-info';
+    if (normalized === 'SINCRONIZADO' || normalized === 'OK') return 'b-ok';
+    if (normalized === 'NAO_SINCRONIZADO' || normalized === 'NOT_SYNCED') return 'b-info';
     if (normalized === 'RATE_LIMIT_COMPRAS_GOV') return 'b-warn';
-    if (normalized === 'EXTERNAL_CONSUMPTION_DETECTED' || normalized === 'CONSUMO_EXTERNO_DETECTADO') return 'b-warn';
     if (normalized === 'ERRO_CONSULTA_EXTERNA') return 'b-danger';
-    return 'b-danger';
+    if (normalized === 'NOT_FOUND' || normalized === 'NAO_ENCONTRADO') return 'b-info';
+    return 'b-info';
+  }
+
+  externalUsageStatusLabel(status: string): string {
+    const normalized = status.toUpperCase();
+    return {
+      SEM_USO_EXTERNO: 'OK',
+      OK: 'OK',
+      ADESAO_DETECTADA: 'Adesão detectada',
+      CONSUMO_GERENCIADORA_DETECTADO: 'Consumo da gerenciadora',
+      CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS: 'Consumo gerenciadora + adesão',
+      CONSUMO_EXTERNO_DETECTADO: 'Consumo externo detectado',
+      EXTERNAL_CONSUMPTION_DETECTED: 'Consumo externo detectado',
+    }[normalized] ?? 'OK';
+  }
+
+  externalUsageStatusClass(status: string): string {
+    const normalized = status.toUpperCase();
+
+    if (!normalized || normalized === 'SEM_USO_EXTERNO' || normalized === 'OK') return 'b-ok';
+    if (
+      normalized === 'ADESAO_DETECTADA' ||
+      normalized === 'CONSUMO_GERENCIADORA_DETECTADO' ||
+      normalized === 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS' ||
+      normalized === 'CONSUMO_EXTERNO_DETECTADO' ||
+      normalized === 'EXTERNAL_CONSUMPTION_DETECTED'
+    ) return 'b-warn';
+    return 'b-ok';
   }
 
   externalLastSyncedLabel(item: AtaBalanceItem): string {
@@ -893,13 +1033,30 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   isNoCommitmentStatus(item: AtaBalanceItem): boolean {
-    const status = this.externalStatus(item).toUpperCase();
+    const status = this.legacySyncStatus(item).toUpperCase();
     return status === 'SEM_EMPENHO_REGISTRADO' && !this.itemRateLimitMessage(item);
   }
 
-  hasExternalConsumptionDetected(item: AtaBalanceItem): boolean {
-    const normalized = this.externalStatus(item).toUpperCase();
-    return normalized === 'CONSUMO_EXTERNO_DETECTADO' || normalized === 'EXTERNAL_CONSUMPTION_DETECTED';
+  externalUsageAlert(item: AtaBalanceItem): string {
+    const status = this.externalUsageStatus(item).toUpperCase();
+
+    return {
+      ADESAO_DETECTADA: 'Adesão detectada por órgão não participante.',
+      CONSUMO_GERENCIADORA_DETECTADO: 'Consumo da gerenciadora detectado.',
+      CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS: 'Consumo da gerenciadora e adesão externa detectados.',
+    }[status] ?? '';
+  }
+
+  hasExternalDifferenceAlert(item: AtaBalanceItem): boolean {
+    const comparison = this.comparison(item);
+    const informativeValue = this.getExternalDifferenceQuantity(comparison);
+
+    if (informativeValue != null) {
+      return informativeValue > 0;
+    }
+
+    const legacyValue = comparison?.difference ?? comparison?.balanceDifference;
+    return this.numberValue(legacyValue) > 0;
   }
 
   isAtaSyncCoolingDown(ataId: string): boolean {
@@ -913,26 +1070,33 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   managedExternalCommitments(item: AtaBalanceItem): AtaExternalBalanceCommitment[] {
-    const externalBalance = this.comparison(item)?.externalBalance;
+    const externalBalance = this.externalBalanceObject(item);
 
-    if (!externalBalance || typeof externalBalance !== 'object') {
-      return [];
+    const managedCommitments = externalBalance?.managedBalance?.commitments;
+
+    if (managedCommitments?.length) {
+      return managedCommitments;
     }
 
-    return (externalBalance.commitments ?? []).filter((commitment) => commitment.affectsManagedBalance !== false);
+    return (externalBalance?.commitments ?? []).filter((commitment) => commitment.affectsManagedBalance !== false);
   }
 
   nonParticipantExternalCommitments(item: AtaBalanceItem): AtaExternalBalanceCommitment[] {
-    const externalBalance = this.comparison(item)?.externalBalance;
+    const externalBalance = this.externalBalanceObject(item);
 
-    if (!externalBalance || typeof externalBalance !== 'object') {
-      return [];
+    const adhesionCommitments = [
+      ...(externalBalance?.adhesionBalance?.commitments ?? []),
+      ...(externalBalance?.adhesionBalance?.adhesions ?? []),
+    ];
+
+    if (adhesionCommitments.length) {
+      return adhesionCommitments;
     }
 
     return [
-      ...(externalBalance.nonParticipantCommitments ?? []),
-      ...(externalBalance.adhesions ?? []),
-      ...(externalBalance.commitments ?? []).filter((commitment) => commitment.affectsManagedBalance === false),
+      ...(externalBalance?.nonParticipantCommitments ?? []),
+      ...(externalBalance?.adhesions ?? []),
+      ...(externalBalance?.commitments ?? []).filter((commitment) => commitment.affectsManagedBalance === false),
     ];
   }
 
@@ -941,7 +1105,8 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   commitmentNumberLabel(commitment: AtaExternalBalanceCommitment): string {
-    return this.textValue(commitment.numeroEmpenho ?? commitment.commitmentNumber ?? commitment.number ?? commitment.empenhoNumber);
+    const value = commitment.numeroEmpenho ?? commitment.commitmentNumber ?? commitment.number ?? commitment.empenhoNumber;
+    return value == null || value === '' ? 'NE não informada pela API' : String(value);
   }
 
   commitmentUnitLabel(commitment: AtaExternalBalanceCommitment): string {
@@ -949,12 +1114,15 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   commitmentSupplierLabel(commitment: AtaExternalBalanceCommitment): string {
-    return this.textValue(commitment.supplier ?? commitment.supplierName ?? commitment.vendor ?? commitment.vendorName);
+    return this.textValue(
+      commitment.supplier ?? commitment.supplierName ?? commitment.vendor ?? commitment.vendorName,
+      'Fornecedor não informado',
+    );
   }
 
   commitmentDateLabel(commitment: AtaExternalBalanceCommitment): string {
     const value = commitment.commitmentDate ?? commitment.date ?? commitment.empenhoDate;
-    return value ? formatDate(value) : 'Nao informado';
+    return value ? formatDate(value) : 'Não informado';
   }
 
   commitmentIncludedQuantityLabel(commitment: AtaExternalBalanceCommitment, unit?: string | null): string {
@@ -965,9 +1133,185 @@ export class AtaBalancePageComponent implements OnInit {
     return this.optionalQuantityLabel(commitment.committedQuantity ?? commitment.quantityCommitted, unit);
   }
 
+  commitmentQuantityLabel(commitment: AtaExternalBalanceCommitment, unit?: string | null): string {
+    return this.optionalQuantityLabel(
+      commitment.committedQuantity ??
+      commitment.quantityCommitted ??
+      commitment.includedQuantity ??
+      commitment.quantityIncluded,
+      unit,
+    );
+  }
+
   commitmentValueLabel(commitment: AtaExternalBalanceCommitment): string {
     const value = commitment.value ?? commitment.amount ?? commitment.totalValue;
-    return value == null ? 'Nao informado' : formatCurrency(value);
+    return value == null ? 'Não informado' : formatCurrency(value);
+  }
+
+  externalEstimatedAmountLabel(item: AtaBalanceItem): string {
+    const value = this.externalBalanceObject(item)?.estimatedAmount;
+    return value == null ? 'Não informado' : formatCurrency(value);
+  }
+
+  hasManagedBalanceDetails(item: AtaBalanceItem): boolean {
+    const managedBalance = this.managedBalance(item);
+
+    return Boolean(
+      managedBalance &&
+      (
+        this.hasTextValue(managedBalance.unit ?? managedBalance.unitName ?? managedBalance.unidade) ||
+        this.hasNumericValue(managedBalance.registeredQuantity ?? managedBalance.contractedQuantity) ||
+        this.hasNumericValue(managedBalance.committedQuantity ?? managedBalance.pledgedQuantity) ||
+        this.hasNumericValue(managedBalance.availableQuantity ?? managedBalance.balanceQuantity) ||
+        this.managedExternalCommitments(item).length
+      ),
+    );
+  }
+
+  managedBalanceUnitLabel(item: AtaBalanceItem): string {
+    const managedBalance = this.managedBalance(item);
+    return this.textValue(managedBalance?.unit ?? managedBalance?.unitName ?? managedBalance?.unidade, 'Não informado');
+  }
+
+  managedBalanceRegisteredQuantityLabel(item: AtaBalanceItem): string {
+    const managedBalance = this.managedBalance(item);
+    return this.optionalQuantityLabel(
+      managedBalance?.registeredQuantity ?? managedBalance?.contractedQuantity,
+      item.unit,
+    );
+  }
+
+  managedBalanceCommittedQuantityLabel(item: AtaBalanceItem): string {
+    const managedBalance = this.managedBalance(item);
+    return this.optionalQuantityLabel(
+      managedBalance?.committedQuantity ?? managedBalance?.pledgedQuantity,
+      item.unit,
+    );
+  }
+
+  managedBalanceAvailableQuantityLabel(item: AtaBalanceItem): string {
+    const managedBalance = this.managedBalance(item);
+    return this.optionalQuantityLabel(
+      managedBalance?.availableQuantity ?? managedBalance?.balanceQuantity,
+      item.unit,
+    );
+  }
+
+  hasAdhesionBalanceDetails(item: AtaBalanceItem): boolean {
+    const adhesionBalance = this.adhesionBalance(item);
+
+    return Boolean(
+      adhesionBalance &&
+      (
+        this.hasNumericValue(adhesionBalance.limitQuantity ?? adhesionBalance.registeredQuantity ?? adhesionBalance.contractedQuantity) ||
+        this.hasNumericValue(adhesionBalance.approvedQuantity ?? adhesionBalance.adhesionApprovedQuantity) ||
+        this.hasNumericValue(adhesionBalance.committedQuantity ?? adhesionBalance.pledgedQuantity) ||
+        this.hasNumericValue(adhesionBalance.availableQuantity ?? adhesionBalance.balanceQuantity) ||
+        this.adhesionOrganizations(item).length ||
+        this.nonParticipantExternalCommitments(item).length
+      ),
+    );
+  }
+
+  adhesionLimitQuantityLabel(item: AtaBalanceItem): string {
+    const adhesionBalance = this.adhesionBalance(item);
+    return this.optionalQuantityLabel(
+      adhesionBalance?.limitQuantity ?? adhesionBalance?.registeredQuantity ?? adhesionBalance?.contractedQuantity,
+      item.unit,
+    );
+  }
+
+  adhesionApprovedQuantityLabel(item: AtaBalanceItem): string {
+    const adhesionBalance = this.adhesionBalance(item);
+    return this.optionalQuantityLabel(
+      adhesionBalance?.approvedQuantity ?? adhesionBalance?.adhesionApprovedQuantity,
+      item.unit,
+    );
+  }
+
+  adhesionCommittedQuantityLabel(item: AtaBalanceItem): string {
+    const adhesionBalance = this.adhesionBalance(item);
+    return this.optionalQuantityLabel(
+      adhesionBalance?.committedQuantity ?? adhesionBalance?.pledgedQuantity,
+      item.unit,
+    );
+  }
+
+  adhesionAvailableQuantityLabel(item: AtaBalanceItem): string {
+    const adhesionBalance = this.adhesionBalance(item);
+    return this.optionalQuantityLabel(
+      adhesionBalance?.availableQuantity ?? adhesionBalance?.balanceQuantity,
+      item.unit,
+    );
+  }
+
+  adhesionOrganizationsCountLabel(item: AtaBalanceItem): string {
+    const organizations = this.adhesionOrganizations(item);
+    return organizations.length ? String(organizations.length) : 'Não informado';
+  }
+
+  adhesionOrganizationsLabel(item: AtaBalanceItem): string {
+    const organizations = this.adhesionOrganizations(item);
+    return organizations.length ? organizations.join(', ') : 'Não informado';
+  }
+
+  getManagedRegisteredQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const externalBalance = this.externalBalanceFromComparison(comparison);
+
+    if (!externalBalance?.managedBalance) {
+      return null;
+    }
+
+    const value = externalBalance.managedBalance.registeredQuantity ?? externalBalance.managedBalance.contractedQuantity;
+    return value == null ? 0 : this.numberValue(value);
+  }
+
+  getManagedCommittedQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const externalBalance = this.externalBalanceFromComparison(comparison);
+
+    if (!externalBalance?.managedBalance) {
+      return null;
+    }
+
+    const value = externalBalance.managedBalance.committedQuantity ?? externalBalance.managedBalance.pledgedQuantity;
+    return value == null ? 0 : this.numberValue(value);
+  }
+
+  getAdhesionCommittedQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const externalBalance = this.externalBalanceFromComparison(comparison);
+
+    if (!externalBalance?.adhesionBalance) {
+      return null;
+    }
+
+    const value = externalBalance.adhesionBalance.committedQuantity ?? externalBalance.adhesionBalance.pledgedQuantity;
+    return value == null ? 0 : this.numberValue(value);
+  }
+
+  getTotalExternalCommittedQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const managedRegistered = this.getManagedRegisteredQuantity(comparison);
+
+    if (managedRegistered == null) {
+      return null;
+    }
+
+    return (this.getManagedCommittedQuantity(comparison) ?? 0) + (this.getAdhesionCommittedQuantity(comparison) ?? 0);
+  }
+
+  getInformativeExternalAvailableQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const managedRegistered = this.getManagedRegisteredQuantity(comparison);
+    const totalCommitted = this.getTotalExternalCommittedQuantity(comparison);
+
+    if (managedRegistered == null || totalCommitted == null) {
+      return null;
+    }
+
+    return managedRegistered - totalCommitted;
+  }
+
+  getExternalDifferenceQuantity(comparison: AtaExternalBalanceComparison | null): number | null {
+    const totalCommitted = this.getTotalExternalCommittedQuantity(comparison);
+    return totalCommitted == null ? null : totalCommitted;
   }
 
   private externalQuantityFieldLabel(
@@ -982,13 +1326,27 @@ export class AtaBalancePageComponent implements OnInit {
     item: AtaBalanceItem,
     field: 'registeredQuantity' | 'committedQuantity' | 'availableQuantity',
   ): string | number | null | undefined {
-    const externalBalance = this.comparison(item)?.externalBalance;
+    const externalBalance = this.externalBalanceObject(item);
 
-    if (externalBalance && typeof externalBalance === 'object') {
-      return externalBalance[field];
+    if (!externalBalance) {
+      return undefined;
     }
 
-    return undefined;
+    if (field === 'registeredQuantity') {
+      return externalBalance.managedBalance?.registeredQuantity ??
+        externalBalance.managedBalance?.contractedQuantity ??
+        externalBalance[field];
+    }
+
+    if (field === 'committedQuantity') {
+      return externalBalance.managedBalance?.committedQuantity ??
+        externalBalance.managedBalance?.pledgedQuantity ??
+        externalBalance[field];
+    }
+
+    return externalBalance.managedBalance?.availableQuantity ??
+      externalBalance.managedBalance?.balanceQuantity ??
+      externalBalance[field];
   }
 
   private externalAvailableQuantityValue(item: AtaBalanceItem): string | number | null | undefined {
@@ -996,8 +1354,8 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   private externalMissingLabel(item: AtaBalanceItem): string {
-    const normalized = this.externalStatus(item).toUpperCase();
-    return normalized === 'NOT_FOUND' || normalized === 'NAO_ENCONTRADO' ? 'Nao encontrado' : 'Nao sincronizado';
+    const normalized = this.syncStatus(item).toUpperCase();
+    return normalized === 'NOT_FOUND' || normalized === 'NAO_ENCONTRADO' ? 'Não encontrado' : 'Não sincronizado';
   }
 
   private externalLastSyncValue(item: AtaBalanceItem): string | null | undefined {
@@ -1050,11 +1408,11 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   optionalQuantityLabel(value: string | number | null | undefined, unit?: string | null): string {
-    return value == null ? 'Nao informado' : this.quantityLabel(this.numberValue(value), unit);
+    return value == null ? 'Não informado' : this.quantityLabel(this.numberValue(value), unit);
   }
 
-  textValue(value: string | number | null | undefined): string {
-    return value == null || value === '' ? 'Nao informado' : String(value);
+  textValue(value: string | number | null | undefined, fallback = 'Não informado'): string {
+    return value == null || value === '' ? fallback : String(value);
   }
 
   movementLabel(movement: AtaBalanceMovement): string {
@@ -1108,11 +1466,119 @@ export class AtaBalancePageComponent implements OnInit {
     return Number.isFinite(numeric) ? numeric : 0;
   }
 
+  private externalBalanceObject(item: AtaBalanceItem): AtaExternalBalancePayload | null {
+    const externalBalance = this.comparison(item)?.externalBalance;
+    return externalBalance && typeof externalBalance === 'object' ? externalBalance as AtaExternalBalancePayload : null;
+  }
+
+  private externalBalanceFromComparison(comparison: AtaExternalBalanceComparison | null): AtaExternalBalancePayload | null {
+    const externalBalance = comparison?.externalBalance;
+    return externalBalance && typeof externalBalance === 'object' ? externalBalance as AtaExternalBalancePayload : null;
+  }
+
+  private managedBalance(item: AtaBalanceItem): AtaExternalManagedBalance | null {
+    return this.externalBalanceObject(item)?.managedBalance ?? null;
+  }
+
+  private adhesionBalance(item: AtaBalanceItem): AtaExternalAdhesionBalance | null {
+    return this.externalBalanceObject(item)?.adhesionBalance ?? null;
+  }
+
+  private adhesionOrganizations(item: AtaBalanceItem): string[] {
+    const adhesionBalance = this.adhesionBalance(item);
+    const source = adhesionBalance?.adheringOrganizations ?? adhesionBalance?.organizations ?? adhesionBalance?.units ?? [];
+
+    return source
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          return entry.trim();
+        }
+
+        return String(
+          entry?.name ??
+          entry?.organizationName ??
+          entry?.organization ??
+          entry?.unitName ??
+          entry?.unit ??
+          entry?.unidade ??
+          entry?.agency ??
+          '',
+        ).trim();
+      })
+      .filter(Boolean)
+      .filter((value, index, values) => values.indexOf(value) === index);
+  }
+
+  externalUsageStatus(item: AtaBalanceItem): string {
+    const explicitStatus = this.externalBalanceObject(item)?.externalUsageStatus;
+    if (explicitStatus) {
+      return explicitStatus;
+    }
+
+    const legacyStatus = String(this.comparison(item)?.status || '').toUpperCase();
+
+    if (
+      legacyStatus === 'ADESAO_DETECTADA' ||
+      legacyStatus === 'CONSUMO_GERENCIADORA_DETECTADO' ||
+      legacyStatus === 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS' ||
+      legacyStatus === 'CONSUMO_EXTERNO_DETECTADO' ||
+      legacyStatus === 'EXTERNAL_CONSUMPTION_DETECTED'
+    ) {
+      return legacyStatus;
+    }
+
+    return 'SEM_USO_EXTERNO';
+  }
+
+  private explicitSyncStatus(item: AtaBalanceItem): string {
+    return this.comparison(item)?.syncStatus || this.externalBalanceObject(item)?.syncStatus || '';
+  }
+
+  private legacySyncStatus(item: AtaBalanceItem): string {
+    const rawStatus = String(this.comparison(item)?.status || '').toUpperCase();
+
+    if (!rawStatus) {
+      return '';
+    }
+
+    if (
+      rawStatus === 'ADESAO_DETECTADA' ||
+      rawStatus === 'CONSUMO_GERENCIADORA_DETECTADO' ||
+      rawStatus === 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS' ||
+      rawStatus === 'CONSUMO_EXTERNO_DETECTADO' ||
+      rawStatus === 'EXTERNAL_CONSUMPTION_DETECTED'
+    ) {
+      return 'SINCRONIZADO';
+    }
+
+    if (rawStatus === 'SEM_EMPENHO_REGISTRADO' || rawStatus === 'OK') {
+      return 'SINCRONIZADO';
+    }
+
+    if (rawStatus === 'NOT_FOUND' || rawStatus === 'NAO_ENCONTRADO' || rawStatus === 'NOT_SYNCED') {
+      return 'NAO_SINCRONIZADO';
+    }
+
+    return rawStatus;
+  }
+
+  private hasTextValue(value: string | null | undefined): boolean {
+    return Boolean(value && value.trim());
+  }
+
+  private hasNumericValue(value: string | number | null | undefined): boolean {
+    return value != null && value !== '';
+  }
+
+  private usesTotalExternalView(comparison: AtaExternalBalanceComparison | null): boolean {
+    return this.getManagedRegisteredQuantity(comparison) != null;
+  }
+
   private listItems<T>(response: { items: T[] } | T[]): T[] {
     return Array.isArray(response) ? response : response.items ?? [];
   }
 
-  private syncAtaExternalBalance(ataId: string, itemId?: string): void {
+  private syncAtaExternalBalance(ataId: string): void {
     if (!ataId || this.syncingAtaId()) {
       return;
     }
@@ -1125,10 +1591,10 @@ export class AtaBalancePageComponent implements OnInit {
     this.successMessage.set('');
     this.ataBalanceService
       .syncAtaExternalBalance(ataId)
+      .pipe(finalize(() => this.syncingAtaId.set('')))
       .subscribe({
         next: (response) => {
           if (this.handleAtaRateLimitResponse(ataId, response)) {
-            this.syncingAtaId.set('');
             return;
           }
 
@@ -1137,49 +1603,14 @@ export class AtaBalancePageComponent implements OnInit {
 
           this.applyAtaExternalComparisons(ataId, syncedComparisons, response);
           this.successMessage.set(this.syncSuccessMessage(warnings));
-
-          this.ataBalanceService
-            .getAtaExternalBalance(ataId)
-            .pipe(finalize(() => this.syncingAtaId.set('')))
-            .subscribe({
-              next: (confirmedResponse) => {
-                if (this.handleAtaRateLimitResponse(ataId, confirmedResponse)) {
-                  return;
-                }
-
-                this.applyAtaExternalComparisons(ataId, this.externalComparisonItems(confirmedResponse), confirmedResponse);
-                this.successMessage.set(this.syncSuccessMessage(warnings));
-                this.refreshOpenMovementComparison(itemId);
-              },
-              error: (error) => {
-                const message = getErrorMessage(error, 'Nao foi possivel confirmar o saldo externo atualizado desta ATA.');
-                this.successMessage.set(this.syncSuccessMessage([...warnings, message]));
-
-                if (itemId) {
-                  this.externalComparisonErrors.update((errors) => ({
-                    ...errors,
-                    [itemId]: message,
-                  }));
-                }
-              },
-            });
         },
         error: (error) => {
           if (this.handleAtaRateLimitResponse(ataId, error?.error)) {
-            this.syncingAtaId.set('');
             return;
           }
 
           const message = getErrorMessage(error, 'Nao foi possivel sincronizar o saldo externo desta ATA.');
           this.syncError.set(message);
-          this.syncingAtaId.set('');
-
-          if (itemId) {
-            this.externalComparisonErrors.update((errors) => ({
-              ...errors,
-              [itemId]: message,
-            }));
-          }
         },
       });
   }
@@ -1212,7 +1643,6 @@ export class AtaBalancePageComponent implements OnInit {
 
           this.applyItemExternalComparison(item.id, comparison);
           this.successMessage.set('Saldo externo do item sincronizado com sucesso.');
-          this.loadItemBalanceComparison(item);
         },
         error: (error) => {
           if (this.handleItemRateLimitResponse(item.id, error?.error)) {
@@ -1226,95 +1656,6 @@ export class AtaBalancePageComponent implements OnInit {
             [item.id]: message,
           }));
         },
-      });
-  }
-
-  private loadAtaExternalBalance(ataId: string): void {
-    const ataItems = this.items().filter((item) => this.ataId(item) === ataId);
-
-    if (!ataId || !ataItems.length) {
-      return;
-    }
-
-    this.externalLoading.set(true);
-    this.ataBalanceService
-      .getAtaExternalBalance(ataId)
-      .pipe(finalize(() => this.externalLoading.set(false)))
-      .subscribe({
-        next: (response) => {
-          if (this.handleAtaRateLimitResponse(ataId, response)) {
-            return;
-          }
-
-          this.applyAtaExternalComparisons(ataId, this.externalComparisonItems(response), response);
-        },
-        error: (error) => {
-          if (this.handleAtaRateLimitResponse(ataId, error?.error)) {
-            return;
-          }
-
-          const message = getErrorMessage(error, 'Nao foi possivel carregar a comparacao externa desta ATA.');
-          this.externalComparisonErrors.update((errors) => {
-            const nextErrors = { ...errors };
-            ataItems.forEach((item) => {
-              nextErrors[item.id] = message;
-            });
-            return nextErrors;
-          });
-        },
-      });
-  }
-
-  private loadExternalComparisons(items: AtaBalanceItem[]): void {
-    const uniqueItems = items.filter((item, index, source) => source.findIndex((entry) => entry.id === item.id) === index);
-
-    if (!uniqueItems.length) {
-      return;
-    }
-
-    this.externalLoading.set(true);
-
-    forkJoin(
-      uniqueItems.map((item) =>
-        this.ataBalanceService.getItemBalanceComparison(item.id).pipe(
-          catchError((error) => {
-            if (this.handleItemRateLimitResponse(item.id, error?.error)) {
-              return of(null);
-            }
-
-            this.externalComparisonErrors.update((errors) => ({
-              ...errors,
-              [item.id]: getErrorMessage(error, 'Nao foi possivel carregar a comparacao externa deste item.'),
-            }));
-            return of(null);
-          }),
-        ),
-      ),
-    )
-      .pipe(finalize(() => this.externalLoading.set(false)))
-      .subscribe((comparisons) => {
-        const nextComparisons = { ...this.externalComparisons() };
-        const nextErrors = { ...this.externalComparisonErrors() };
-
-        comparisons.forEach((comparison, index) => {
-          const item = uniqueItems[index];
-
-          if (comparison && this.isRateLimitResponse(comparison)) {
-            this.handleItemRateLimitResponse(item.id, comparison);
-            return;
-          }
-
-          if (comparison) {
-            nextComparisons[item.id] = comparison;
-          }
-
-          if (comparison) {
-            delete nextErrors[item.id];
-          }
-        });
-
-        this.externalComparisons.set(nextComparisons);
-        this.externalComparisonErrors.set(nextErrors);
       });
   }
 
@@ -1351,16 +1692,6 @@ export class AtaBalancePageComponent implements OnInit {
           }));
         },
       });
-  }
-
-  private refreshOpenMovementComparison(itemId?: string): void {
-    const selected = this.selectedItem();
-
-    if (!itemId || !selected || selected.id !== itemId) {
-      return;
-    }
-
-    this.loadItemBalanceComparison(selected);
   }
 
   private handleAtaRateLimitResponse(

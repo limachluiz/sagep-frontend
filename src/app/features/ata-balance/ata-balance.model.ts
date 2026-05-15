@@ -84,6 +84,9 @@ export type ExternalBalanceStatus =
   | 'OK'
   | 'DIVERGENTE'
   | 'CONSUMO_EXTERNO_DETECTADO'
+  | 'ADESAO_DETECTADA'
+  | 'CONSUMO_GERENCIADORA_DETECTADO'
+  | 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS'
   | 'NAO_ENCONTRADO'
   | 'SEM_EMPENHO_REGISTRADO'
   | 'ERRO_CONSULTA_EXTERNA'
@@ -93,6 +96,15 @@ export type ExternalBalanceStatus =
   | 'NOT_FOUND'
   | string;
 
+export type ExternalSyncStatus =
+  | 'SINCRONIZADO'
+  | 'NAO_SINCRONIZADO'
+  | 'RATE_LIMIT_COMPRAS_GOV'
+  | 'ERRO_CONSULTA_EXTERNA'
+  | 'OK'
+  | 'NOT_SYNCED'
+  | string;
+
 export interface AtaExternalBalanceValues {
   registeredQuantity?: string | number | null;
   committedQuantity?: string | number | null;
@@ -100,6 +112,54 @@ export interface AtaExternalBalanceValues {
   commitments?: AtaExternalBalanceCommitment[] | null;
   nonParticipantCommitments?: AtaExternalBalanceCommitment[] | null;
   adhesions?: AtaExternalBalanceCommitment[] | null;
+}
+
+export interface AtaExternalAdheringOrganization {
+  name?: string | null;
+  unit?: string | null;
+  unitName?: string | null;
+  unidade?: string | null;
+  organization?: string | null;
+  organizationName?: string | null;
+  agency?: string | null;
+}
+
+export interface AtaExternalManagedBalance {
+  registeredQuantity?: string | number | null;
+  contractedQuantity?: string | number | null;
+  committedQuantity?: string | number | null;
+  pledgedQuantity?: string | number | null;
+  availableQuantity?: string | number | null;
+  balanceQuantity?: string | number | null;
+  unit?: string | null;
+  unitName?: string | null;
+  unidade?: string | null;
+  commitments?: AtaExternalBalanceCommitment[] | null;
+}
+
+export interface AtaExternalAdhesionBalance {
+  registeredQuantity?: string | number | null;
+  contractedQuantity?: string | number | null;
+  limitQuantity?: string | number | null;
+  approvedQuantity?: string | number | null;
+  adhesionApprovedQuantity?: string | number | null;
+  committedQuantity?: string | number | null;
+  pledgedQuantity?: string | number | null;
+  availableQuantity?: string | number | null;
+  balanceQuantity?: string | number | null;
+  adheringOrganizations?: Array<AtaExternalAdheringOrganization | string> | null;
+  organizations?: Array<AtaExternalAdheringOrganization | string> | null;
+  units?: Array<AtaExternalAdheringOrganization | string> | null;
+  commitments?: AtaExternalBalanceCommitment[] | null;
+  adhesions?: AtaExternalBalanceCommitment[] | null;
+}
+
+export interface AtaExternalBalancePayload extends AtaExternalBalanceValues {
+  managedBalance?: AtaExternalManagedBalance | null;
+  adhesionBalance?: AtaExternalAdhesionBalance | null;
+  externalUsageStatus?: ExternalBalanceStatus | null;
+  syncStatus?: ExternalSyncStatus | null;
+  estimatedAmount?: string | number | null;
 }
 
 export interface AtaExternalBalanceCommitment {
@@ -145,7 +205,7 @@ export interface AtaExternalBalanceComparison {
   localBalance?: string | number | null;
   localAvailableQuantity?: string | number | null;
   availableQuantity?: string | number | null;
-  externalBalance?: AtaExternalBalanceValues | string | number | null;
+  externalBalance?: AtaExternalBalancePayload | AtaExternalBalanceValues | string | number | null;
   externalAvailableQuantity?: string | number | null;
   comprasGovAvailableQuantity?: string | number | null;
   fallbackBalance?: string | number | null;
@@ -155,6 +215,7 @@ export interface AtaExternalBalanceComparison {
   difference?: string | number | null;
   balanceDifference?: string | number | null;
   status?: ExternalBalanceStatus | null;
+  syncStatus?: ExternalSyncStatus | null;
   retryAfterSeconds?: number | null;
   warnings?: Array<string | { message?: string | null; detail?: string | null }> | null;
   lastSyncAt?: string | null;
@@ -173,6 +234,7 @@ export interface AtaExternalBalanceListResponse {
   lastSyncedAt?: string | null;
   lastSyncAt?: string | null;
   status?: ExternalBalanceStatus | null;
+  syncStatus?: ExternalSyncStatus | null;
   retryAfterSeconds?: number | null;
   warnings?: Array<string | { message?: string | null; detail?: string | null }> | null;
   errors?: Array<string | { message?: string | null; detail?: string | null }> | null;
