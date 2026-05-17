@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { Project, ProjectListResponse } from '../../core/models/project.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ProjectsService } from '../../core/services/projects.service';
 import { AccessDeniedStateComponent } from '../../shared/components/access-denied-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -43,7 +44,13 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
       eyebrow="Operação"
       subtitle="Consulta integrada ao backend com busca, filtros, paginação e acesso ao detalhe do projeto."
       badge="Painel operacional"
-    />
+    >
+      @if (canCreateProject()) {
+        <a page-header-actions routerLink="/projects/new" class="btn btn-gold">
+          Novo projeto
+        </a>
+      }
+    </app-page-header>
 
     <div class="workspace projects-workspace">
       <section class="card">
@@ -179,6 +186,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
 })
 export class ProjectsPageComponent implements OnInit {
   private readonly projectsService = inject(ProjectsService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
@@ -191,6 +199,7 @@ export class ProjectsPageComponent implements OnInit {
     stage: [''],
   });
   readonly pageSize = signal(10);
+  readonly canCreateProject = computed(() => this.authService.canPerformMutation(['projects.create']));
 
   readonly statusOptions = ['PLANEJAMENTO', 'EM_ANDAMENTO', 'PAUSADO', 'CONCLUIDO', 'CANCELADO'] as const;
   readonly stageOptions = [

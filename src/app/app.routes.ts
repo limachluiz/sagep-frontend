@@ -56,6 +56,19 @@ export const routes: Routes = [
         path: 'projects',
         children: [
           {
+            path: 'new',
+            canActivate: [permissionGuard],
+            data: {
+              roles: ['ADMIN', 'GESTOR', 'PROJETISTA'],
+              permissions: ['projects.create'],
+              deniedRoles: ['CONSULTA'],
+            },
+            loadComponent: () =>
+              import('./features/projects/project-create-page.component').then(
+                (m) => m.ProjectCreatePageComponent,
+              ),
+          },
+          {
             path: '',
             loadComponent: () =>
               import('./features/projects/projects-page.component').then(

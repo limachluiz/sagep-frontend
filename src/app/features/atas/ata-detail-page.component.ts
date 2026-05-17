@@ -149,7 +149,7 @@ import { AtasService } from './atas.service';
                 <div class="form-actions">
                   <button type="button" class="btn btn-ghost" (click)="toggleEditForm()">Cancelar</button>
                   <button type="submit" class="btn btn-primary" [disabled]="savingAta() || ataForm.invalid">
-                    {{ savingAta() ? 'Salvando...' : 'Salvar alteraÃ§Ãµes' }}
+                    {{ savingAta() ? 'Salvando...' : 'Salvar alterações' }}
                   </button>
                 </div>
               </form>
@@ -600,7 +600,7 @@ export class AtaDetailPageComponent implements OnInit {
         this.reload();
       },
       error: (error) => {
-        this.editError.set(getErrorMessage(error, 'NÃ£o foi possÃ­vel atualizar a ATA.'));
+        this.editError.set(getErrorMessage(error, 'Não foi possível atualizar a ATA.'));
         this.savingAta.set(false);
       },
     });

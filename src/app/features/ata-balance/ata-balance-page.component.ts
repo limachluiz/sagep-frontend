@@ -16,7 +16,7 @@ import {
   ResponsiveTableComponent,
 } from '../../shared/components/responsive-table.component';
 import { SummaryCardComponent } from '../../shared/components/summary-card.component';
-import { formatCurrency, formatDate, formatLabel } from '../../shared/utils/format.util';
+import { formatCurrency, formatDate, formatDisplayText, formatLabel } from '../../shared/utils/format.util';
 import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error.util';
 import { AuthService } from '../../core/services/auth.service';
 import { Ata } from '../atas/ata.model';
@@ -170,14 +170,14 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
           >
             <ng-template appResponsiveTableCell="ata" let-item>
               <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ ataLabel(item) }}</p>
-              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.ata?.vendorName || 'Fornecedor não informado' }}</p>
+              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ displayText(item.ata?.vendorName, 'Fornecedor não informado') }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="item" let-item>
               <p class="font-semibold text-[var(--sagep-brand-deep)]">{{ itemCode(item) }}</p>
-              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ item.referenceCode || 'Sem referência' }}</p>
+              <p class="mt-1 text-sm text-[var(--sagep-muted)]">{{ displayText(item.referenceCode, 'Sem referência') }}</p>
             </ng-template>
             <ng-template appResponsiveTableCell="description" let-item>
-              {{ item.description || 'Descrição não informada' }}
+              {{ displayText(item.description, 'Descrição não informada') }}
             </ng-template>
             <ng-template appResponsiveTableCell="localInitialQuantity" let-item>
               {{ quantityLabel(initialQuantity(item), item.unit) }}
@@ -245,7 +245,7 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
               <div class="ata-movement-panel__head">
                 <div>
                   <p class="document-action-label">Movimentações do saldo</p>
-                  <h3 id="ata-movement-title">{{ itemCode(selectedItem()!) }} - {{ selectedItem()?.description || 'Descrição não informada' }}</h3>
+                  <h3 id="ata-movement-title">{{ itemCode(selectedItem()!) }} - {{ displayText(selectedItem()?.description, 'Descrição não informada') }}</h3>
                   <p>{{ ataLabel(selectedItem()!) }}</p>
                 </div>
                 <button type="button" (click)="closeMovements()" class="btn btn-sm btn-ghost">
@@ -379,7 +379,7 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                       <div class="detail-grid">
                         <div class="detail-item">
                           <label>Item</label>
-                          <b>{{ itemCode(selectedItem()!) }} - {{ selectedItem()?.description || 'Descrição não informada' }}</b>
+                          <b>{{ itemCode(selectedItem()!) }} - {{ displayText(selectedItem()?.description, 'Descrição não informada') }}</b>
                         </div>
                         <div class="detail-item">
                           <label>ATA</label>
@@ -490,7 +490,7 @@ type BalanceStatus = 'normal' | 'baixo' | 'insuficiente';
                         <span><strong>Quantidade</strong>{{ quantityLabel(numberValue(movement.quantity), selectedItem()?.unit) }}</span>
                         <span><strong>Valor unitário</strong>{{ formatCurrency(movement.unitPrice) }}</span>
                         <span><strong>Valor total</strong>{{ formatCurrency(movement.totalPrice ?? movement.amount) }}</span>
-                        <span><strong>Resumo</strong>{{ movement.summary || movement.description || movement.source || 'Movimentação registrada.' }}</span>
+                        <span><strong>Resumo</strong>{{ displayText(movement.summary || movement.description || movement.source, 'Movimentação registrada.') }}</span>
                         <span><strong>Ator</strong>{{ actorLabel(movement) }}</span>
                         <span><strong>Projeto</strong>{{ projectLabel(movement) }}</span>
                         <span><strong>Estimativa</strong>{{ estimateLabel(movement) }}</span>
@@ -610,13 +610,13 @@ export class AtaBalancePageComponent implements OnInit {
       const matchesSearch = !term ||
         [
           this.ataLabel(item),
-          item.ata?.vendorName,
+          this.displayText(item.ata?.vendorName),
           this.itemCode(item),
-          item.referenceCode,
-          item.description,
-          item.unit,
-          item.coverageGroup?.code,
-          item.coverageGroup?.name,
+          this.displayText(item.referenceCode),
+          this.displayText(item.description),
+          this.displayText(item.unit),
+          this.displayText(item.coverageGroup?.code),
+          this.displayText(item.coverageGroup?.name),
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(term));
@@ -881,7 +881,7 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   itemCode(item: AtaBalanceItem): string {
-    return item.ataItemCode ? `#${item.ataItemCode}` : item.referenceCode || item.id;
+    return item.ataItemCode ? `#${item.ataItemCode}` : this.displayText(item.referenceCode || item.id);
   }
 
   ataId(item: AtaBalanceItem): string {
@@ -896,7 +896,7 @@ export class AtaBalancePageComponent implements OnInit {
 
   ataOptionLabel(ata: Ata): string {
     const number = ata.number || (ata.ataCode ? `#${ata.ataCode}` : 'ATA sem numero');
-    const vendor = ata.vendorName || 'Fornecedor nao informado';
+    const vendor = this.displayText(ata.vendorName, 'Fornecedor não informado');
     const bidding = [this.ataStringField(ata, ['uasg', 'uAsg']), this.biddingLabel(ata)].filter(Boolean).join(' - ');
 
     return [number, vendor, bidding].filter(Boolean).join(' | ');
@@ -1295,7 +1295,7 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   quantityLabel(value: number, unit?: string | null): string {
-    return `${new Intl.NumberFormat('pt-BR').format(value)}${unit ? ` ${unit}` : ''}`;
+    return `${new Intl.NumberFormat('pt-BR').format(value)}${unit ? ` ${this.displayText(unit)}` : ''}`;
   }
 
   optionalQuantityLabel(value: string | number | null | undefined, unit?: string | null): string {
@@ -1303,7 +1303,7 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   textValue(value: string | number | null | undefined, fallback = 'Não informado'): string {
-    return value == null || value === '' ? fallback : String(value);
+    return value == null || value === '' ? fallback : formatDisplayText(value);
   }
 
   movementLabel(movement: AtaBalanceMovement): string {
@@ -1311,12 +1311,12 @@ export class AtaBalancePageComponent implements OnInit {
   }
 
   actorLabel(movement: AtaBalanceMovement): string {
-    return movement.actorName || movement.actor?.name || movement.actor?.fullName || 'Não informado';
+    return this.displayText(movement.actorName || movement.actor?.name || movement.actor?.fullName, 'Não informado');
   }
 
   projectLabel(movement: AtaBalanceMovement): string {
     const code = movement.project?.projectCode ?? movement.projectCode ?? movement.projectNumber;
-    return code ? `PRJ-${code}` : movement.project?.title || 'Não informado';
+    return code ? `PRJ-${code}` : this.displayText(movement.project?.title, 'Não informado');
   }
 
   estimateLabel(movement: AtaBalanceMovement): string {
@@ -1332,6 +1332,11 @@ export class AtaBalancePageComponent implements OnInit {
     return movement.serviceOrder?.serviceOrderNumber ||
       movement.serviceOrderNumber ||
       (movement.serviceOrder?.serviceOrderCode || movement.serviceOrderCode ? `OS-${movement.serviceOrder?.serviceOrderCode || movement.serviceOrderCode}` : 'Não informado');
+  }
+
+  displayText(value: unknown, fallback = ''): string {
+    const text = formatDisplayText(value);
+    return text || fallback;
   }
 
   movementTrack(movement: AtaBalanceMovement, index: number): string | number {

@@ -4,6 +4,7 @@ import { forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  ProjectCreatePayload,
   ProjectDetails,
   ProjectLookupResponse,
   ProjectListResponse,
@@ -67,6 +68,10 @@ export class ProjectsService {
 
   getByCode(code: string) {
     return this.http.get<ProjectLookupResponse>(`${this.apiUrl}/projects/code/${encodeURIComponent(code)}`);
+  }
+
+  create(payload: ProjectCreatePayload) {
+    return this.http.post<ProjectLookupResponse>(`${this.apiUrl}/projects`, payload);
   }
 
   getDetails(projectIdentifier: string) {

@@ -24,6 +24,10 @@ export interface Project {
   projectCode: number;
   title: string;
   description?: string | null;
+  omId?: string | null;
+  militaryOrganizationId?: string | null;
+  omName?: string | null;
+  militaryOrganizationName?: string | null;
   status: ProjectStatus;
   stage: ProjectStage;
   ownerId?: string | null;
@@ -110,4 +114,13 @@ export interface ProjectListResponse {
   links?: {
     self: string;
   };
+}
+
+export interface ProjectCreatePayload {
+  title: string;
+  omId: string;
+  ownerId: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
 }

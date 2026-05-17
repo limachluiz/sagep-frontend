@@ -66,14 +66,14 @@ import { AtasService } from './atas.service';
             <form [formGroup]="ataForm" class="ata-form" (ngSubmit)="createAta()">
               <div class="grid grid-2">
                 <label class="field">
-                  <span>NÃºmero da ATA</span>
+                  <span>Número da ATA</span>
                   <input formControlName="number" placeholder="Ex.: 001/2026" />
                 </label>
                 <label class="field">
                   <span>Tipo</span>
                   <select formControlName="type">
                     <option value="CFTV">CFTV</option>
-                    <option value="FIBRA_OPTICA">Fibra Ã³ptica</option>
+                    <option value="FIBRA_OPTICA">Fibra óptica</option>
                   </select>
                 </label>
                 <label class="field">
@@ -81,21 +81,21 @@ import { AtasService } from './atas.service';
                   <input formControlName="vendorName" placeholder="Nome do fornecedor" />
                 </label>
                 <label class="field">
-                  <span>Ã“rgÃ£o gerenciador</span>
-                  <input formControlName="managingAgency" placeholder="Ã“rgÃ£o gerenciador" />
+                  <span>Órgão gerenciador</span>
+                  <input formControlName="managingAgency" placeholder="Órgão gerenciador" />
                 </label>
                 <label class="field">
-                  <span>VigÃªncia inÃ­cio</span>
+                  <span>Vigência início</span>
                   <input type="date" formControlName="startDate" />
                 </label>
                 <label class="field">
-                  <span>VigÃªncia fim</span>
+                  <span>Vigência fim</span>
                   <input type="date" formControlName="endDate" />
                 </label>
               </div>
               <label class="field">
-                <span>ObservaÃ§Ãµes</span>
-                <textarea formControlName="observations" rows="3" placeholder="ObservaÃ§Ãµes da ATA"></textarea>
+                <span>Observações</span>
+                <textarea formControlName="observations" rows="3" placeholder="Observações da ATA"></textarea>
               </label>
               <label class="field-checkbox">
                 <input type="checkbox" formControlName="isActive" />
@@ -358,7 +358,7 @@ export class AtasPageComponent implements OnInit {
         void this.router.navigate(['/atas', ata.id]);
       },
       error: (error) => {
-        this.createError.set(getErrorMessage(error, 'NÃ£o foi possÃ­vel criar a ATA.'));
+        this.createError.set(getErrorMessage(error, 'Não foi possível criar a ATA.'));
         this.savingAta.set(false);
       },
     });
