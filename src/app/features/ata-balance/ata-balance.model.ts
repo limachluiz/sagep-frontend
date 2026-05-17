@@ -83,16 +83,12 @@ export interface AtaBalanceMovementListResponse {
 export type ExternalBalanceStatus =
   | 'OK'
   | 'DIVERGENTE'
-  | 'CONSUMO_EXTERNO_DETECTADO'
-  | 'ADESAO_DETECTADA'
   | 'CONSUMO_GERENCIADORA_DETECTADO'
-  | 'CONSUMO_GERENCIADORA_E_ADESAO_DETECTADOS'
   | 'NAO_ENCONTRADO'
   | 'SEM_EMPENHO_REGISTRADO'
   | 'ERRO_CONSULTA_EXTERNA'
   | 'RATE_LIMIT_COMPRAS_GOV'
   | 'DIVERGENT'
-  | 'EXTERNAL_CONSUMPTION_DETECTED'
   | 'NOT_FOUND'
   | string;
 
@@ -110,18 +106,6 @@ export interface AtaExternalBalanceValues {
   committedQuantity?: string | number | null;
   availableQuantity?: string | number | null;
   commitments?: AtaExternalBalanceCommitment[] | null;
-  nonParticipantCommitments?: AtaExternalBalanceCommitment[] | null;
-  adhesions?: AtaExternalBalanceCommitment[] | null;
-}
-
-export interface AtaExternalAdheringOrganization {
-  name?: string | null;
-  unit?: string | null;
-  unitName?: string | null;
-  unidade?: string | null;
-  organization?: string | null;
-  organizationName?: string | null;
-  agency?: string | null;
 }
 
 export interface AtaExternalManagedBalance {
@@ -137,27 +121,8 @@ export interface AtaExternalManagedBalance {
   commitments?: AtaExternalBalanceCommitment[] | null;
 }
 
-export interface AtaExternalAdhesionBalance {
-  registeredQuantity?: string | number | null;
-  contractedQuantity?: string | number | null;
-  limitQuantity?: string | number | null;
-  approvedQuantity?: string | number | null;
-  adhesionApprovedQuantity?: string | number | null;
-  committedQuantity?: string | number | null;
-  pledgedQuantity?: string | number | null;
-  availableQuantity?: string | number | null;
-  balanceQuantity?: string | number | null;
-  adheringOrganizations?: Array<AtaExternalAdheringOrganization | string> | null;
-  organizations?: Array<AtaExternalAdheringOrganization | string> | null;
-  units?: Array<AtaExternalAdheringOrganization | string> | null;
-  commitments?: AtaExternalBalanceCommitment[] | null;
-  adhesions?: AtaExternalBalanceCommitment[] | null;
-}
-
 export interface AtaExternalBalancePayload extends AtaExternalBalanceValues {
   managedBalance?: AtaExternalManagedBalance | null;
-  adhesionBalance?: AtaExternalAdhesionBalance | null;
-  externalUsageStatus?: ExternalBalanceStatus | null;
   syncStatus?: ExternalSyncStatus | null;
   estimatedAmount?: string | number | null;
 }
