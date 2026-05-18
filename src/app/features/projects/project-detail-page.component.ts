@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, switchMap, throwError } from 'rxjs';
 
 import { ProjectDetails } from '../../core/models/project.model';
@@ -54,7 +54,28 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
       badge="Dados atualizados"
       backLabel="Voltar para projetos"
       backLink="/projects"
-    />
+    >
+      @if (details()?.project && canManageProject()) {
+        <ng-container page-header-actions>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="archiveProject()"
+            [disabled]="archivingProject() || deletingProject() || isProjectArchived()"
+          >
+            {{ archivingProject() ? 'Arquivando...' : isProjectArchived() ? 'Projeto arquivado' : 'Arquivar' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            (click)="deleteProject()"
+            [disabled]="archivingProject() || deletingProject()"
+          >
+            {{ deletingProject() ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </ng-container>
+      }
+    </app-page-header>
 
     <div class="workspace project-detail-workspace">
       @if (loading()) {
@@ -125,6 +146,18 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
         @if (serviceCompletionSuccess()) {
           <div class="form-alert success">
             Conclusão do serviço registrada com sucesso. O detalhe do projeto foi atualizado.
+          </div>
+        }
+
+        @if (projectArchiveSuccess()) {
+          <div class="form-alert success">
+            Projeto arquivado com sucesso.
+          </div>
+        }
+
+        @if (projectMutationError()) {
+          <div class="form-alert">
+            {{ projectMutationError() }}
           </div>
         }
 
@@ -955,6 +988,7 @@ import { getErrorMessage, isForbiddenError } from '../../shared/utils/http-error
 })
 export class ProjectDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly projectsService = inject(ProjectsService);
@@ -1032,6 +1066,10 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly serviceOrderError = signal('');
   readonly serviceOrderForbidden = signal(false);
   readonly serviceOrderSuccess = signal(false);
+  readonly archivingProject = signal(false);
+  readonly deletingProject = signal(false);
+  readonly projectArchiveSuccess = signal(false);
+  readonly projectMutationError = signal('');
   readonly details = signal<ProjectDetails | null>(null);
   private projectIdentifier: string | null = null;
 
@@ -1411,6 +1449,72 @@ export class ProjectDetailPageComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  canManageProject(): boolean {
+    return this.authService.canPerformMutation(['projects.manage', 'projects.delete', 'projects.archive']);
+  }
+
+  isProjectArchived(): boolean {
+    return Boolean(this.details()?.project?.archivedAt);
+  }
+
+  archiveProject(): void {
+    const project = this.details()?.project;
+
+    if (!project || !this.canManageProject() || this.isProjectArchived()) {
+      return;
+    }
+
+    const confirmed = window.confirm('Arquivar este projeto? Ele deixara de aparecer como projeto ativo.');
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.archivingProject.set(true);
+    this.projectMutationError.set('');
+    this.projectArchiveSuccess.set(false);
+
+    this.projectsService
+      .archive(project.id)
+      .pipe(finalize(() => this.archivingProject.set(false)))
+      .subscribe({
+        next: () => {
+          this.projectArchiveSuccess.set(true);
+          this.reload();
+        },
+        error: (error) => {
+          this.projectMutationError.set(getErrorMessage(error, 'Nao foi possivel arquivar o projeto.'));
+        },
+      });
+  }
+
+  deleteProject(): void {
+    const project = this.details()?.project;
+
+    if (!project || !this.canManageProject()) {
+      return;
+    }
+
+    const confirmed = window.confirm('Excluir este projeto? Esta acao nao pode ser desfeita.');
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingProject.set(true);
+    this.projectMutationError.set('');
+
+    this.projectsService
+      .delete(project.id)
+      .pipe(finalize(() => this.deletingProject.set(false)))
+      .subscribe({
+        next: () => void this.router.navigate(['/projects']),
+        error: (error) => {
+          this.projectMutationError.set(getErrorMessage(error, 'Nao foi possivel excluir o projeto.'));
+        },
+      });
   }
 
   toggleCommitmentNotePanel(): void {

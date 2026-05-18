@@ -412,6 +412,12 @@ textarea:focus-visible {
   color: var(--eb-night);
 }
 
+.btn-danger {
+  background: #b42318;
+  color: white;
+  box-shadow: 0 10px 24px rgba(180, 35, 24, 0.18);
+}
+
 .btn-sm {
   border-radius: 12px;
   padding: 8px 11px;
@@ -881,7 +887,8 @@ textarea:focus-visible {
 }
 
 .page-actions .btn-ghost,
-.page-actions .btn-gold {
+.page-actions .btn-gold,
+.page-actions .btn-danger {
   min-width: 174px;
 }
 

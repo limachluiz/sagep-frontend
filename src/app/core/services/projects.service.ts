@@ -99,6 +99,14 @@ export class ProjectsService {
     return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${projectId}/as-built/review`, payload);
   }
 
+  archive(projectId: string) {
+    return this.http.patch<ProjectLookupResponse>(`${this.apiUrl}/projects/${encodeURIComponent(projectId)}/archive`, {});
+  }
+
+  delete(projectId: string) {
+    return this.http.delete<void>(`${this.apiUrl}/projects/${encodeURIComponent(projectId)}`);
+  }
+
   informCommitmentNote(projectId: string, payload: InformCommitmentNotePayload) {
     return this.updateFlow(projectId, {
       stage: 'OS_LIBERADA',
